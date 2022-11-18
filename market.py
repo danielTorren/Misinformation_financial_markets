@@ -49,6 +49,7 @@ class Market:
 
         self.set_seed = parameters["set_seed"]
         np.random.seed(self.set_seed)
+        self.save_data = parameters["save_data"]
 
         self.I = parameters["I"]
         self.K = parameters["K"]
@@ -74,7 +75,7 @@ class Market:
         self.S_omega_t = self.compute_S_omega_t()
 
         self.c_0_list = np.random.choice(a = [0,1], size = self.I)
-        print("self.c_0_list",self.c_0_list)
+        #print("self.c_0_list",self.c_0_list)
 
 
         #create network
@@ -96,6 +97,12 @@ class Market:
         S_list_init = [self.S_tau_t[0],self.S_omega_t[0], self.mu_0]
         for i in range(self.I):
             self.agent_list[i].expectation_mean, self.agent_list[i].expectation_variance = self.agent_list[i].compute_posterior_mean_variance(S_list_init)
+
+        if self.save_data:
+            self.history_p_t = [0]
+            self.history_d_t= [0]
+            self.history_time = [self.step_count]
+
 
     def compute_S_tau_t(self):
         return np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
@@ -175,6 +182,7 @@ class Market:
         agent_list: list[Consumer]
         """ 
         consumer_params = {
+            "save_data": self.save_data,
             "W_0":self.W_0,
             "mu_0":self.mu_0,
             "var_0":self.var_0,
@@ -196,17 +204,20 @@ class Market:
 
         return agent_list
 
-    def get_consumers_mean_variance(self):
+    def get_consumers_dt_mean_variance(self):
 
         expectations_mean_vector = [i.expectation_mean for i in self.agent_list]
         expectations_variance_vector = [i.expectation_variance for i in self.agent_list]
 
-        return np.asarray(expectations_mean_vector), np.asarray(expectations_variance_vector)
+        dt_expectations_mean = self.d + np.asarray(expectations_mean_vector)
+        dt_expectations_variance = self.epsilon_sigma**2 + np.asarray(expectations_variance_vector)
+
+        return dt_expectations_mean, dt_expectations_variance
 
     def compute_price(self):
 
-        term_1 = sum((self.expectations_mean_vector)/(self.expectations_variance_vector))
-        term_2 = sum(self.expectations_variance_vector)
+        term_1 = sum((self.dt_expectations_mean)/(self.dt_expectations_variance ))
+        term_2 = 1/(sum(1/self.dt_expectations_variance ))
         #print("compute price term 1", term_1)
         #print("compute price term 2", term_2)
 
@@ -217,8 +228,8 @@ class Market:
         return aggregate_price
 
     def compute_demand(self):
-        demand_numerator = self.expectations_mean_vector - self.R*self.p_t
-        demand_denominator = self.a*self.expectations_variance_vector
+        demand_numerator = self.dt_expectations_mean - self.R*self.p_t
+        demand_denominator = self.a*self.dt_expectations_variance
         
         #print("demand_numerator" , demand_numerator)
         #print("demand_denominator",demand_denominator)
@@ -252,6 +263,11 @@ class Market:
         for i in range(self.I):
             self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], S_tau, S_omega, self.S_rho_i[i])
 
+    def append_data(self):
+        self.history_p_t.append(self.p_t)
+        self.history_d_t.append(self.d_t)
+        self.history_time.append(self.step_count)
+
     def next_step(self):
         """
         Push the simulation forwards one time step.
@@ -267,12 +283,7 @@ class Market:
         self.step_count +=1  
 
         #Recieve expectations of mean and variances
-        self.expectations_mean_vector, self.expectations_variance_vector = self.get_consumers_mean_variance()
-
-        #quit()
-        
-        #print("self.expectations_mean_vector",self.expectations_mean_vector)
-        #print("self.expectations_variance_vector",self.expectations_variance_vector)
+        self.dt_expectations_mean, self.dt_expectations_variance = self.get_consumers_dt_mean_variance()
 
         #Compute aggregate price
         self.p_t = self.compute_price()
@@ -288,3 +299,6 @@ class Market:
 
         #compute and return profits
         self.update_consumers()
+
+        if self.save_data:
+            self.append_data()

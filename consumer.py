@@ -14,6 +14,7 @@ class Consumer:
     "Class of consumer"
     def __init__(self, parameters: dict, c_0):
         "Construct initial data of Consumer class"
+        self.save_data = parameters["save_data"]
         self.W_0 = parameters["W_0"]
         self.expectation_mean = parameters["mu_0"]
         self.expectation_variance = parameters["var_0"]
@@ -32,7 +33,13 @@ class Consumer:
         self.c_list = [self.c_0,0,0]
 
         self.signal_variances = self.compute_signal_variances()
-        
+
+        if self.save_data:
+            self.history_weighting_vector = [list(self.weighting_vector)] 
+            self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
+            self.history_expectation_mean = [self.expectation_mean]
+            self.history_expectation_variance = [self.expectation_variance] 
+            self.history_S_rho = [0]#if in doubt 0!
 
     def compute_c_status(self):
         if ~np.isnan(self.weighting_vector[0]):#check if weighting is nan of purchasing signal
@@ -77,7 +84,7 @@ class Consumer:
         else:
             X_list = [self.compute_X(self.S_list[v]) for v in non_nan_index_list]
 
-            print("X LIst: THESE ARE ALL NEGATIVE", X_list)
+            #print("X LIst: THESE ARE ALL NEGATIVE", X_list)
 
             #calc the theoretical profit
             profit_list = [self.compute_profit(self.d_t, self.p_t, X_list[v], self.c_list[v]) for v in range(len(X_list))]
@@ -130,6 +137,13 @@ class Consumer:
 
         return posterior_mean,posterior_variance 
 
+    def append_data(self):
+        self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
+        self.history_profit.append(self.profit)
+        self.history_expectation_mean.append(self.expectation_mean) 
+        self.history_expectation_variance.append(self.expectation_variance) 
+        self.history_S_rho.append(self.S_list[2])
+
     def next_step(self,d_t,p_t,X_t, S_tau, S_omega, S_rho):
         #recieve dividend and demand
         #compute profit
@@ -155,3 +169,6 @@ class Consumer:
         
         #compute posterior expectations
         self.expectation_mean, self.expectation_variance = self.compute_posterior_mean_variance(self.S_list)
+
+        if self.save_data:  
+            self.append_data()
