@@ -97,7 +97,7 @@ if __name__ == "__main__":
     plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting",dpi_save,"history_weighting_vector", 3, [r"$S_{\tau}$", r"$S_{\omega}$", r"$S_{\rho}$"])
 
     #network
-    plot_history_p_t = plot_time_series_market(fileName,Data,"p_t",dpi_save,"history_p_t")
+    # plot1 plot_history_p_t = plot_time_series_market(fileName,Data,"p_t",dpi_save,"history_p_t")
     plot_history_d_t = plot_time_series_market(fileName,Data,"d_t",dpi_save,"history_d_t")
 
     plt.show()
