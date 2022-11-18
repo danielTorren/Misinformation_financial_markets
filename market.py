@@ -50,6 +50,7 @@ class Market:
         self.set_seed = parameters["set_seed"]
         np.random.seed(self.set_seed)
         self.save_data = parameters["save_data"]
+        self.degroot_aggregation = parameters["degroot_aggregation"]
 
         self.I = parameters["I"]
         self.K = parameters["K"]
@@ -250,10 +251,15 @@ class Market:
 
     def compute_network_signal(self):
 
-        k_list = [np.random.choice(range(self.I), 1, p=self.weighting_matrix[i])[0] for i in range(self.I)]
+        if self.degroot_aggregation:
+            behavioural_attitude_matrix = np.array([(n.expectation_mean ) for n in self.agent_list])
+            neighbour_influence = np.matmul(self.weighting_matrix, behavioural_attitude_matrix)
+            return neighbour_influence
+        else:
+            k_list = [np.random.choice(range(self.I), 1, p=self.weighting_matrix[i])[0] for i in range(self.I)]
 
-        neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
-        return neighbour_influence
+            neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
+            return neighbour_influence
 
     def update_consumers(self):
 
