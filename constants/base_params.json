@@ -1,9 +1,9 @@
 {
-    "steps":200,
+    "steps":1000,
     "compression_factor": 10,
     "save_data": 1, 
-    "I": 200,
-    "K": 20,
+    "I": 500,
+    "K": 30,
     "prob_rewire": 0.1,
     "set_seed": 1,
     "network_structure": "small_world",
@@ -16,12 +16,13 @@
     "epsilon_sigma": 0.31622776601,
     "gamma_sigma": 0.31622776601,
     "var_0": 0.1,
-    "tau": 0.33,
-    "omega": 0.33,
-    "rho": 0.34,
+    "phi_tau": 0.33,
+    "phi_omega": 0.33,
+    "phi_rho": 0.34,
     "W_0": 100,
     "c_info": 0.1,
     "beta": 1,
     "zeta_threshold": 0.63245553202,
-    "delta":1e-5
+    "delta":1e-5,
+    "cost":1
 }

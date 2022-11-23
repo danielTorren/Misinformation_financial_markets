@@ -75,6 +75,7 @@ class Market:
         self.S_tau_t = self.compute_S_tau_t()
         self.S_omega_t = self.compute_S_omega_t()
 
+        self.cost_val = parameters["cost"]
         self.c_0_list = np.random.choice(a = [0,1], size = self.I)
         #print("self.c_0_list",self.c_0_list)
 
@@ -90,19 +91,24 @@ class Market:
             self.network,
         ) = self.create_weighting_matrix()
 
-        self.weighting_vector_0 = np.array([parameters["tau"], parameters["omega"],parameters["rho"]])
+        self.weighting_vector_0 = np.array([parameters["phi_tau"], parameters["phi_omega"],parameters["phi_rho"]])
 
         self.agent_list = self.create_agent_list()
 
         #update_expectations of agents based on their netork and initial signals
-        S_list_init = [self.S_tau_t[0],self.S_omega_t[0], self.mu_0]
-        for i in range(self.I):
-            self.agent_list[i].expectation_mean, self.agent_list[i].expectation_variance = self.agent_list[i].compute_posterior_mean_variance(S_list_init)
 
+        for i in range(self.I):
+            if self.agent_list[i].c_bool:
+                S_tau_init = self.S_tau_t[0]
+            else:
+                S_tau_init = np.nan
+            self.agent_list[i].expectation_mean, self.agent_list[i].expectation_variance = self.agent_list[i].compute_posterior_mean_variance([S_tau_init,self.S_omega_t[0], self.mu_0])
+            
         if self.save_data:
             self.history_p_t = [0]
             self.history_d_t= [0]
             self.history_time = [self.step_count]
+            self.history_X_it = [[0]*self.I]
 
 
     def compute_S_tau_t(self):
@@ -111,9 +117,22 @@ class Market:
     def compute_S_omega_t(self):
         gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
         
-        zeta = [(self.S_tau_t[i] + gamma_t[i]) if (np.abs(self.S_tau_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.steps+1)]#+1 is for the zeroth step update of the signal
+        zeta_list = []
+        zeta_tracker = 0
+        decay_factor = 0.8
 
-        return np.asarray(zeta)
+        for i in range(0,self.steps+1):
+            if (np.abs(self.S_tau_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold):
+                zeta = (self.S_tau_t[i] + gamma_t[i])
+            else:
+                zeta = zeta_tracker*decay_factor
+            zeta_tracker = zeta
+
+            zeta_list.append(zeta)
+
+        #zeta = [(self.S_tau_t[i] + gamma_t[i]) if (np.abs(self.S_tau_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.steps+1)]#+1 is for the zeroth step update of the signal
+
+        return np.asarray(zeta_list)
 
     def normlize_matrix(self, matrix: npt.NDArray) -> npt.NDArray:
         """
@@ -129,8 +148,19 @@ class Market:
         norm_matrix: npt.NDArray
             row normalized array
         """
+
         row_sums = matrix.sum(axis=1)
-        norm_matrix = matrix / row_sums[:, np.newaxis]
+
+        if np.any(row_sums):
+            """THIS IS VERY VERY CLUMBSY"""
+            mask = row_sums == 0# check which rows are negative
+            reduced_array = matrix[~mask]#create new array with only the non zero rows
+            reduced_sums = row_sums[~mask]#create list 
+            location_zero_elements = np.nonzero(mask)[0]#get location of where the zeros are
+            reduced_norm_matrix = reduced_array/reduced_sums[:, np.newaxis]#norm the matrix
+            norm_matrix = np.insert(reduced_norm_matrix, location_zero_elements - np.arange(len(location_zero_elements)), matrix[mask], 0)#put the zeros back in, ()
+        else:
+            norm_matrix = matrix/row_sums[:, np.newaxis]#norm the matrix
 
         return norm_matrix
 
@@ -160,7 +190,7 @@ class Market:
 
         weighting_matrix = nx.to_numpy_array(G)
 
-        #print(self.network_structure, weighting_matrix)
+        #print("weighting_matrix", weighting_matrix)
 
         norm_weighting_matrix = self.normlize_matrix(weighting_matrix)
 
@@ -198,7 +228,7 @@ class Market:
 
         agent_list = [
             Consumer(
-                consumer_params,self.c_0_list[i]
+                consumer_params,self.c_0_list[i], self.cost_val
             )
             for i in range(self.I)
         ]
@@ -254,25 +284,48 @@ class Market:
         if self.degroot_aggregation:
             behavioural_attitude_matrix = np.array([(n.expectation_mean ) for n in self.agent_list])
             neighbour_influence = np.matmul(self.weighting_matrix, behavioural_attitude_matrix)
-            return neighbour_influence
+            if np.any(neighbour_influence):#DEAL WITH INDIVIDUALS WHO HAVE NO MATES
+                neighbour_influence[neighbour_influence == 0] = np.nan#replace signal for those with no neighbours with nan
         else:
-            k_list = [np.random.choice(range(self.I), 1, p=self.weighting_matrix[i])[0] for i in range(self.I)]
+            #mask = self.weighting_matrix > 0
+            if np.any([np.any(i) for i in self.weighting_matrix], axis=0):#first any gives list of true or false as to whether the row is all zeros i believe?
+                mask = [np.any(i) for i in self.weighting_matrix]
+                #mask = np.any(self.weighting_matrix, axis=0)# check which rows are negative
+                #print(mask_alt, mask)
+                reduced_array = self.weighting_matrix[~mask]#create new array with only the non zero rows
+                location_zero_elements = np.nonzero(mask)[0]#get location of where the zeros are
+                
+                #print("location_zero_elements",location_zero_elements)
 
-            neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
-            return neighbour_influence
+                k_list = [np.random.choice(range(self.I), 1, p=i)[0] for i in reduced_array]
+                neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
+                
+                #print(" BEFORE neighbour_influence",neighbour_influence)
+                neighbour_influence = np.insert(neighbour_influence, location_zero_elements- np.arange(len(location_zero_elements)) , np.nan)#put nan at the location
+                #print("After neighbour_influence",neighbour_influence)
+
+            else:
+                k_list = [
+                    np.random.choice(range(self.I), 1, p=self.weighting_matrix[i])[0]
+                    for i in range(self.I)
+                ]  # for each individual select a neighbour using the row of the alpha matrix as the probability
+                neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
+
+        return neighbour_influence
 
     def update_consumers(self):
 
-        S_tau = self.S_tau_t[self.step_count] 
+        S_tau = [self.S_tau_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
         S_omega = self.S_omega_t[self.step_count]
 
         for i in range(self.I):
-            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], S_tau, S_omega, self.S_rho_i[i])
+            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], S_tau[i], S_omega, self.S_rho_i[i])
 
     def append_data(self):
         self.history_p_t.append(self.p_t)
         self.history_d_t.append(self.d_t)
         self.history_time.append(self.step_count)
+        self.history_X_it.append(self.X_it)
 
     def next_step(self):
         """

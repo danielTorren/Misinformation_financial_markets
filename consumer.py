@@ -12,7 +12,7 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, c_0):
+    def __init__(self, parameters: dict, c_bool, cost_val):
         "Construct initial data of Consumer class"
         self.save_data = parameters["save_data"]
         self.W_0 = parameters["W_0"]
@@ -28,26 +28,29 @@ class Consumer:
         self.delta = parameters["delta"]
 
         #cost related nonsense
-        
-        self.c_0 = c_0
-        self.c_list = [self.c_0,0,0]
+        self.c_bool = c_bool
+        if ~self.c_bool:
+            self.weighting_vector[0] = 0#np.nan
+        self.c_0 = cost_val
+        self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
 
         self.signal_variances = self.compute_signal_variances()
 
         if self.save_data:
+            self.history_X_list = [[0,0,0]]#no demand at start?
             self.history_weighting_vector = [list(self.weighting_vector)] 
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_expectation_mean = [self.expectation_mean]
             self.history_expectation_variance = [self.expectation_variance] 
             self.history_S_rho = [0]#if in doubt 0!
+            self.history_c_bool = [self.c_bool]
 
-    def compute_c_status(self):
-        if ~np.isnan(self.weighting_vector[0]):#check if weighting is nan of purchasing signal
-            c = self.c_0
-        else:
-            c = 0
-        
-        return c
+    def compute_c_status(self,d_t,p_t):
+        """FIX"""
+
+        c_effect = self.compute_profit(d_t,p_t,self.X_list[0],self.c_list[0])
+        if c_effect <= 0.0:#turn it off if negative profit
+            self.c_bool = 0
 
     def compute_profit(self,d_t,p_t,X_t,c):
 
@@ -80,6 +83,7 @@ class Consumer:
 
         if not non_nan_index_list:
             #empty list therefore all signal are nan, keep weighting static - DO NOTHING
+            X_list = [0,0,0] #if weighting is all nan then dont buy anything
             pass
         else:
             X_list = [self.compute_X(self.S_list[v]) for v in non_nan_index_list]
@@ -96,19 +100,22 @@ class Consumer:
 
             #print("denominator_weighting",denominator_weighting)
 
-            if not nan_index_list:
-                #if all values are present
-                #print("THESE ARE A PROBLEM!",np.exp(self.beta*profit_list[2]),denominator_weighting )
+            if not nan_index_list:#if all values are present
                 weighting_vector = [np.exp(self.beta*profit)/denominator_weighting for profit in  profit_list]
-                #print("after",weighting_vector)
             else:
                 #at least 1 nan value
                 weighting_vector_short = np.asarray([np.exp(self.beta*profit)/denominator_weighting for profit in  profit_list])
-                weighting_vector = weighting_vector_short*(1-sum(self.weighting_vector[v] for v in nan_index_list))
+                weighting_vector = weighting_vector_short*(1-sum(weighting_vector[v] for v in nan_index_list))#1 - the effect of others?
                 for v in nan_index_list:
-                    weighting_vector = np.insert(weighting_vector, v ,self.weighting_vector[v])#(array, position, what to put)
+                    weighting_vector = np.insert(weighting_vector, v ,self.weighting_vector[v])# DOES THIS PUT IT IN THE RIGHT PLACE?
+            
+            for v in nan_index_list:
+                X_list = np.insert(X_list, v , 0)# DOES THIS PUT IT IN THE RIGHT PLACE?
 
-        return np.asarray(weighting_vector)
+        #print("X_list",X_list)
+
+        return np.asarray(X_list), np.asarray(weighting_vector)
+        
 
     def compute_signal_variances(self):
         signal_variances = -1/(10*np.log(1 + self.delta - self.weighting_vector))
@@ -118,6 +125,7 @@ class Consumer:
         prior_variance = self.expectation_variance
         prior_mean = self.expectation_mean
 
+        #Only want to use signals available in the posterior calculation
         full_signal_variances_dirty = np.append(self.signal_variances, prior_variance)
         full_signal_means_dirty = np.append(S_list, prior_mean)
 
@@ -138,11 +146,13 @@ class Consumer:
         return posterior_mean,posterior_variance 
 
     def append_data(self):
+        self.history_X_list.append(list(self.X_list))
         self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
         self.history_expectation_mean.append(self.expectation_mean) 
         self.history_expectation_variance.append(self.expectation_variance) 
         self.history_S_rho.append(self.S_list[2])
+        self.history_c_bool.append(self.c_bool)
 
     def next_step(self,d_t,p_t,X_t, S_tau, S_omega, S_rho):
         #recieve dividend and demand
@@ -154,18 +164,19 @@ class Consumer:
 
         #print("self.S_list",self.S_list)
 
-        self.profit = self.compute_profit(d_t,p_t,X_t,self.c_list[0])
+        self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
 
         #update weighting
         #print("BEFORE self.weighting_vector", self.weighting_vector)
-        self.weighting_vector = self.compute_weighting_vector()
+        self.X_list, self.weighting_vector = self.compute_weighting_vector()
 
         #print("AFTER self.weighting_vector", self.weighting_vector)
     
         self.signal_variances = self.compute_signal_variances()
 
         #update cost
-        self.c_list[0] = self.compute_c_status()
+        if self.c_bool:
+            self.compute_c_status(self.d_t,self.p_t)
         
         #compute posterior expectations
         self.expectation_mean, self.expectation_variance = self.compute_posterior_mean_variance(self.S_list)
