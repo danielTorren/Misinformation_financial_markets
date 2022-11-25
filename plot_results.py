@@ -69,9 +69,10 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
     plt.tight_layout()
 
     plotName = fileName + "/Plots"
-    f = plotName + "/timeseries_consumers_%s.eps" % (property_y)
+    f = plotName + "/timeseries_consumers_%s" % (property_y)
     print("f",f)
-    fig.savefig(f, dpi=dpi_save, format="eps")
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,num_signals, titles,red_blue_c):
     fig, axes = plt.subplots(nrows=1, ncols=num_signals, figsize=(10,6))
@@ -91,8 +92,9 @@ def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,n
     plt.tight_layout()
 
     plotName = fileName + "/Prints"
-    f = plotName + "/plot_time_series_consumer_triple_%s.eps" % property_y
-    fig.savefig(f, dpi=dpi_save, format="eps")
+    f = plotName + "/plot_time_series_consumer_triple_%s" % property_y
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
     
 def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
 
@@ -110,8 +112,9 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
         ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
 
     plotName = fileName + "/Plots"
-    f = plotName + "/" + property_y + "_timeseries.eps"
-    fig.savefig(f, dpi=dpi_save, format="eps")
+    f = plotName + "/" + property_y + "_timeseries"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
 
@@ -124,8 +127,9 @@ def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
     ax.set_ylabel(r"%s" % y_title)
 
     plotName = fileName + "/Plots"
-    f = plotName + "/" + "_timeseries_pulsing.eps"
-    fig.savefig(f, dpi=dpi_save, format="eps")
+    f = plotName + "/" + "_timeseries_pulsing"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,property_y):
 
@@ -145,8 +149,9 @@ def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,prop
     ax.set_ylabel(r"%s" % y_title)
 
     plotName = fileName + "/Plots"
-    f = plotName + "/" + property_y + "_plot_time_series_market_matrix_transpose.eps"
-    fig.savefig(f, dpi=dpi_save, format="eps")
+    f = plotName + "/" + property_y + "_plot_time_series_market_matrix_transpose"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def prod_pos(layout_type: str, network: nx.Graph) -> nx.Graph:
 
@@ -279,8 +284,9 @@ def plot_network_shape(
     cbar_culture.set_label(colour_bar_label)
 
     plotName = fileName + "/Plots"
-    f = plotName + "/" + property_value + "_plot_network_shape.eps"
-    fig.savefig(f, dpi=dpi_save, format="eps")
+    f = plotName + "/" + property_value + "_plot_network_shape"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
 dpi_save = 1200
