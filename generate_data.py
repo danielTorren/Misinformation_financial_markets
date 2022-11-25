@@ -39,6 +39,29 @@ def generate_data(params):
             "or %s s" % ((time.time() - start_time)),
         )
     return financial_market
+    
+def produce_name(parameters: dict, parameters_name_list: list) -> str:
+    """produce a file name from a subset list of parameters and values  to create a unique identifier for each simulation run
+
+    Parameters
+    ----------
+    params_dict: dict[dict],
+        dictionary of parameters used to generate attributes, dict used for readability instead of super long list of input parameters.
+        See generate_data function for an example
+    parameters_name_list: list
+        list of parameters to be used in the filename
+
+    Returns
+    -------
+    fileName: str
+        name of file where results may be found composed of value from the different assigned parameters.
+    """
+
+    fileName = "results/single_shot"
+    for key, value in parameters.items():
+        if key in parameters_name_list:
+            fileName = fileName + "_" + str(key) + "_" + str(value)
+    return fileName
 
 RUN = 1
 
@@ -47,7 +70,15 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    fileName = "results/test"
+    namesList = [
+    "steps",
+    "I",
+    "network_structure",
+    "degroot_aggregation",
+    ]
+
+    fileName = produce_name(params,namesList)#"results/test"
+
     print("FILENAME:", fileName)
 
     Data = generate_data(params)  # run the simulation

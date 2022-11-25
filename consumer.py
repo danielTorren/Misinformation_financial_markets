@@ -12,17 +12,18 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, c_bool, cost_val):
+    def __init__(self, parameters: dict, c_bool):
         "Construct initial data of Consumer class"
         self.save_data = parameters["save_data"]
         self.W_0 = parameters["W_0"]
-        self.expectation_mean = parameters["mu_0"]
-        self.expectation_variance = parameters["var_0"]
+        self.expectation_theta_mean = parameters["mu_0"]
+        self.expectation_theta_variance = parameters["var_0"]
         self.weighting_vector = parameters["weighting_vector_0"]
         self.R = parameters["R"]
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
+        self.c_0 = parameters["c_info"]
 
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
@@ -31,7 +32,7 @@ class Consumer:
         self.c_bool = c_bool
         if ~self.c_bool:
             self.weighting_vector[0] = 0#np.nan
-        self.c_0 = cost_val
+        
         self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
 
         self.signal_variances = self.compute_signal_variances()
@@ -39,10 +40,10 @@ class Consumer:
         if self.save_data:
             self.history_X_list = [[0,0,0]]#no demand at start?
             self.history_weighting_vector = [list(self.weighting_vector)] 
-            self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
-            self.history_expectation_mean = [self.expectation_mean]
-            self.history_expectation_variance = [self.expectation_variance] 
-            self.history_S_rho = [0]#if in doubt 0!
+            self.history_profit = [self.W_0]#if in doubt 0!, just so everyhting is the same length!
+            self.history_expectation_theta_mean = [self.expectation_theta_mean]
+            self.history_expectation_theta_variance = [self.expectation_theta_variance] 
+            self.history_lambda_t = [0]#if in doubt 0!
             self.history_c_bool = [self.c_bool]
 
     def compute_c_status(self,d_t,p_t):
@@ -122,36 +123,37 @@ class Consumer:
         return signal_variances
 
     def compute_posterior_mean_variance(self,S_list):
-        prior_variance = self.expectation_variance
-        prior_mean = self.expectation_mean
+        prior_theta_variance = self.expectation_theta_variance
+        prior_theta_mean = self.expectation_theta_mean
+
+        #add priors for cycling
+        full_signal_variances_dirty = np.append(self.signal_variances, prior_theta_variance)
+        full_signal_means_dirty = np.append(S_list, prior_theta_mean)
 
         #Only want to use signals available in the posterior calculation
-        full_signal_variances_dirty = np.append(self.signal_variances, prior_variance)
-        full_signal_means_dirty = np.append(S_list, prior_mean)
-
         nan_mask = ~np.isnan(full_signal_means_dirty)
         full_signal_means = full_signal_means_dirty[nan_mask]
         full_signal_variances = full_signal_variances_dirty[nan_mask]
 
         denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
-        posterior_variance = np.prod(full_signal_variances)/denominator
+        posterior_theta_variance = np.prod(full_signal_variances)/denominator
 
         #mean
         numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
         #print("numerator_mean",numerator_mean)
-        posterior_mean = numerator_mean/denominator
+        posterior_theta_mean = numerator_mean/denominator
 
         #print("posterior_mean,posterior_variance:",posterior_mean, posterior_variance)
 
-        return posterior_mean,posterior_variance 
+        return posterior_theta_mean,posterior_theta_variance 
 
     def append_data(self):
         self.history_X_list.append(list(self.X_list))
         self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
-        self.history_expectation_mean.append(self.expectation_mean) 
-        self.history_expectation_variance.append(self.expectation_variance) 
-        self.history_S_rho.append(self.S_list[2])
+        self.history_expectation_theta_mean.append(self.expectation_theta_mean) 
+        self.history_expectation_theta_variance.append(self.expectation_theta_variance) 
+        self.history_lambda_t.append(self.S_list[2])
         self.history_c_bool.append(self.c_bool)
 
     def next_step(self,d_t,p_t,X_t, S_tau, S_omega, S_rho):
@@ -179,7 +181,7 @@ class Consumer:
             self.compute_c_status(self.d_t,self.p_t)
         
         #compute posterior expectations
-        self.expectation_mean, self.expectation_variance = self.compute_posterior_mean_variance(self.S_list)
+        self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)
 
         if self.save_data:  
             self.append_data()

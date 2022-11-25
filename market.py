@@ -72,10 +72,11 @@ class Market:
         self.step_count = 0
         self.steps = parameters["steps"]
 
-        self.S_tau_t = self.compute_S_tau_t()
-        self.S_omega_t = self.compute_S_omega_t()
+        self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.steps+1)
+        self.gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
+        self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)
+        self.zeta_t = self.compute_zeta_t()
 
-        self.cost_val = parameters["cost"]
         self.c_0_list = np.random.choice(a = [0,1], size = self.I)
         #print("self.c_0_list",self.c_0_list)
 
@@ -99,10 +100,10 @@ class Market:
 
         for i in range(self.I):
             if self.agent_list[i].c_bool:
-                S_tau_init = self.S_tau_t[0]
+                theta_init = self.theta_t[0]
             else:
-                S_tau_init = np.nan
-            self.agent_list[i].expectation_mean, self.agent_list[i].expectation_variance = self.agent_list[i].compute_posterior_mean_variance([S_tau_init,self.S_omega_t[0], self.mu_0])
+                theta_init = np.nan
+            self.agent_list[i].expectation_theta_mean, self.agent_list[i].expectation_theta_variance = self.agent_list[i].compute_posterior_mean_variance([theta_init,self.zeta_t[0], self.mu_0])
             
         if self.save_data:
             self.history_p_t = [0]
@@ -110,29 +111,35 @@ class Market:
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
 
-
-    def compute_S_tau_t(self):
-        return np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
+    def compute_zeta_t(self):
         
-    def compute_S_omega_t(self):
-        gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
+        """
+        DECAYING BROADCAST
         
         zeta_list = []
         zeta_tracker = 0
         decay_factor = 0.8
 
         for i in range(0,self.steps+1):
-            if (np.abs(self.S_tau_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold):
-                zeta = (self.S_tau_t[i] + gamma_t[i])
+            if (np.abs(self.theta_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold):
+                zeta = (self.theta_t[i] + gamma_t[i])
             else:
                 zeta = zeta_tracker*decay_factor
             zeta_tracker = zeta
 
             zeta_list.append(zeta)
 
-        #zeta = [(self.S_tau_t[i] + gamma_t[i]) if (np.abs(self.S_tau_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.steps+1)]#+1 is for the zeroth step update of the signal
-
         return np.asarray(zeta_list)
+        """
+        """
+        INSTANT BROADCAST
+        
+        """
+
+        zeta = [(self.theta_t[i] + self.gamma_t[i]) if (np.abs(self.theta_t[i]) + np.abs(self.gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.steps+1)]#+1 is for the zeroth step update of the signal
+
+        return zeta
+        
 
     def normlize_matrix(self, matrix: npt.NDArray) -> npt.NDArray:
         """
@@ -224,11 +231,12 @@ class Market:
             "epsilon_sigma": self.epsilon_sigma,
             "beta": self.beta,
             "delta":self.delta,
+            "c_info": self.c_info,
         }
 
         agent_list = [
             Consumer(
-                consumer_params,self.c_0_list[i], self.cost_val
+                consumer_params,self.c_0_list[i]
             )
             for i in range(self.I)
         ]
@@ -237,11 +245,11 @@ class Market:
 
     def get_consumers_dt_mean_variance(self):
 
-        expectations_mean_vector = [i.expectation_mean for i in self.agent_list]
-        expectations_variance_vector = [i.expectation_variance for i in self.agent_list]
+        expectations_theta_mean_vector = [i.expectation_theta_mean for i in self.agent_list]
+        expectations_theta_variance_vector = [i.expectation_theta_variance for i in self.agent_list]
 
-        dt_expectations_mean = self.d + np.asarray(expectations_mean_vector)
-        dt_expectations_variance = self.epsilon_sigma**2 + np.asarray(expectations_variance_vector)
+        dt_expectations_mean = self.d + np.asarray(expectations_theta_mean_vector)
+        dt_expectations_variance = self.epsilon_sigma**2 + np.asarray(expectations_theta_variance_vector)
 
         return dt_expectations_mean, dt_expectations_variance
 
@@ -273,7 +281,7 @@ class Market:
 
     def compute_dividends(self):
         
-        d_t = self.d + self.S_tau_t[self.step_count] + np.random.normal(0, self.epsilon_sigma, 1)
+        d_t = self.d + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
 
         #print("dividend at t", d_t)
 
@@ -282,44 +290,38 @@ class Market:
     def compute_network_signal(self):
 
         if self.degroot_aggregation:
-            behavioural_attitude_matrix = np.array([(n.expectation_mean ) for n in self.agent_list])
+            behavioural_attitude_matrix = np.array([(n.expectation_theta_mean ) for n in self.agent_list])
             neighbour_influence = np.matmul(self.weighting_matrix, behavioural_attitude_matrix)
             if np.any(neighbour_influence):#DEAL WITH INDIVIDUALS WHO HAVE NO MATES
                 neighbour_influence[neighbour_influence == 0] = np.nan#replace signal for those with no neighbours with nan
         else:
             #mask = self.weighting_matrix > 0
             if np.any([np.any(i) for i in self.weighting_matrix], axis=0):#first any gives list of true or false as to whether the row is all zeros i believe?
+                
                 mask = [np.any(i) for i in self.weighting_matrix]
-                #mask = np.any(self.weighting_matrix, axis=0)# check which rows are negative
-                #print(mask_alt, mask)
                 reduced_array = self.weighting_matrix[~mask]#create new array with only the non zero rows
                 location_zero_elements = np.nonzero(mask)[0]#get location of where the zeros are
-                
-                #print("location_zero_elements",location_zero_elements)
 
-                k_list = [np.random.choice(range(self.I), 1, p=i)[0] for i in reduced_array]
-                neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
+                k_list = [np.random.choice(range(self.I), 1, p=i)[0] for i in reduced_array]#get list of chosen neighbours to imitate
+                neighbour_influence = [self.agent_list[k].expectation_theta_mean for k in k_list]#get the influence of each neighbour
                 
-                #print(" BEFORE neighbour_influence",neighbour_influence)
                 neighbour_influence = np.insert(neighbour_influence, location_zero_elements- np.arange(len(location_zero_elements)) , np.nan)#put nan at the location
-                #print("After neighbour_influence",neighbour_influence)
-
             else:
                 k_list = [
                     np.random.choice(range(self.I), 1, p=self.weighting_matrix[i])[0]
                     for i in range(self.I)
-                ]  # for each individual select a neighbour using the row of the alpha matrix as the probability
-                neighbour_influence = [self.agent_list[k].expectation_mean for k in k_list]
+                ]  # for each individual select a neighbour using the row of the weighting matrix as the probability
+                neighbour_influence = [self.agent_list[k].expectation_theta_mean for k in k_list]
 
         return neighbour_influence
 
     def update_consumers(self):
 
-        S_tau = [self.S_tau_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
-        S_omega = self.S_omega_t[self.step_count]
+        theta = [self.theta_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
+        zeta = self.zeta_t[self.step_count]
 
         for i in range(self.I):
-            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], S_tau[i], S_omega, self.S_rho_i[i])
+            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta[i], zeta, self.lambda_i[i])
 
     def append_data(self):
         self.history_p_t.append(self.p_t)
@@ -354,7 +356,7 @@ class Market:
         self.d_t = self.compute_dividends()
 
         #update network signal
-        self.S_rho_i = self.compute_network_signal()
+        self.lambda_i = self.compute_network_signal()
 
         #compute and return profits
         self.update_consumers()

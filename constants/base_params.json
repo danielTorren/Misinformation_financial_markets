@@ -1,11 +1,10 @@
 {
-    "steps":1000,
-    "compression_factor": 10,
+    "steps": 3000,
     "save_data": 1, 
-    "I": 500,
-    "K": 30,
+    "I": 200,
+    "K": 20,
     "prob_rewire": 0.1,
-    "set_seed": 1,
+    "set_seed": 0,
     "network_structure": "small_world",
     "degroot_aggregation": 1,
     "R": 1.01,
@@ -23,6 +22,5 @@
     "c_info": 0.1,
     "beta": 1,
     "zeta_threshold": 0.63245553202,
-    "delta":1e-5,
-    "cost":1
+    "delta":1e-5
 }
