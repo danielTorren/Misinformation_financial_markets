@@ -5,6 +5,7 @@ Author: Tommaso Di Francesco and Daniel Torren Peraire  Daniel.Torren@uab.cat dt
 Created: 10/10/2022
 """
 # imports
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
@@ -28,13 +29,13 @@ plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "Helvetica"
-})
+# plt.rcParams.update({
+#     "text.usetex": True,
+#     "font.family": "Helvetica"
+# })
 
 ###PLOT STUFF
-node_size = 100
+node_size = 200
 norm_zero_one = Normalize(vmin=0, vmax=1)
 cmap = get_cmap("Blues")
 fps = 5
@@ -60,22 +61,25 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
             data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
             ax.plot(np.asarray(Data.history_time), data_ind)
 
-    ax.set_xlabel(r"Steps")
-    ax.set_ylabel(r"%s" % y_title)
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("%s" % y_title)
 
     if property_y == "history_expectation_mean":
         ax.plot(Data.history_time, Data.theta_t, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
-
+    elif property_y == "history_profit":
+        ax.axhline(y= Data.R*Data.W_0, linestyle = 'dashed', color = 'black',linewidth=2, alpha=0.5)
+        ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
     plt.tight_layout()
 
     plotName = fileName + "/Plots"
     f = plotName + "/timeseries_consumers_%s" % (property_y)
     print("f",f)
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,num_signals, titles,red_blue_c):
     fig, axes = plt.subplots(nrows=1, ncols=num_signals, figsize=(10,6))
+    print(property_y)
 
     for i, ax in enumerate(axes.flat):
         for v in range(len(Data.agent_list)):
@@ -84,17 +88,21 @@ def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,n
             else:
                 color = "red"
             data_ind = np.asarray(  eval("Data.agent_list[%s].%s" % (str(v), property_y))   )#get the list of data for that specific agent
+            print(data_ind[:, i])
             ax.plot(np.asarray(Data.history_time), data_ind[:, i], color = color)#plot the ith column in the weighting matrix which is [T x num_signals] where T is total steps
-        ax.set_xlabel(r"Steps")
-        ax.set_ylabel(r"%s" % y_title)
+        ax.set_xlabel("Steps")
+        ax.set_ylim([0,1])
+        ax.set_ylabel("%s" % y_title)
         ax.set_title(titles[i])
+        #ax.set_ylim = ([0,1])
 
     plt.tight_layout()
 
     plotName = fileName + "/Prints"
     f = plotName + "/plot_time_series_consumer_triple_%s" % property_y
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
+    #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     
 def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
 
@@ -103,17 +111,17 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
 
     # bodge
     ax.plot(Data.history_time, data, linestyle='solid', color="blue",  linewidth=2)
-    ax.set_xlabel(r"Steps")
-    ax.set_ylabel(r"%s" % y_title)
-
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("%s" % y_title)
+    ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
-        ax.plot(Data.history_time, (Data.d + Data.theta_t)/Data.R, linestyle='dashed',color="green" , linewidth=2)
+        #ax.plot(Data.history_time, (Data.d + Data.theta_t)/Data.R, linestyle='dashed',color="green" , linewidth=2)
         #ax.plot(Data.history_time, [(Data.d)/Data.R], "--")
         ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
 
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
@@ -123,12 +131,12 @@ def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
 
     # bodge
     ax.scatter(Data.history_time, data, color="blue")
-    ax.set_xlabel(r"Steps")
-    ax.set_ylabel(r"%s" % y_title)
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("%s" % y_title)
 
     plotName = fileName + "/Plots"
     f = plotName + "/" + "_timeseries_pulsing"
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,property_y):
@@ -145,12 +153,12 @@ def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,prop
     for v in range(len(data_no_c)):
         ax.plot(Data.history_time, data_no_c[v], color="red")
 
-    ax.set_xlabel(r"Steps")
-    ax.set_ylabel(r"%s" % y_title)
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("%s" % y_title)
 
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_plot_time_series_market_matrix_transpose"
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def prod_pos(layout_type: str, network: nx.Graph) -> nx.Graph:
@@ -275,49 +283,50 @@ def plot_network_shape(
         node_size=node_size,
         edgecolors="black",
     )
-
+    
     cbar_culture = fig.colorbar(
         plt.cm.ScalarMappable(cmap=cmap),
         ax=ax,
-        location="right",
+        location="right"
     )  #
     cbar_culture.set_label(colour_bar_label)
 
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_value + "_plot_network_shape"
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
-dpi_save = 1200
+dpi_save = 600
 red_blue_c = True
 
 if __name__ == "__main__":
 
-    fileName = "results/single_shot_steps_3000_I_200_network_structure_small_world_degroot_aggregation_1"
+    fileName = "results/single_shot_steps_1_I_100_network_structure_small_world_degroot_aggregation_1"
     createFolder(fileName)
     Data = load_object(fileName + "/Data", "financial_market")
 
     #consumers
     #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-    plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
-    plot_history_lambda_t = plot_time_series_consumers(fileName,Data,r"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
-    plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-    plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+    #plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
+    #plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+    #plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+    #plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
     #consumer X list and weighting
-    plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_X_list", 3, [r"$X_{\theta}$", r"$X_{\zeta}$", r"$X_{\lambda}$"],red_blue_c)
-    plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, [r"$S_{\theta}$", r"$S_{\zeta}$", r"$S_{\lambda}$"],red_blue_c)
+    #plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
+    #plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{\theta}$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
+    #plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
     #network
-    plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
+    #plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
     #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
     #plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-    #plot_network_c = plot_network_shape(fileName, Data, layout, "c bool","history_c_bool",cmap, norm_zero_one, node_size)
+    plot_network_c = plot_network_shape(fileName, Data, layout, "c bool","history_c_bool",cmap, norm_zero_one, node_size)
     #plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
 
     #network trasnspose
-    plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+    #plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
 
     #Animation BROKE
     #anim_c_bool = anim_value_network(fileName,Data,layout, "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)

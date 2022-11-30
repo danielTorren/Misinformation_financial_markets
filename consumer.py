@@ -23,22 +23,27 @@ class Consumer:
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
-        self.c_0 = parameters["c_info"]
+
 
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
 
-        #cost related nonsense
+
+        self.c_0 = parameters["c_info"]
+        #cost 
         self.c_bool = c_bool
-        if ~self.c_bool:
+        if self.c_bool:
+            self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
+        else:
+            self.c_list = [0,0,0]
             self.weighting_vector[0] = 0#np.nan
-        
-        self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
+
 
         self.signal_variances = self.compute_signal_variances()
 
         if self.save_data:
-            self.history_X_list = [[0,0,0]]#no demand at start?
+            self.history_theoretical_X_list = [[0,0,0]]#no demand at start?
+            self.history_theoretical_profit_list = [[0,0,0]]#no demand at start?
             self.history_weighting_vector = [list(self.weighting_vector)] 
             self.history_profit = [self.W_0]#if in doubt 0!, just so everyhting is the same length!
             self.history_expectation_theta_mean = [self.expectation_theta_mean]
@@ -47,11 +52,11 @@ class Consumer:
             self.history_c_bool = [self.c_bool]
 
     def compute_c_status(self,d_t,p_t):
-        """FIX"""
 
-        c_effect = self.compute_profit(d_t,p_t,self.X_list[0],self.c_list[0])
+        c_effect = self.compute_profit(d_t,p_t,self.theoretical_X_list[0],self.c_list[0]) - self.R*self.W_0
         if c_effect <= 0.0:#turn it off if negative profit
             self.c_bool = 0
+            self.c_list = [0,0,0]
 
     def compute_profit(self,d_t,p_t,X_t,c):
 
@@ -84,38 +89,40 @@ class Consumer:
 
         if not non_nan_index_list:
             #empty list therefore all signal are nan, keep weighting static - DO NOTHING
-            X_list = [0,0,0] #if weighting is all nan then dont buy anything
+            theoretical_X_list = [np.nan,np.nan,np.nan] #if weighting is all nan then dont buy anything
+            theoretical_profit_list = [np.nan,np.nan,np.nan]
             pass
         else:
-            X_list = [self.compute_X(self.S_list[v]) for v in non_nan_index_list]
+            theoretical_X_list = [self.compute_X(self.S_list[v]) for v in non_nan_index_list]
 
-            #print("X LIst: THESE ARE ALL NEGATIVE", X_list)
+            #print("X LIst: THESE ARE ALL NEGATIVE", theoretical_X_list)
 
             #calc the theoretical profit
-            profit_list = [self.compute_profit(self.d_t, self.p_t, X_list[v], self.c_list[v]) for v in range(len(X_list))]
+            theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v], self.c_list[v]) for v in range(len(theoretical_X_list))]
 
             #print("profit list", profit_list)
 
             #plug those into the equation
-            denominator_weighting = sum(np.exp(self.beta*profit) for profit in profit_list)
+            denominator_weighting = sum(np.exp(self.beta*profit) for profit in theoretical_profit_list)
 
             #print("denominator_weighting",denominator_weighting)
 
             if not nan_index_list:#if all values are present
-                weighting_vector = [np.exp(self.beta*profit)/denominator_weighting for profit in  profit_list]
+                weighting_vector = [np.exp(self.beta*profit)/denominator_weighting for profit in  theoretical_profit_list]
             else:
                 #at least 1 nan value
-                weighting_vector_short = np.asarray([np.exp(self.beta*profit)/denominator_weighting for profit in  profit_list])
+                weighting_vector_short = np.asarray([np.exp(self.beta*profit)/denominator_weighting for profit in  theoretical_profit_list])
                 weighting_vector = weighting_vector_short*(1-sum(weighting_vector[v] for v in nan_index_list))#1 - the effect of others?
                 for v in nan_index_list:
                     weighting_vector = np.insert(weighting_vector, v ,self.weighting_vector[v])# DOES THIS PUT IT IN THE RIGHT PLACE?
             
             for v in nan_index_list:
-                X_list = np.insert(X_list, v , 0)# DOES THIS PUT IT IN THE RIGHT PLACE?
+                theoretical_X_list = np.insert(theoretical_X_list, v , 0)# DOES THIS PUT IT IN THE RIGHT PLACE?
+                theoretical_profit_list = np.insert(theoretical_profit_list, v , np.nan)
 
-        #print("X_list",X_list)
+        #print("theoretical_X_list",theoretical_X_list)
 
-        return np.asarray(X_list), np.asarray(weighting_vector)
+        return np.asarray(theoretical_X_list), np.asarray(weighting_vector), np.asarray(theoretical_profit_list)
         
 
     def compute_signal_variances(self):
@@ -148,7 +155,8 @@ class Consumer:
         return posterior_theta_mean,posterior_theta_variance 
 
     def append_data(self):
-        self.history_X_list.append(list(self.X_list))
+        self.history_theoretical_X_list.append(list(self.theoretical_X_list))
+        self.history_theoretical_profit_list.append(list(self.theoretical_profit_list))
         self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
         self.history_expectation_theta_mean.append(self.expectation_theta_mean) 
@@ -170,15 +178,15 @@ class Consumer:
 
         #update weighting
         #print("BEFORE self.weighting_vector", self.weighting_vector)
-        self.X_list, self.weighting_vector = self.compute_weighting_vector()
+        self.theoretical_X_list, self.weighting_vector, self.theoretical_profit_list = self.compute_weighting_vector()
 
         #print("AFTER self.weighting_vector", self.weighting_vector)
     
         self.signal_variances = self.compute_signal_variances()
 
-        #update cost
-        if self.c_bool:
-            self.compute_c_status(self.d_t,self.p_t)
+        # #update cost
+        # if self.c_bool:
+        #     self.compute_c_status(self.d_t,self.p_t)
         
         #compute posterior expectations
         self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)

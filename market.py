@@ -96,7 +96,7 @@ class Market:
 
         self.agent_list = self.create_agent_list()
 
-        #update_expectations of agents based on their netork and initial signals
+        #update_expectations of agents based on their network and initial signals
 
         for i in range(self.I):
             if self.agent_list[i].c_bool:
