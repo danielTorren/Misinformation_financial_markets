@@ -1,8 +1,8 @@
 {
-    "steps": 3000,
+    "steps": 1,
     "save_data": 1, 
-    "I": 200,
-    "K": 20,
+    "I": 100,
+    "K": 10,
     "prob_rewire": 0.1,
     "set_seed": 0,
     "network_structure": "small_world",
