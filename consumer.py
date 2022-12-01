@@ -99,6 +99,8 @@ class Consumer:
 
             #calc the theoretical profit
             theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v], self.c_list[v]) for v in range(len(theoretical_X_list))]
+            # add theoretical profit list to historical theoretical profit list
+            # sum over history of each element in historical theoretical profit list
 
             #print("profit list", profit_list)
 
