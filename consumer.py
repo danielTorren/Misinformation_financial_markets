@@ -23,17 +23,18 @@ class Consumer:
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
-        self.c_0 = parameters["c_info"]
-
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
 
-        #cost related nonsense
+        self.c_0 = parameters["c_info"]
+        #cost 
         self.c_bool = c_bool
-        if ~self.c_bool:
+        if self.c_bool:
+            self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
+        else:
+            self.c_list = [0,0,0]
             self.weighting_vector[0] = 0#np.nan
         
-        self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
 
         self.signal_variances = self.compute_signal_variances()
 
@@ -49,9 +50,10 @@ class Consumer:
     def compute_c_status(self,d_t,p_t):
         """FIX"""
 
-        c_effect = self.compute_profit(d_t,p_t,self.X_list[0],self.c_list[0])
+        c_effect = self.compute_profit(d_t,p_t,self.X_list[0],self.c_list[0]) - self.R*self.W_0
         if c_effect <= 0.0:#turn it off if negative profit
             self.c_bool = 0
+            self.c_list = [0 ,0,0]
 
     def compute_profit(self,d_t,p_t,X_t,c):
 
@@ -177,8 +179,8 @@ class Consumer:
         self.signal_variances = self.compute_signal_variances()
 
         #update cost
-        if self.c_bool:
-            self.compute_c_status(self.d_t,self.p_t)
+        #if self.c_bool:
+        #    self.compute_c_status(self.d_t,self.p_t)
         
         #compute posterior expectations
         self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)
