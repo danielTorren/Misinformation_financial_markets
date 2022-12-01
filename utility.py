@@ -9,6 +9,7 @@ Created: 10/10/2022
 # imports
 import pickle
 import os
+import datetime
 
 # modules
 def createFolder(fileName: str) -> str:
@@ -93,3 +94,30 @@ def load_object(fileName, objectName) -> dict:
     with open(fileName + "/" + objectName + ".pkl", "rb") as f:
         data = pickle.load(f)
     return data
+
+def produce_name(root:str, parameters: dict, parameters_name_list: list) -> str:
+    """produce a file name from a subset list of parameters and values  to create a unique identifier for each simulation run
+
+    Parameters
+    ----------
+    params_dict: dict[dict],
+        dictionary of parameters used to generate attributes, dict used for readability instead of super long list of input parameters.
+        See generate_data function for an example
+    parameters_name_list: list
+        list of parameters to be used in the filename
+
+    Returns
+    -------
+    fileName: str
+        name of file where results may be found composed of value from the different assigned parameters.
+    """
+
+    fileName = "results/" + root
+    for key, value in parameters.items():
+        if key in parameters_name_list:
+            fileName = fileName + "_" + str(key) + "_" + str(value)
+    return fileName
+
+def produce_name_datetime(root):
+    fileName = "results/" + root +  "_" + datetime.datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    return fileName

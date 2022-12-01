@@ -68,7 +68,7 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
         ax.plot(Data.history_time, Data.theta_t, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
     elif property_y == "history_profit":
         ax.axhline(y= Data.R*Data.W_0, linestyle = 'dashed', color = 'black',linewidth=2, alpha=0.5)
-        ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
+        #ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
     plt.tight_layout()
 
     plotName = fileName + "/Plots"
@@ -91,7 +91,7 @@ def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,n
             #print(data_ind[:, i])
             ax.plot(np.asarray(Data.history_time), data_ind[:, i], color = color)#plot the ith column in the weighting matrix which is [T x num_signals] where T is total steps
         ax.set_xlabel("Steps")
-        ax.set_ylim([0,1])
+        #ax.set_ylim([0,1])
         ax.set_ylabel("%s" % y_title)
         ax.set_title(titles[i])
         #ax.set_ylim = ([0,1])
@@ -113,7 +113,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     ax.plot(Data.history_time, data, linestyle='solid', color="blue",  linewidth=2)
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
-    ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
+    #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
         #ax.plot(Data.history_time, (Data.d + Data.theta_t)/Data.R, linestyle='dashed',color="green" , linewidth=2)
         #ax.plot(Data.history_time, [(Data.d)/Data.R], "--")
@@ -296,39 +296,87 @@ def plot_network_shape(
     # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,property_y,signal, property_varied, property_list,titles):
+    
+    ncols = len(property_list)
+    nrows = 1
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharey=True, figsize=(10,6))
+    #print(property_y)
+
+    for i, ax in enumerate(axes.flat):
+        for v in range(len(Data_list[i].agent_list)):
+            if (Data_list[i].agent_list[v].history_c_bool[0]):
+                color = "blue"
+            else:
+                color = "red"
+            data_ind = np.asarray(eval("Data_list[%s].agent_list[%s].%s" % (str(i),str(v), property_y)))#get the list of data for that specific agent
+            #print(data_ind[:, i])
+            ax.plot(np.asarray(Data_list[i].history_time), data_ind[:, signal], color = color)#plot the ith column in the weighting matrix which is [T x num_signals] where T is total steps
+        ax.set_xlabel("Steps")
+        #ax.set_ylim([0,1])
+        
+        ax.set_title(titles[i])
+        #ax.set_ylim = ([0,1])
+    fig.supylabel("%s" % y_title)
+
+    plt.tight_layout()
+
+    plotName = fileName + "/Prints"
+    f = plotName + "/plot_time_series_consumer_triple_multi_%s_%s" % (property_varied,signal)
+    
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+    #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+
 
 dpi_save = 600
 red_blue_c = True
 
+single_shot = 0
+single_param_vary = 1
+
 if __name__ == "__main__":
+    if single_shot:
+        fileName = "results/single_shot_steps_500_I_50_network_structure_small_world_degroot_aggregation_1"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        createFolder(fileName)
+        Data = load_object(fileName + "/Data", "financial_market")
 
-    fileName = "results/single_shot_steps_3000_I_100_network_structure_small_world_degroot_aggregation_1"
-    createFolder(fileName)
-    Data = load_object(fileName + "/Data", "financial_market")
+        #consumers
+        #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
+        plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
+        plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+        plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
-    #consumers
-    #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-    plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
-    plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
-    plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-    plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        #consumer X list and weighting
+        plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
+        plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{\theta}$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
+        plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
-    #consumer X list and weighting
-    plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
-    plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{\theta}$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
-    plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
+        #network
+        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
+        #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
+        #plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
+        plot_network_c = plot_network_shape(fileName, Data, layout, "c bool","history_c_bool",cmap, norm_zero_one, node_size)
+        #plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
 
-    #network
-    plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
-    #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
-    #plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-    plot_network_c = plot_network_shape(fileName, Data, layout, "c bool","history_c_bool",cmap, norm_zero_one, node_size)
-    #plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
+        #network trasnspose
+        plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
 
-    #network trasnspose
-    plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+        #Animation BROKE
+        #anim_c_bool = anim_value_network(fileName,Data,layout, "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
 
-    #Animation BROKE
-    #anim_c_bool = anim_value_network(fileName,Data,layout, "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
+    elif single_param_vary:
+        fileName = "results/single_vary_T_h_prop_20_59_46__01_12_2022"
+        createFolder(fileName)
 
+        Data_list = load_object(fileName + "/Data", "financial_market_list")
+        property_varied =  load_object(fileName + "/Data", "property_varied")
+        property_list = load_object(fileName + "/Data", "property_list")
+
+        property_title = "$T_{h}$"
+        titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
+        #print("titles", titles)
+
+        plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
+        plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
     plt.show()

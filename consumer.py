@@ -23,6 +23,7 @@ class Consumer:
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
+        self.T_h = parameters["T_h"]
 
 
         self.beta = parameters["beta"]
@@ -81,22 +82,33 @@ class Consumer:
         if not non_nan_index_list:
             #empty list therefore all signal are nan, keep weighting static - DO NOTHING
             theoretical_X_list = [np.nan,np.nan,np.nan] #if weighting is all nan then dont buy anything
-
         else:
             theoretical_X_list = [self.compute_X(self.S_list[v]) for v in non_nan_index_list]
             
             for v in nan_index_list:
                 theoretical_X_list = np.insert(theoretical_X_list, v , 0)# DOES THIS PUT IT IN THE RIGHT PLACE?
-        return theoretical_X_list
+        return theoretical_X_list        
 
     def calc_theoretical_profit_list_history_array(self,theoretical_profit_list,theoretical_profit_list_history_array):
-       # print("BEFORE ",self.theoretical_profit_list_history_array)
+        #print("BEFORE ",theoretical_profit_list_history_array)
         #print("double array",np.asarray([theoretical_profit_list]))
-        theoretical_profit_list_history_array = np.append(np.asarray([theoretical_profit_list]),theoretical_profit_list_history_array, axis = 0)
-        #print("After ",self.theoretical_profit_list_history_array)
-        return theoretical_profit_list_history_array
+
+        #new_theoretical_profit_list_history_array = np.insert(arr = theoretical_profit_list_history_array, obj = 0, values = np.asarray([theoretical_profit_list]),   axis=0)
+        new_theoretical_profit_list_history_array = np.vstack([theoretical_profit_list_history_array, np.asarray([theoretical_profit_list])])
+        #print("test",test)
+
+
+        #print("BF", new_theoretical_profit_list_history_array)
+        if new_theoretical_profit_list_history_array.shape[0] > self.T_h + 1: #when T_h = 0 ie only want current value, want to delete if len is 2, so forth. When T_h = 1, that means present and 1 step back, so want to delete for 3
+            new_theoretical_profit_list_history_array = new_theoretical_profit_list_history_array[1:]#select all except first
+
+
+        #theoretical_profit_list_history_array = np.append(np.asarray([theoretical_profit_list]),theoretical_profit_list_history_array, axis = 0)
+        #print("After ",theoretical_profit_list_history_array)
+        
+        return new_theoretical_profit_list_history_array
     
-    def calc_theoretical_profit_list_sum_history(self,non_nan_index_list,nan_index_list,theoretical_X_list):
+    def calc_theoretical_profit_list_mean_history(self,non_nan_index_list,nan_index_list,theoretical_X_list):
         # add theoretical profit list to historical theoretical profit list
         # sum over history of each element in historical theoretical profit list
 
@@ -105,9 +117,7 @@ class Consumer:
             #empty list therefore all signal are nan, keep weighting static - DO NOTHING
             theoretical_profit_list = [np.nan,np.nan,np.nan]
             self.theoretical_profit_list_history_array = self.calc_theoretical_profit_list_history_array(np.asarray(theoretical_profit_list),self.theoretical_profit_list_history_array)
-            theoretical_profit_list_sum_history = np.mean(self.theoretical_profit_list_history_array, axis=0)#sums over the coloumns
-            #print("MEAN 0", np.mean(self.theoretical_profit_list_history_array, axis=0))
-            #print("MEAN 1", np.mean(self.theoretical_profit_list_history_array, axis= 1))
+            theoretical_profit_list_mean_history = np.nanmean(self.theoretical_profit_list_history_array, axis=0)#sums over the coloumns
         else:
             #print("PROFIT AT LEAST ONE NON NAN")
             #calc the theoretical profit
@@ -115,18 +125,37 @@ class Consumer:
             #print("theoretical_profit_list ",theoretical_profit_list )
 
             self.theoretical_profit_list_history_array = self.calc_theoretical_profit_list_history_array(np.asarray(theoretical_profit_list),self.theoretical_profit_list_history_array)
+            #print("self.theoretical_profit_list_history_array", self.theoretical_profit_list_history_array)
 
-            theoretical_profit_list_sum_history = np.mean(self.theoretical_profit_list_history_array, axis=0)# over the coloumns, I THOUTH THE AXIS WOULD BE 1 BUT ITS ZERO??
-            #print("vals",theoretical_profit_list_sum_history)
-            #print("MEAN 0", np.mean(self.theoretical_profit_list_history_array, axis=0))
-            #print("MEAN 1", np.mean(self.theoretical_profit_list_history_array, axis= 1))
+            theoretical_profit_list_mean_history = np.nanmean(self.theoretical_profit_list_history_array, axis=0)# over the coloumns, I THOUTH THE AXIS WOULD BE 1 BUT ITS ZERO??
+            #print("vals",theoretical_profit_list_mean_history)
             
             for v in nan_index_list:
-                #theoretical_profit_list_sum_history = np.insert(theoretical_profit_list_sum_history, v , np.nan)
-                theoretical_profit_list_sum_history[v] = np.nan
-        return theoretical_profit_list_sum_history
+                #theoretical_profit_list_mean_history = np.insert(theoretical_profit_list_mean_history, v , np.nan)
+                theoretical_profit_list_mean_history[v] = np.nan
+
+        return theoretical_profit_list_mean_history
+
+    def calc_theoretical_profit_list_mean_history_alt(self,non_nan_index_list,nan_index_list,theoretical_X_list):
+        # add theoretical profit list to historical theoretical profit list
+        # sum over history of each element in historical theoretical profit list
+
+        if not non_nan_index_list:
+            #print("PROFIT DO NOTHERING LIST EMPTY, ALL NANs")
+            #empty list therefore all signal are nan, keep weighting static - DO NOTHING
+            theoretical_profit_list = [np.nan,np.nan,np.nan]
+        else:
+            #print("PROFIT AT LEAST ONE NON NAN")
+            #calc the theoretical profit
+            theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v], self.c_list[v]) for v in range(len(theoretical_X_list))]
+
+            for v in nan_index_list:
+                #theoretical_profit_list_mean_history = np.insert(theoretical_profit_list_mean_history, v , np.nan)
+                theoretical_profit_list[v] = np.nan
+
+        return theoretical_profit_list
     
-    def calc_weighting_vector(self,non_nan_index_list,nan_index_list,weighting_vector,theoretical_profit_list_sum_history):
+    def calc_weighting_vector(self,non_nan_index_list,nan_index_list,weighting_vector,theoretical_profit_list_mean_history):
         if not non_nan_index_list:
             #empty list therefore all signal are nan, keep weighting static - DO NOTHING
             #print("DO NOTHERING LIST EMPTY, ALL NANs")
@@ -134,24 +163,25 @@ class Consumer:
         else:
             #print("AT LEAST ONE NON NAN")
             #plug those into the equation
-            denominator_weighting = sum(np.exp(self.beta*theoretical_profit_list_sum_history [i]) for i in non_nan_index_list)
+            denominator_weighting = sum(np.exp(self.beta*theoretical_profit_list_mean_history [i]) for i in non_nan_index_list)
 
             #print("denominator_weighting",denominator_weighting)
 
             if not nan_index_list:#if all values are present
                 #print("ALL VALUES PRESENT")
-                weighting_vector = [np.exp(self.beta*profit)/denominator_weighting for profit in theoretical_profit_list_sum_history]
+                weighting_vector = [np.exp(self.beta*profit)/denominator_weighting for profit in theoretical_profit_list_mean_history]
             else:
                 #print("AT LEAST ONE NAN")
                 #at least 1 nan value
-                #print("non nan profit", [self.beta*theoretical_profit_list_sum_history[i] for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_sum_history[i]) for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_sum_history[i])/denominator_weighting for i in non_nan_index_list])
-                weighting_vector_short = np.asarray([np.exp(self.beta*theoretical_profit_list_sum_history[i])/denominator_weighting for i in non_nan_index_list])
+                #print("non nan profit", [self.beta*theoretical_profit_list_mean_history[i] for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_mean_history[i]) for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_mean_history[i])/denominator_weighting for i in non_nan_index_list])
+                weighting_vector_short = np.asarray([np.exp(self.beta*theoretical_profit_list_mean_history[i])/denominator_weighting for i in non_nan_index_list])
                 #print("weighting_vector_short",weighting_vector_short)
                 weighting_vector = weighting_vector_short*(1-sum(weighting_vector[v] for v in nan_index_list))#1 - the effect of others?
                 #print("before weighting_vector",weighting_vector)
                 for v in nan_index_list:
                     weighting_vector = np.insert(weighting_vector, v ,self.weighting_vector[v])# DOES THIS PUT IT IN THE RIGHT PLACE?
-            
+        
+        #print("weighting_vector: c",weighting_vector,self.c_bool)
         return weighting_vector
 
 
@@ -176,14 +206,15 @@ class Consumer:
         theoretical_X_list = self.calc_theoretical_X(non_nan_index_list,nan_index_list)
         #print(" theoretical_X_list", theoretical_X_list)
 
-        #calc theoretical_profit_list_sum_history
-        theoretical_profit_list_sum_history = self.calc_theoretical_profit_list_sum_history(non_nan_index_list,nan_index_list,theoretical_X_list)
-        #print("theoretical_profit_list_sum_history",theoretical_profit_list_sum_history)
+        #calc theoretical_profit_list_mean_history
+        theoretical_profit_list_mean_history = self.calc_theoretical_profit_list_mean_history(non_nan_index_list,nan_index_list,theoretical_X_list)
+        #print("compare",theoretical_profit_list_mean_history,self.calc_theoretical_profit_list_mean_history_alt(non_nan_index_list,nan_index_list,theoretical_X_list))
+        #print("theoretical_profit_list_mean_history",theoretical_profit_list_mean_history)
 
         #calc_weighting
-        weighting_vector = self.calc_weighting_vector(non_nan_index_list,nan_index_list,weighting_vector,theoretical_profit_list_sum_history)
+        weighting_vector = self.calc_weighting_vector(non_nan_index_list,nan_index_list,weighting_vector,theoretical_profit_list_mean_history)
         #print("weighting_vector",weighting_vector)
-        return np.asarray(theoretical_X_list), np.asarray(theoretical_profit_list_sum_history), np.asarray(weighting_vector), 
+        return np.asarray(theoretical_X_list), np.asarray(theoretical_profit_list_mean_history), np.asarray(weighting_vector) 
         
 
     def compute_signal_variances(self):
@@ -223,14 +254,14 @@ class Consumer:
         self.history_lambda_t.append(self.S_list[2])
         self.history_c_bool.append(self.c_bool)
 
-    def next_step(self,d_t,p_t,X_t, S_tau, S_omega, S_rho):
+    def next_step(self,d_t,p_t,X_t, S_theta, S_omega, S_lamba):
         #print("NEXT")
         #recieve dividend and demand
         #compute profit
         self.d_t = d_t
         self.p_t = p_t
 
-        self.S_list = [S_tau,S_omega,S_rho]
+        self.S_list = [S_theta,S_omega,S_lamba]
 
         self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
 

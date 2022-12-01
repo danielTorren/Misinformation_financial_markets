@@ -1,22 +1,11 @@
-"""Generate and save model data
-
-Author: Tommaso Di Francesco and Daniel Torren Peraire  Daniel.Torren@uab.cat dtorrenp@hotmail.com
-
-Created: 10/10/2022
-"""
-# imports
-import json
 import time
-
 import numpy as np
+import numpy.typing as npt
+from joblib import Parallel, delayed
 from market import Market
-from utility import (
-    createFolder, 
-    save_object, 
-)
+import multiprocessing
 
-
-def generate_data(params):
+def generate_data_single(params):
 
     #generate the inital data, move forward in time and return
 
@@ -39,51 +28,27 @@ def generate_data(params):
             "or %s s" % ((time.time() - start_time)),
         )
     return financial_market
-    
-def produce_name(parameters: dict, parameters_name_list: list) -> str:
-    """produce a file name from a subset list of parameters and values  to create a unique identifier for each simulation run
+
+def generate_data_parallel(params_list):
+    """
+    Generate data from a list of parameter dictionaries, parallelize the execution of each single shot simulation
 
     Parameters
     ----------
-    params_dict: dict[dict],
-        dictionary of parameters used to generate attributes, dict used for readability instead of super long list of input parameters.
-        See generate_data function for an example
-    parameters_name_list: list
-        list of parameters to be used in the filename
+    params_list: list[dict],
+        list of dictionary of parameters used to generate attributes, dict used for readability instead of super long list of input parameters.
+        Each entry corresponds to a different society.
 
     Returns
     -------
-    fileName: str
-        name of file where results may be found composed of value from the different assigned parameters.
+    data_parallel: list[list[Network]]
+        serialized list of networks, each generated with a different set of parameters
     """
 
-    fileName = "results/single_shot"
-    for key, value in parameters.items():
-        if key in parameters_name_list:
-            fileName = fileName + "_" + str(key) + "_" + str(value)
-    return fileName
-
-RUN = 1
-
-if __name__ == "__main__":
-    #load in exogenous parameters
-    f = open("constants/base_params.json")
-    params = json.load(f)
-
-    namesList = [
-    "steps",
-    "I",
-    "network_structure",
-    "degroot_aggregation",
-    ]
-
-    fileName = produce_name(params,namesList)#"results/test"
-
-    print("FILENAME:", fileName)
-
-    Data = generate_data(params)  # run the simulation
-
-    createFolder(fileName)
-
-    save_object(Data, fileName + "/Data", "financial_market")
-
+    num_cores = multiprocessing.cpu_count()
+    #data_parallel = [generate_data(i) for i in params_dict]
+    data_parallel = Parallel(n_jobs=num_cores, verbose=10)(
+        delayed(generate_data_single)(i) for i in params_list
+    )
+    
+    return data_parallel

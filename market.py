@@ -72,6 +72,10 @@ class Market:
         self.step_count = 0
         self.steps = parameters["steps"]
 
+        self.T_h_prop = parameters["T_h_prop"]
+        self.T_h = int(round(self.T_h_prop*self.steps))
+        #print("self.T_h", self.T_h)
+
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.steps+1)
         self.gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
         self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)
@@ -232,6 +236,7 @@ class Market:
             "beta": self.beta,
             "delta":self.delta,
             "c_info": self.c_info,
+            "T_h": self.T_h
         }
 
         agent_list = [
