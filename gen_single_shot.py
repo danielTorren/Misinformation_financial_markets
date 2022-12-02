@@ -6,7 +6,6 @@ Created: 10/10/2022
 """
 # imports
 import json
-import time
 
 import numpy as np
 from market import Market

@@ -15,6 +15,9 @@ class Consumer:
     def __init__(self, parameters: dict, c_bool):
         "Construct initial data of Consumer class"
         self.save_data = parameters["save_data"]
+        self.update_c = parameters["update_c"]
+        self.c_fountain = parameters["c_fountain"]
+
         self.W_0 = parameters["W_0"]
         self.expectation_theta_mean = parameters["mu_0"]
         self.expectation_theta_variance = parameters["var_0"]
@@ -24,13 +27,10 @@ class Consumer:
         self.d = parameters["d"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.T_h = parameters["T_h"]
-
-
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
-
-
         self.c_0 = parameters["c_info"]
+
         #cost 
         self.c_bool = c_bool
         if self.c_bool:
@@ -48,7 +48,7 @@ class Consumer:
             self.history_theoretical_X_list = [[0,0,0]]#no demand at start?
             self.history_theoretical_profit_list = [[0,0,0]]#no demand at start?
             self.history_weighting_vector = [list(self.weighting_vector)] 
-            self.history_profit = [self.W_0]#if in doubt 0!, just so everyhting is the same length!
+            self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_expectation_theta_mean = [self.expectation_theta_mean]
             self.history_expectation_theta_variance = [self.expectation_theta_variance] 
             self.history_lambda_t = [0]#if in doubt 0!
@@ -56,14 +56,14 @@ class Consumer:
 
     def compute_c_status(self,d_t,p_t):
 
-        c_effect = self.compute_profit(d_t,p_t,self.theoretical_X_list[0],self.c_list[0]) - self.R*self.W_0
+        c_effect = self.compute_profit(d_t,p_t,self.theoretical_X_list[0],self.c_list[0])
         if c_effect <= 0.0:#turn it off if negative profit
             self.c_bool = 0
             self.c_list = [0,0,0]
 
     def compute_profit(self,d_t,p_t,X_t,c):
 
-        profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - c
+        profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - c - self.R*self.W_0
 
         return profit
 
@@ -263,9 +263,8 @@ class Consumer:
 
         self.S_list = [S_theta,S_omega,S_lamba]
 
-        if self.c_bool:
-            self.expectation_theta_mean = S_theta
-            self.expectation_theta_variance = 0
+        if self.c_bool and self.c_fountain:
+
             self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
 
             #update weighting
@@ -274,6 +273,8 @@ class Consumer:
             self.weighting_vector = np.array([1, 0, 0])
 
             self.signal_variances = np.array([0, np.nan, np.nan])
+            self.expectation_theta_mean = S_theta
+            self.expectation_theta_variance = 0
         else:
             self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
 
@@ -282,9 +283,9 @@ class Consumer:
 
             self.signal_variances = self.compute_signal_variances()
 
-            # #update cost
-            # if self.c_bool:
-            #     self.compute_c_status(self.d_t,self.p_t)
+            #update cost
+            if self.c_bool and self.update_c:
+                 self.compute_c_status(self.d_t,self.p_t)
         
             #compute posterior expectations
             self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)

@@ -51,8 +51,11 @@ class Market:
         np.random.seed(self.set_seed)
         self.save_data = parameters["save_data"]
         self.degroot_aggregation = parameters["degroot_aggregation"]
+        self.c_fountain = parameters["c_fountain"]
+        self.update_c = parameters["update_c"]
 
         self.I = parameters["I"]
+        self.I_array = np.arange(self.I)
         self.K = parameters["K"]
         self.R = parameters["R"]
         self.a = parameters["a"]
@@ -78,7 +81,7 @@ class Market:
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.steps+1)
         self.gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
-        self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)
+        self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.steps + 1)) + 
         self.zeta_t = self.compute_zeta_t()
         
         num_c = int(round(parameters["c_prop"]*self.I))
@@ -94,6 +97,15 @@ class Market:
         if self.network_structure == "small_world":
             self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
             self.prob_rewire = parameters["prob_rewire"]
+        elif self.network_structure == "barabasi_albert_graph":
+            self.k_new_node = parameters["k_new_node"]
+        elif self.network_structure == "scale_free_directed":
+            self.alpha = parameters["alpha"] # Probability for adding a new node connected to an existing node chosen randomly according to the in-degree distribution.
+            self.beta = parameters["beta"]
+            self.gamma = parameters["gamma"]
+            self.delta_in = parameters["delta_in"]
+            self.delta_out = parameters["delta_in"]
+
         (
             self.adjacency_matrix,
             self.weighting_matrix,
@@ -107,7 +119,7 @@ class Market:
 
         #update_expectations of agents based on their network and initial signals
 
-        for i in range(self.I):
+        for i in self.I_array:
             if self.agent_list[i].c_bool:
                 theta_init = self.theta_t[0]
             else:
@@ -124,6 +136,8 @@ class Market:
             self.history_d_t= [0]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
+        
+        self.update_vector_v = np.vectorize(self.update_vector)
 
     def compute_zeta_t(self):
         
@@ -187,7 +201,7 @@ class Market:
 
     def create_weighting_matrix(self) -> tuple[npt.NDArray, npt.NDArray, nx.Graph]:
         """
-        Create watts-strogatz small world graph using Networkx library
+        Create graph using Networkx library
 
         Parameters
         ----------
@@ -206,14 +220,16 @@ class Market:
 
         if self.network_structure == "small_world":
             G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small-world graph,watts_strogatz_graph( n, k, p[, seed])
-
-        #nx.draw(G)
+        if self.network_structure == "barabasi_albert_graph":
+            G = nx.barabasi_albert_graph(n=self.I, m=self.k_new_node, seed=self.set_seed)
+        if self.network_structure == "scale_free_directed":
+            G = nx.scale_free_graph(n=self.I, alpha=self.alpha, beta=self.beta, gamma=self.gamma, delta_in=self.delta_in, delta_out=self.delta_out)
 
         weighting_matrix = nx.to_numpy_array(G)
 
-        #print("weighting_matrix", weighting_matrix)
-
         norm_weighting_matrix = self.normlize_matrix(weighting_matrix)
+
+        print("Network density:", nx.density(G))
 
         return (
             weighting_matrix,
@@ -246,14 +262,16 @@ class Market:
             "beta": self.beta,
             "delta":self.delta,
             "c_info": self.c_info,
-            "T_h": self.T_h
+            "T_h": self.T_h, 
+            "c_fountain": self.c_fountain,
+            "update_c": self.update_c
         }
 
         agent_list = [
             Consumer(
                 consumer_params,self.c_0_list[i]
             )
-            for i in range(self.I)
+            for i in self.I_array
         ]
 
         return agent_list
@@ -317,26 +335,32 @@ class Market:
                 reduced_array = self.weighting_matrix[~mask]#create new array with only the non zero rows
                 location_zero_elements = np.nonzero(mask)[0]#get location of where the zeros are
 
-                k_list = [np.random.choice(range(self.I), 1, p=i)[0] for i in reduced_array]#get list of chosen neighbours to imitate
+                k_list = [np.random.choice(self.I_array, 1, p=i)[0] for i in reduced_array]#get list of chosen neighbours to imitate
                 neighbour_influence = [self.agent_list[k].expectation_theta_mean for k in k_list]#get the influence of each neighbour
                 
                 neighbour_influence = np.insert(neighbour_influence, location_zero_elements- np.arange(len(location_zero_elements)) , np.nan)#put nan at the location
             else:
                 k_list = [
-                    np.random.choice(range(self.I), 1, p=self.weighting_matrix[i])[0]
-                    for i in range(self.I)
+                    np.random.choice(self.I_array, 1, p=self.weighting_matrix[i])[0]
+                    for i in self.I_array
                 ]  # for each individual select a neighbour using the row of the weighting matrix as the probability
                 neighbour_influence = [self.agent_list[k].expectation_theta_mean for k in k_list]
 
         return neighbour_influence
 
+    def update_vector(self, i,d_t,p_t,X, theta, zeta, lambda_val):
+        self.agent_list[i].next_step(d_t,p_t,X, theta, zeta, lambda_val)
+
     def update_consumers(self):
 
-        theta = [self.theta_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
+        theta_v = [self.theta_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
         zeta = self.zeta_t[self.step_count]
 
-        for i in range(self.I):
-            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta[i], zeta, self.lambda_i[i])
+        for i in self.I_array:
+            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta_v[i], zeta, self.lambda_i[i])
+
+        #d_t_v, p_t_v, zeta_v = np.full((self.I),self.d_t), np.full((self.I),self.p_t), np.full((self.I), zeta)
+        #self.update_vector_v(self.I_array, d_t_v, p_t_v,self.X_it, theta_v, zeta_v, self.lambda_i)
 
     def append_data(self):
         self.history_p_t.append(self.p_t)
