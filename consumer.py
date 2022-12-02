@@ -12,13 +12,13 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, c_bool):
+    def __init__(self, parameters: dict, c_bool, W_0):
         "Construct initial data of Consumer class"
         self.save_data = parameters["save_data"]
         self.update_c = parameters["update_c"]
         self.c_fountain = parameters["c_fountain"]
 
-        self.W_0 = parameters["W_0"]
+        self.W_0 = W_0
         self.expectation_theta_mean = parameters["mu_0"]
         self.expectation_theta_variance = parameters["var_0"]
         self.weighting_vector = parameters["weighting_vector_0"]

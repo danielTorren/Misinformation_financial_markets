@@ -66,6 +66,7 @@ class Market:
         self.zeta_threshold = parameters["zeta_threshold"]
 
         self.W_0 = parameters["W_0"]
+        self.non_c_W_0_prop = parameters["non_c_W_0_prop"]
         self.mu_0 = parameters["mu_0"]
         self.var_0 =parameters["var_0"]
         self.c_info = parameters["c_info"]
@@ -88,6 +89,9 @@ class Market:
         num_notc = self.I - num_c
         self.c_0_list = np.concatenate((np.zeros(num_notc), np.ones(num_c)), axis = None)
         np.random.shuffle(self.c_0_list) # just shuffle, does not create a new array
+
+        self.W_0_list = np.asarray([self.W_0 if i else self.W_0*self.non_c_W_0_prop for i in self.c_0_list]) + np.random.normal(0, 5, self.I)
+
         #self.c_0_list = np.random.choice(a = [0,1], size = self.I)
         #print("self.c_0_list",self.c_0_list)
 
@@ -251,7 +255,6 @@ class Market:
         """ 
         consumer_params = {
             "save_data": self.save_data,
-            "W_0":self.W_0,
             "mu_0":self.mu_0,
             "var_0":self.var_0,
             "weighting_vector_0": self.weighting_vector_0,
@@ -269,7 +272,7 @@ class Market:
 
         agent_list = [
             Consumer(
-                consumer_params,self.c_0_list[i]
+                consumer_params,self.c_0_list[i],self.W_0_list[i]
             )
             for i in self.I_array
         ]

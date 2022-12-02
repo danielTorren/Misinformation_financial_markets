@@ -1,4 +1,8 @@
-{
+import yaml
+import io
+
+# Define data
+data = {
     "save_data": 1, 
     "network_structure": "barabasi_albert_graph",
     "degroot_aggregation": 1,
@@ -30,3 +34,16 @@
     "k_new_node": 6,
     "non_c_W_0_prop": 0.8
 }
+
+
+
+
+# Write YAML file
+with io.open('data.yaml', 'w', encoding='utf8') as outfile:
+    yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
+
+# Read YAML file
+with open("data.yaml", 'r') as stream:
+    data_loaded = yaml.safe_load(stream)
+
+print(data == data_loaded)
