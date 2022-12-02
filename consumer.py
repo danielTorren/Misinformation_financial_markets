@@ -263,19 +263,31 @@ class Consumer:
 
         self.S_list = [S_theta,S_omega,S_lamba]
 
-        self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
+        if self.c_bool:
+            self.expectation_theta_mean = S_theta
+            self.expectation_theta_variance = 0
+            self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
 
-        #update weighting
-        self.theoretical_X_list, self.theoretical_profit_list, self.weighting_vector = self.compute_weighting_vector_demand_profit()
-    
-        self.signal_variances = self.compute_signal_variances()
+            #update weighting
+            self.theoretical_X_list = np.array([self.compute_X(self.S_list[0]), 0, 0])
+            self.theoretical_profit_list = np.array([self.profit, 0, 0])
+            self.weighting_vector = np.array([1, 0, 0])
 
-        # #update cost
-        # if self.c_bool:
-        #     self.compute_c_status(self.d_t,self.p_t)
+            self.signal_variances = np.array([0, np.nan, np.nan])
+        else:
+            self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
+
+            #update weighting
+            self.theoretical_X_list, self.theoretical_profit_list, self.weighting_vector = self.compute_weighting_vector_demand_profit()
+
+            self.signal_variances = self.compute_signal_variances()
+
+            # #update cost
+            # if self.c_bool:
+            #     self.compute_c_status(self.d_t,self.p_t)
         
-        #compute posterior expectations
-        self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)
+            #compute posterior expectations
+            self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)
 
         if self.save_data:  
             self.append_data()

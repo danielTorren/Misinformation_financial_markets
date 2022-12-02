@@ -3,6 +3,9 @@ from utility import (
     load_object, 
 )
 import numpy as np
+
+
+
 fileName = "results/single_shot_steps_3000_I_200_network_structure_small_world_degroot_aggregation_1"
 createFolder(fileName)
 Data = load_object(fileName + "/Data", "financial_market")

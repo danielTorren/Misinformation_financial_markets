@@ -80,8 +80,12 @@ class Market:
         self.gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
         self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)
         self.zeta_t = self.compute_zeta_t()
-
-        self.c_0_list = np.random.choice(a = [0,1], size = self.I)
+        
+        num_c = int(round(parameters["c_prop"]*self.I))
+        num_notc = self.I - num_c
+        self.c_0_list = np.concatenate((np.zeros(num_notc), np.ones(num_c)), axis = None)
+        np.random.shuffle(self.c_0_list) # just shuffle, does not create a new array
+        #self.c_0_list = np.random.choice(a = [0,1], size = self.I)
         #print("self.c_0_list",self.c_0_list)
 
 
@@ -100,6 +104,7 @@ class Market:
 
         self.agent_list = self.create_agent_list()
 
+
         #update_expectations of agents based on their network and initial signals
 
         for i in range(self.I):
@@ -108,7 +113,12 @@ class Market:
             else:
                 theta_init = np.nan
             self.agent_list[i].expectation_theta_mean, self.agent_list[i].expectation_theta_variance = self.agent_list[i].compute_posterior_mean_variance([theta_init,self.zeta_t[0], self.mu_0])
-            
+
+        self.d_t = self.d #uninformed expectation
+        self.p_t = self.d / self.R #uninformed price
+        self.X_it = [0]*self.I
+        self.lambda_i = self.compute_network_signal()
+
         if self.save_data:
             self.history_p_t = [0]
             self.history_d_t= [0]
@@ -346,7 +356,11 @@ class Market:
         -------
         None
         """
-        self.step_count +=1  
+        
+
+        #compute and return profits
+        self.update_consumers()
+
 
         #Recieve expectations of mean and variances
         self.dt_expectations_mean, self.dt_expectations_variance = self.get_consumers_dt_mean_variance()
@@ -363,8 +377,9 @@ class Market:
         #update network signal
         self.lambda_i = self.compute_network_signal()
 
-        #compute and return profits
-        self.update_consumers()
+       
 
+       
         if self.save_data:
             self.append_data()
+        self.step_count +=1  

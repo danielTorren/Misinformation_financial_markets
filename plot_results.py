@@ -68,6 +68,7 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
         ax.plot(Data.history_time, Data.theta_t, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
     elif property_y == "history_profit":
         ax.axhline(y= Data.R*Data.W_0, linestyle = 'dashed', color = 'black',linewidth=2, alpha=0.5)
+
         #ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
     plt.tight_layout()
 
@@ -117,7 +118,9 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     if property_y == "history_p_t":
         #ax.plot(Data.history_time, (Data.d + Data.theta_t)/Data.R, linestyle='dashed',color="green" , linewidth=2)
         #ax.plot(Data.history_time, [(Data.d)/Data.R], "--")
-        ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
+        ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t)/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        print(np.sum(data-(Data.d + Data.theta_t)/Data.R))
+        #ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
 
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
@@ -331,12 +334,12 @@ def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,p
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 0
-single_param_vary = 1
+single_shot = 1
+single_param_vary = 0
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_steps_500_I_50_network_structure_small_world_degroot_aggregation_1"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_10_13_57__02_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
 
