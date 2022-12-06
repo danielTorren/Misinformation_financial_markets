@@ -332,8 +332,8 @@ class Market:
 
     def update_consumers(self):
 
-        theta = [self.theta_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
-        zeta = self.zeta_t[self.step_count]
+        theta = [self.theta_t[self.step_count + 1] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
+        zeta = self.zeta_t[self.step_count + 1]
 
         for i in range(self.I):
             self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta[i], zeta, self.lambda_i[i])
