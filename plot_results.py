@@ -12,6 +12,7 @@ import networkx as nx
 import matplotlib.animation as animation
 from matplotlib.colors import Normalize
 from matplotlib.cm import get_cmap
+import collections
 from utility import (
     createFolder, 
     load_object, 
@@ -192,7 +193,7 @@ def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
     if network_structure == "small_world":
         layout_type = "circular"
-    elif network_structure == ("barabasi_albert_graph" or "scale_free_directed"):
+    elif network_structure == "barabasi_albert_graph" or "scale_free_directed":
         layout_type ="spring"
 
     if layout_type == "circular":
@@ -378,6 +379,49 @@ def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,p
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
     #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
 
+def plot_initial_priors_hist(fileName,Data,dpi_save):
+    fig, ax = plt.subplots()
+
+    # bodge
+    ax.hist(Data.mu_0_i_c, color="blue", label = "Private signal")
+    ax.hist(Data.mu_0_i_no_c, color="red", label = "No private signal")
+    ax.set_xlabel("Inital prior")
+    ax.set_ylabel("Counts")
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "_plot_initial_priors_hist"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    #fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+
+def degree_distribution_single(   
+    fileName,
+    Data,
+    dpi_save,
+):
+
+    fig, ax = plt.subplots(figsize=(14, 7), constrained_layout=True)
+
+    G = Data.network
+    
+    degree_sequence = sorted([d for n, d in G.degree()], reverse=True)  # degree sequence
+    # print "Degree sequence", degree_sequence
+    degreeCount = collections.Counter(degree_sequence)
+    deg, cnt = zip(*degreeCount.items())
+
+    ax.bar(deg, cnt, width=0.80, color='b')
+
+    ax.set_xticks([d + 0.4 for d in deg])
+    ax.set_xticklabels(deg)
+
+    ax.set_xlabel("Degree")
+    ax.set_ylabel("Count")
+    #ax.set_ylim(0, 1)
+
+    plotName = fileName + "/Prints"
+    f = plotName + "/degree_distribution"
+    #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 dpi_save = 600
 red_blue_c = True
@@ -401,39 +445,46 @@ if __name__ == "__main__":
         start_time = time.time()
 
     if single_shot:
-        fileName = "results/single_shot_17_47_54__02_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_11_39_28__06_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
 
         #consumers
         #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
-        plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
-        plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-        plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        #plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
+        #plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+        ##
+        # plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        #plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #consumer X list and weighting
-        plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
+        #plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
         #plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{\theta}$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
-        plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
+        #plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
         #network
-        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
-        plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
-        plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
+        #plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
+        #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
+        #plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
         plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size)
         #plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
+        plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
 
         #network trasnspose
-        plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+        #plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+        
 
         #cumsum
         #plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
+        #plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
         #plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         #plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
         #plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+
+        #inital prior distributions
+        if base_params["heterogenous_priors"]:
+            plot_inital_priors = plot_initial_priors_hist(fileName,Data,dpi_save)
 
         #Animation BROKE
         #anim_c_bool = anim_value_network(fileName,Data,base_params["network_structure"], "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
@@ -452,7 +503,8 @@ if __name__ == "__main__":
 
         plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
         plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
-    
+
+
     if print_simu:
         print(
             "PLOT time taken: %s minutes" % ((time.time() - start_time) / 60),

@@ -21,6 +21,7 @@ class Consumer:
         self.W_0 = W_0
         self.expectation_theta_mean = parameters["mu_0"]
         self.expectation_theta_variance = parameters["var_0"]
+        
         self.weighting_vector = parameters["weighting_vector_0"]
         self.R = parameters["R"]
         self.a = parameters["a"]

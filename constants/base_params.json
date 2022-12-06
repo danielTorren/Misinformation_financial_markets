@@ -1,9 +1,11 @@
 {
     "save_data": 1, 
-    "network_structure": "barabasi_albert_graph",
+    "network_structure": "scale_free_directed",
     "degroot_aggregation": 1,
     "c_fountain": 0,
     "update_c": 0,
+    "heterogenous_priors": 0,
+    "heterogenous_wealth":0,
     "steps": 1000,
     "I": 100,
     "K": 10,
@@ -28,5 +30,14 @@
     "T_h_prop": 0.05,
     "c_prop": 0.3,
     "k_new_node": 6,
-    "non_c_W_0_prop": 0.8
+    "non_c_W_0": 80,
+    "priors_beta_a_no_c": 2,
+    "priors_beta_b_no_c": 3,
+    "priors_beta_a_c": 3,
+    "priors_beta_b_c": 2,
+    "network_alpha" : 0.4,
+    "network_beta": 0.4,
+    "network_gamma" : 0.2,
+    "network_delta_in" : 0.1,
+    "network_delta_out" : 0.1
 }

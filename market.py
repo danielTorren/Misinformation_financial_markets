@@ -47,12 +47,19 @@ class Market:
 
         """
 
-        self.set_seed = parameters["set_seed"]
-        np.random.seed(self.set_seed)
-        self.save_data = parameters["save_data"]
+        #######################################################################################
+        #Model hyperparameters, dictate what type of run it will be
         self.degroot_aggregation = parameters["degroot_aggregation"]
         self.c_fountain = parameters["c_fountain"]
         self.update_c = parameters["update_c"]
+        self.heterogenous_priors = parameters["heterogenous_priors"]
+        self.heterogenous_wealth = parameters["heterogenous_wealth"]
+
+        #########################################################################################
+        #model parameters
+        self.set_seed = parameters["set_seed"]
+        np.random.seed(self.set_seed)
+        self.save_data = parameters["save_data"]
 
         self.I = parameters["I"]
         self.I_array = np.arange(self.I)
@@ -65,9 +72,13 @@ class Market:
         self.phi_sigma = parameters["gamma_sigma"] 
         self.zeta_threshold = parameters["zeta_threshold"]
 
-        self.W_0 = parameters["W_0"]
-        self.non_c_W_0_prop = parameters["non_c_W_0_prop"]
-        self.mu_0 = parameters["mu_0"]
+        if self.heterogenous_wealth:
+            self.W_0 = parameters["W_0"]
+            self.non_c_W_0 = parameters["non_c_W_0"]
+            self.W_0_list = np.asarray([self.W_0 if i else self.non_c_W_0 for i in self.c_0_list]) + np.random.normal(0, 5, self.I)
+        else:
+            self.W_0_list = np.asarray([self.W_0]*self.I)
+        
         self.var_0 =parameters["var_0"]
         self.c_info = parameters["c_info"]
         self.beta = parameters["beta"]
@@ -85,12 +96,38 @@ class Market:
         self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.steps + 1)) + 
         self.zeta_t = self.compute_zeta_t()
         
-        num_c = int(round(parameters["c_prop"]*self.I))
-        num_notc = self.I - num_c
-        self.c_0_list = np.concatenate((np.zeros(num_notc), np.ones(num_c)), axis = None)
-        np.random.shuffle(self.c_0_list) # just shuffle, does not create a new array
+        self.num_c = int(round(parameters["c_prop"]*self.I))
+        self.num_notc = self.I - self.num_c
+        self.c_0_list = np.concatenate((np.zeros(self.num_notc), np.ones(self.num_c)), axis = None)
+        #print("BEFORE c list",self.c_0_list )
+        
+        randomize = np.arange(self.I)
+        np.random.shuffle(randomize)# just shuffle, does not create a new array, allows us to set multiple diffenret array with the same shuffle
 
-        self.W_0_list = np.asarray([self.W_0 if i else self.W_0*self.non_c_W_0_prop for i in self.c_0_list]) + np.random.normal(0, 5, self.I)
+        #print("randomize", randomize)
+        #shuffle order
+        self.c_0_list = self.c_0_list[randomize]#np.random.shuffle(self.c_0_list) 
+        #print("After c list",self.c_0_list )
+
+        if self.heterogenous_priors:
+
+            self.priors_beta_a_no_c = parameters["priors_beta_a_no_c"]
+            self.priors_beta_b_no_c = parameters["priors_beta_b_no_c"]
+            self.mu_0_i_no_c = np.random.beta(self.priors_beta_a_no_c, self.priors_beta_b_no_c, size=self.num_notc) - 0.5
+
+            self.priors_beta_a_c = parameters["priors_beta_a_c"]
+            self.priors_beta_b_c = parameters["priors_beta_b_c"]
+            self.mu_0_i_c = np.random.beta(self.priors_beta_a_c, self.priors_beta_b_c, size=self.num_c) - 0.5
+
+            self.mu_0_i = np.concatenate((self.mu_0_i_no_c,self.mu_0_i_c), axis = None)
+            #print("BEFORE mu_0_i list",self.mu_0_i )
+            self.mu_0_i = self.mu_0_i[randomize]
+            #print("After mu_0_i list",self.mu_0_i )
+        else:
+            self.mu_0 = parameters["mu_0"]
+
+
+        
 
         #self.c_0_list = np.random.choice(a = [0,1], size = self.I)
         #print("self.c_0_list",self.c_0_list)
@@ -104,11 +141,11 @@ class Market:
         elif self.network_structure == "barabasi_albert_graph":
             self.k_new_node = parameters["k_new_node"]
         elif self.network_structure == "scale_free_directed":
-            self.alpha = parameters["alpha"] # Probability for adding a new node connected to an existing node chosen randomly according to the in-degree distribution.
-            self.beta = parameters["beta"]
-            self.gamma = parameters["gamma"]
-            self.delta_in = parameters["delta_in"]
-            self.delta_out = parameters["delta_in"]
+            self.network_alpha = parameters["network_alpha"] # Probability for adding a new node connected to an existing node chosen randomly according to the in-degree distribution.
+            self.network_beta = parameters["network_beta"]
+            self.network_gamma = parameters["network_gamma"]
+            self.network_delta_in = parameters["network_delta_in"]
+            self.network_delta_out = parameters["network_delta_in"]
 
         (
             self.adjacency_matrix,
@@ -121,14 +158,13 @@ class Market:
         self.agent_list = self.create_agent_list()
 
 
-        #update_expectations of agents based on their network and initial signals
-
-        for i in self.I_array:
-            if self.agent_list[i].c_bool:
-                theta_init = self.theta_t[0]
-            else:
-                theta_init = np.nan
-            self.agent_list[i].expectation_theta_mean, self.agent_list[i].expectation_theta_variance = self.agent_list[i].compute_posterior_mean_variance([theta_init,self.zeta_t[0], self.mu_0])
+        #update_expectations of agents based on their network and initial signals#WHY ARE WE DOING THIS????
+        #for i in self.I_array:
+        #    if self.agent_list[i].c_bool:
+        #        theta_init = self.theta_t[0]
+        #    else:
+        #        theta_init = np.nan
+        #    self.agent_list[i].expectation_theta_mean, self.agent_list[i].expectation_theta_variance = self.agent_list[i].compute_posterior_mean_variance([theta_init, self.zeta_t[0], self.mu_0])
 
         self.d_t = self.d #uninformed expectation
         self.p_t = self.d / self.R #uninformed price
@@ -227,7 +263,7 @@ class Market:
         if self.network_structure == "barabasi_albert_graph":
             G = nx.barabasi_albert_graph(n=self.I, m=self.k_new_node, seed=self.set_seed)
         if self.network_structure == "scale_free_directed":
-            G = nx.scale_free_graph(n=self.I, alpha=self.alpha, beta=self.beta, gamma=self.gamma, delta_in=self.delta_in, delta_out=self.delta_out)
+            G = nx.scale_free_graph(n=self.I, alpha=self.network_alpha, beta=self.network_beta, gamma=self.network_gamma, delta_in=self.network_delta_in, delta_out=self.network_delta_out)
 
         weighting_matrix = nx.to_numpy_array(G)
 
@@ -255,7 +291,6 @@ class Market:
         """ 
         consumer_params = {
             "save_data": self.save_data,
-            "mu_0":self.mu_0,
             "var_0":self.var_0,
             "weighting_vector_0": self.weighting_vector_0,
             "R":self.R,
@@ -270,12 +305,19 @@ class Market:
             "update_c": self.update_c
         }
 
-        agent_list = [
-            Consumer(
-                consumer_params,self.c_0_list[i],self.W_0_list[i]
-            )
-            for i in self.I_array
-        ]
+        if self.heterogenous_priors:
+            agent_list = []
+            for i in self.I_array:
+                consumer_params["mu_0"] = self.mu_0_i[i]
+                agent_list.append(Consumer(consumer_params,self.c_0_list[i],self.W_0_list[i]))
+        else:
+            consumer_params["mu_0"] = self.mu_0
+            agent_list = [
+                Consumer(
+                    consumer_params,self.c_0_list[i],self.W_0_list[i]
+                )
+                for i in self.I_array
+            ]
 
         return agent_list
 

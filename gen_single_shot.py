@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     Data = generate_data_single(params)  # run the simulation
 
-    createFolder(fileName)
+    createFolder(fileName)#put after run so that you dont create folder unless you got to the end of the simulation
 
     save_object(Data, fileName + "/Data", "financial_market")
     save_object(params, fileName + "/Data", "base_params")
