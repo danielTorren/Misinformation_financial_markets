@@ -14,9 +14,10 @@ class Consumer:
     "Class of consumer"
     def __init__(self, parameters: dict, c_bool, W_0):
         "Construct initial data of Consumer class"
-        self.save_data = parameters["save_data"]
-        self.update_c = parameters["update_c"]
+        self.save_timeseries_data = parameters["save_timeseries_data"]
+        self.compression_factor = parameters["compression_factor"]
         self.c_fountain = parameters["c_fountain"]
+        self.accuracy_weighting = parameters["accuracy_weighting"]
 
         self.W_0 = W_0
         self.expectation_theta_mean = parameters["mu_0"]
@@ -34,10 +35,10 @@ class Consumer:
 
         #cost 
         self.c_bool = c_bool
+
         if self.c_bool:
-            self.c_list = [self.c_0 ,0,0]#for calculating profits from each signal need to know how much each one costs, will only be used if paying as else signal will be np.nan
+            pass
         else:
-            self.c_list = [0,0,0]
             self.weighting_vector[0] = 0#np.nan
 
 
@@ -45,9 +46,10 @@ class Consumer:
 
         self.theoretical_profit_list_history_array = np.asarray([[0,0,0]])#SHOULD BE THE SAME BUT ARRAY AS self.history_theoretical_profit_list
 
-        if self.save_data:
-            self.history_theoretical_X_list = [[0,0,0]]#no demand at start?
-            self.history_theoretical_profit_list = [[0,0,0]]#no demand at start?
+        if self.save_timeseries_data:
+            if not self.accuracy_weighting:
+                self.history_theoretical_X_list = [[0,0,0]]#no demand at start?
+                self.history_theoretical_profit_list = [[0,0,0]]#no demand at start?
             self.history_weighting_vector = [list(self.weighting_vector)] 
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_expectation_theta_mean = [self.expectation_theta_mean]
@@ -55,16 +57,11 @@ class Consumer:
             self.history_lambda_t = [0]#if in doubt 0!
             self.history_c_bool = [self.c_bool]
 
-    def compute_c_status(self,d_t,p_t):
-
-        c_effect = self.compute_profit(d_t,p_t,self.theoretical_X_list[0],self.c_list[0])
-        if c_effect <= 0.0:#turn it off if negative profit
-            self.c_bool = 0
-            self.c_list = [0,0,0]
-
-    def compute_profit(self,d_t,p_t,X_t,c):
-
-        profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - c - self.R*self.W_0
+    def compute_profit(self,d_t,p_t,X_t):
+        if self.c_bool:
+            profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - self.c_0 - self.R*self.W_0
+        else:
+            profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - self.R*self.W_0
 
         return profit
 
@@ -122,7 +119,7 @@ class Consumer:
         else:
             #print("PROFIT AT LEAST ONE NON NAN")
             #calc the theoretical profit
-            theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v], self.c_list[v]) for v in range(len(theoretical_X_list))]
+            theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v]) for v in range(len(theoretical_X_list))]
             #print("theoretical_profit_list ",theoretical_profit_list )
 
             self.theoretical_profit_list_history_array = self.calc_theoretical_profit_list_history_array(np.asarray(theoretical_profit_list),self.theoretical_profit_list_history_array)
@@ -148,7 +145,7 @@ class Consumer:
         else:
             #print("PROFIT AT LEAST ONE NON NAN")
             #calc the theoretical profit
-            theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v], self.c_list[v]) for v in range(len(theoretical_X_list))]
+            theoretical_profit_list = [self.compute_profit(self.d_t, self.p_t, theoretical_X_list[v]) for v in range(len(theoretical_X_list))]
 
             for v in nan_index_list:
                 #theoretical_profit_list_mean_history = np.insert(theoretical_profit_list_mean_history, v , np.nan)
@@ -185,9 +182,62 @@ class Consumer:
         #print("weighting_vector: c",weighting_vector,self.c_bool)
         return weighting_vector
 
+    def calc_squared_error_norm(self, d_t, d, S_k):
+        #print("(d_t - (d + S_k))/d_t", (d_t - (d + S_k))/d_t)
+        return np.square((d_t - (d + S_k))/d_t)
+
+    def calc_weighting_vector_accuracy(self,non_nan_index_list,nan_index_list,weighting_vector,squared_error_list):
+        
+        if not non_nan_index_list:
+            #empty list therefore all signal are nan, keep weighting static - DO NOTHING
+            #print("DO NOTHERING LIST EMPTY, ALL NANs")
+            pass
+        else:
+            #print("AT LEAST ONE NON NAN")
+            #plug those into the equation
+            denominator_weighting = sum(np.exp(-self.beta*squared_error_list[i]) for i in non_nan_index_list)
+
+            #print("denominator_weighting",denominator_weighting)
+
+            if not nan_index_list:#if all values are present
+                #print("ALL VALUES PRESENT")
+                weighting_vector = [np.exp(-self.beta*squared_error)/denominator_weighting for squared_error in squared_error_list]
+            else:
+                #print("AT LEAST ONE NAN")
+                #at least 1 nan value
+                #print("non nan profit", [self.beta*theoretical_profit_list_mean_history[i] for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_mean_history[i]) for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_mean_history[i])/denominator_weighting for i in non_nan_index_list])
+                weighting_vector_short = np.asarray([np.exp(-self.beta*squared_error_list[i])/denominator_weighting for i in non_nan_index_list])
+                #print("weighting_vector_short",weighting_vector_short)
+                weighting_vector = weighting_vector_short*(1-sum(weighting_vector[v] for v in nan_index_list))#1 - the effect of others?
+                #print("before weighting_vector",weighting_vector)
+                for v in nan_index_list:
+                    weighting_vector = np.insert(weighting_vector, v ,self.weighting_vector[v])# DOES THIS PUT IT IN THE RIGHT PLACE?
+        
+        #print("weighting_vector: c",weighting_vector,self.c_bool)
+        return weighting_vector
+
+    def compute_weighting_vector_accuracy(self):
+        non_nan_index_list = []
+        nan_index_list = []
+
+        for v in range(len(self.S_list)):
+            if np.isnan(self.S_list[v]):
+                nan_index_list.append(v)
+            else:
+                non_nan_index_list.append(v)
+
+        #print("non_nan_index_list ",non_nan_index_list )
+        #print("nan_index_list ",nan_index_list )
+
+        weighting_vector = self.weighting_vector
+
+        squared_error_list = self.calc_squared_error_norm(self.d_t, self.d, np.asarray(self.S_list))
+        weighting_vector = self.calc_weighting_vector_accuracy(non_nan_index_list,nan_index_list,weighting_vector,squared_error_list)     
+
+        return np.asarray(weighting_vector)   
 
     def compute_weighting_vector_demand_profit(self):
-        """SPLIT PROCESSS OVER THREE FUNCTIONS, CALC DEMAND, PROFIT THEN WEIGHTING"""
+        """SPLIT PROCESSS OVER THREE FUNCTIONS, CALC DEMAND, PROFIT THEN WEIGHTING, FIX SO NOT RETURNING TWICE"""
         #weighting_vector = self.weighting_vector#copy it 
         non_nan_index_list = []
         nan_index_list = []
@@ -206,7 +256,6 @@ class Consumer:
         #Calc the theoretical X 
         theoretical_X_list = self.calc_theoretical_X(non_nan_index_list,nan_index_list)
         #print(" theoretical_X_list", theoretical_X_list)
-
         #calc theoretical_profit_list_mean_history
         theoretical_profit_list_mean_history = self.calc_theoretical_profit_list_mean_history(non_nan_index_list,nan_index_list,theoretical_X_list)
         #print("compare",theoretical_profit_list_mean_history,self.calc_theoretical_profit_list_mean_history_alt(non_nan_index_list,nan_index_list,theoretical_X_list))
@@ -246,8 +295,9 @@ class Consumer:
         return posterior_theta_mean,posterior_theta_variance 
 
     def append_data(self):
-        self.history_theoretical_X_list.append(list(self.theoretical_X_list))
-        self.history_theoretical_profit_list.append(list(self.theoretical_profit_list))
+        if not self.accuracy_weighting:
+            self.history_theoretical_X_list.append(list(self.theoretical_X_list))
+            self.history_theoretical_profit_list.append(list(self.theoretical_profit_list))
         self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
         self.history_expectation_theta_mean.append(self.expectation_theta_mean) 
@@ -255,7 +305,7 @@ class Consumer:
         self.history_lambda_t.append(self.S_list[2])
         self.history_c_bool.append(self.c_bool)
 
-    def next_step(self,d_t,p_t,X_t, S_theta, S_omega, S_lamba):
+    def next_step(self,d_t,p_t,X_t, S_theta, S_omega, S_lamba,steps):
         #print("NEXT")
         #recieve dividend and demand
         #compute profit
@@ -266,30 +316,32 @@ class Consumer:
 
         if self.c_bool and self.c_fountain:
 
-            self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
+            self.profit = self.compute_profit(self.d_t,self.p_t,X_t)
 
             #update weighting
-            self.theoretical_X_list = np.array([self.compute_X(self.S_list[0]), 0, 0])
-            self.theoretical_profit_list = np.array([self.profit, 0, 0])
+            if not self.accuracy_weighting:
+                self.theoretical_X_list = np.array([self.compute_X(self.S_list[0]), 0, 0])
+                self.theoretical_profit_list = np.array([self.profit, 0, 0])
+            
             self.weighting_vector = np.array([1, 0, 0])
 
             self.signal_variances = np.array([0, np.nan, np.nan])
             self.expectation_theta_mean = S_theta
             self.expectation_theta_variance = 0
         else:
-            self.profit = self.compute_profit(self.d_t,self.p_t,X_t,self.c_list[0])
+            self.profit = self.compute_profit(self.d_t,self.p_t,X_t)
 
             #update weighting
-            self.theoretical_X_list, self.theoretical_profit_list, self.weighting_vector = self.compute_weighting_vector_demand_profit()
+            if self.accuracy_weighting:
+                #print("HEEYEYEE")
+                self.weighting_vector = self.compute_weighting_vector_accuracy()
+            else:
+                self.theoretical_X_list, self.theoretical_profit_list, self.weighting_vector = self.compute_weighting_vector_demand_profit()
 
             self.signal_variances = self.compute_signal_variances()
-
-            #update cost
-            if self.c_bool and self.update_c:
-                 self.compute_c_status(self.d_t,self.p_t)
         
             #compute posterior expectations
             self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)
 
-        if self.save_data:  
+        if  (steps % self.compression_factor == 0) and (self.save_timeseries_data):  
             self.append_data()

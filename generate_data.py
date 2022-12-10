@@ -17,10 +17,8 @@ def generate_data_single(params):
     financial_market = Market(params)
 
     #### RUN TIME STEPS
-    time_counter = 0
-    while time_counter < params["steps"]:
+    while financial_market.step_count < params["total_steps"]:
         financial_market.next_step()
-        time_counter += 1
 
     if print_simu:
         print(

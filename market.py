@@ -51,16 +51,20 @@ class Market:
         #Model hyperparameters, dictate what type of run it will be
         self.degroot_aggregation = parameters["degroot_aggregation"]
         self.c_fountain = parameters["c_fountain"]
-        self.update_c = parameters["update_c"]
         self.heterogenous_priors = parameters["heterogenous_priors"]
         self.heterogenous_wealth = parameters["heterogenous_wealth"]
+        self.accuracy_weighting = parameters["accuracy_weighting"]
+        self.dynamic_weighting_matrix = parameters["dynamic_weighting_matrix"]
+        self.endogenous_c_switching = parameters["endogenous_c_switching"]
 
         #########################################################################################
         #model parameters
         self.set_seed = parameters["set_seed"]
         np.random.seed(self.set_seed)
-        self.save_data = parameters["save_data"]
 
+        self.save_timeseries_data = parameters["save_timeseries_data"]
+
+        self.compression_factor = parameters["compression_factor"]
         self.I = parameters["I"]
         self.I_array = np.arange(self.I)
         self.K = parameters["K"]
@@ -71,11 +75,15 @@ class Market:
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.phi_sigma = parameters["gamma_sigma"] 
         self.zeta_threshold = parameters["zeta_threshold"]
+        if self.dynamic_weighting_matrix:
+            self.psi = parameters["psi"]
 
+        self.W_0 = parameters["W_0"]
+        
         if self.heterogenous_wealth:
-            self.W_0 = parameters["W_0"]
+            
             self.non_c_W_0 = parameters["non_c_W_0"]
-            self.W_0_list = np.asarray([self.W_0 if i else self.non_c_W_0 for i in self.c_0_list]) + np.random.normal(0, 5, self.I)
+            self.W_0_list = np.asarray([self.W_0 if i else self.non_c_W_0 for i in self.c_bool_list]) + np.random.normal(0, 5, self.I)
         else:
             self.W_0_list = np.asarray([self.W_0]*self.I)
         
@@ -85,29 +93,32 @@ class Market:
         self.delta = parameters["delta"]
 
         self.step_count = 0
-        self.steps = parameters["steps"]
+        self.total_steps = parameters["total_steps"]
+        
+        if self.endogenous_c_switching:
+            self.switch_vals = np.random.uniform(size = (self.total_steps,self.I)) #use numpy for the sake of seed setting
 
         self.T_h_prop = parameters["T_h_prop"]
-        self.T_h = int(round(self.T_h_prop*self.steps))
+        self.T_h = int(round(self.T_h_prop*self.total_steps))
         #print("self.T_h", self.T_h)
 
-        self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.steps+1)
-        self.gamma_t = np.random.normal(0, self.theta_sigma, self.steps+1) #+1 is for the zeroth step update of the signal
-        self.theta_t = np.random.normal(0, self.theta_sigma, self.steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.steps + 1)) + 
+        self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
+        self.gamma_t = np.random.normal(0, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
+        self.theta_t = np.random.normal(0, self.theta_sigma, self.total_steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
         self.zeta_t = self.compute_zeta_t()
         
         self.num_c = int(round(parameters["c_prop"]*self.I))
         self.num_notc = self.I - self.num_c
-        self.c_0_list = np.concatenate((np.zeros(self.num_notc), np.ones(self.num_c)), axis = None)
-        #print("BEFORE c list",self.c_0_list )
+        self.c_bool_list = np.concatenate((np.zeros(self.num_notc), np.ones(self.num_c)), axis = None)
+        #print("BEFORE c list",self.c_bool_list )
         
         randomize = np.arange(self.I)
         np.random.shuffle(randomize)# just shuffle, does not create a new array, allows us to set multiple diffenret array with the same shuffle
 
         #print("randomize", randomize)
         #shuffle order
-        self.c_0_list = self.c_0_list[randomize]#np.random.shuffle(self.c_0_list) 
-        #print("After c list",self.c_0_list )
+        self.c_bool_list = self.c_bool_list[randomize]#np.random.shuffle(self.c_bool_list) 
+        #print("After c list",self.c_bool_list )
 
         if self.heterogenous_priors:
 
@@ -129,8 +140,8 @@ class Market:
 
         
 
-        #self.c_0_list = np.random.choice(a = [0,1], size = self.I)
-        #print("self.c_0_list",self.c_0_list)
+        #self.c_bool_list = np.random.choice(a = [0,1], size = self.I)
+        #print("self.c_bool_list",self.c_bool_list)
 
 
         #create network
@@ -171,13 +182,14 @@ class Market:
         self.X_it = [0]*self.I
         self.lambda_i = self.compute_network_signal()
 
-        if self.save_data:
+        if self.save_timeseries_data:
             self.history_p_t = [0]
             self.history_d_t= [0]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
+            self.history_weighting_matrix = [self.weighting_matrix]
         
-        self.update_vector_v = np.vectorize(self.update_vector)
+        #self.update_vector_v = np.vectorize(self.update_vector)
 
     def compute_zeta_t(self):
         
@@ -188,7 +200,7 @@ class Market:
         zeta_tracker = 0
         decay_factor = 0.8
 
-        for i in range(0,self.steps+1):
+        for i in range(0,self.total_steps+1):
             if (np.abs(self.theta_t[i]) + np.abs(gamma_t[i]) > self.zeta_threshold):
                 zeta = (self.theta_t[i] + gamma_t[i])
             else:
@@ -204,7 +216,7 @@ class Market:
         
         """
 
-        zeta = [(self.theta_t[i] + self.gamma_t[i]) if (np.abs(self.theta_t[i]) + np.abs(self.gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.steps+1)]#+1 is for the zeroth step update of the signal
+        zeta = [(self.theta_t[i] + self.gamma_t[i]) if (np.abs(self.theta_t[i]) + np.abs(self.gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.total_steps+1)]#+1 is for the zeroth step update of the signal
 
         return zeta
         
@@ -290,7 +302,8 @@ class Market:
         agent_list: list[Consumer]
         """ 
         consumer_params = {
-            "save_data": self.save_data,
+            "save_timeseries_data": self.save_timeseries_data,
+            "compression_factor": self.compression_factor,
             "var_0":self.var_0,
             "weighting_vector_0": self.weighting_vector_0,
             "R":self.R,
@@ -302,19 +315,19 @@ class Market:
             "c_info": self.c_info,
             "T_h": self.T_h, 
             "c_fountain": self.c_fountain,
-            "update_c": self.update_c
+            "accuracy_weighting": self.accuracy_weighting,
         }
 
         if self.heterogenous_priors:
             agent_list = []
             for i in self.I_array:
                 consumer_params["mu_0"] = self.mu_0_i[i]
-                agent_list.append(Consumer(consumer_params,self.c_0_list[i],self.W_0_list[i]))
+                agent_list.append(Consumer(consumer_params,self.c_bool_list[i],self.W_0_list[i]))
         else:
             consumer_params["mu_0"] = self.mu_0
             agent_list = [
                 Consumer(
-                    consumer_params,self.c_0_list[i],self.W_0_list[i]
+                    consumer_params,self.c_bool_list[i],self.W_0_list[i]
                 )
                 for i in self.I_array
             ]
@@ -323,13 +336,13 @@ class Market:
 
     def get_consumers_dt_mean_variance(self):
 
-        expectations_theta_mean_vector = [i.expectation_theta_mean for i in self.agent_list]
-        expectations_theta_variance_vector = [i.expectation_theta_variance for i in self.agent_list]
+        expectations_theta_mean_vector = np.asarray([i.expectation_theta_mean for i in self.agent_list])
+        expectations_theta_variance_vector = np.asarray([i.expectation_theta_variance for i in self.agent_list])
 
-        dt_expectations_mean = self.d + np.asarray(expectations_theta_mean_vector)
-        dt_expectations_variance = self.epsilon_sigma**2 + np.asarray(expectations_theta_variance_vector)
+        dt_expectations_mean = self.d + expectations_theta_mean_vector
+        dt_expectations_variance = self.epsilon_sigma**2 + expectations_theta_variance_vector
 
-        return dt_expectations_mean, dt_expectations_variance
+        return dt_expectations_mean, dt_expectations_variance,expectations_theta_mean_vector
 
     def compute_price(self):
 
@@ -402,16 +415,54 @@ class Market:
         zeta = self.zeta_t[self.step_count]
 
         for i in self.I_array:
-            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta_v[i], zeta, self.lambda_i[i])
+            self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta_v[i], zeta, self.lambda_i[i],self.step_count)
 
         #d_t_v, p_t_v, zeta_v = np.full((self.I),self.d_t), np.full((self.I),self.p_t), np.full((self.I), zeta)
         #self.update_vector_v(self.I_array, d_t_v, p_t_v,self.X_it, theta_v, zeta_v, self.lambda_i)
+    
+    def update_weighting_matrix(self):
+        #asdasda
+        norm_ME_array = np.abs((self.d_t -  (self.d + self.expectations_theta_mean_vector))/self.d_t)
+
+        #print("MSE_array",MSE_array, MSE_array.shape)
+        alpha_numerator = np.exp(-np.multiply(self.psi, norm_ME_array))
+        #print("alpha_numerator",alpha_numerator , alpha_numerator.shape)
+
+        tile_alpha_numerator = np.tile(alpha_numerator, (self.I, 1))
+        #print("tile_alpha_numerator", tile_alpha_numerator, tile_alpha_numerator.shape)
+
+        connections_weighting_matrix = (self.adjacency_matrix * tile_alpha_numerator)  # We want only those values that have network connections
+        #print("connections_weighting_matrix", connections_weighting_matrix, connections_weighting_matrix.shape)
+
+        norm_weighting_matrix = self.normlize_matrix(
+            connections_weighting_matrix
+        )  # normalize the matrix row wise
+
+        #print("norm_weighting_matrix", norm_weighting_matrix, norm_weighting_matrix.shape)
+        #quit()
+        return norm_weighting_matrix
+
+    def update_c_bools(self):
+        #repetition FIX
+        norm_ME_array = np.abs((self.d_t -  (self.d + self.expectations_theta_mean_vector))/self.d_t)
+        #print(" - norm_ME_array",- norm_ME_array)
+        #print("np.exp(-norm_ME_array)",np.exp(-norm_ME_array))
+        P_switch = (1/(1+np.exp(-norm_ME_array))) - 0.5
+        #print("P_switch",P_switch)
+        #print("self.switch_vals[self.step_count]",self.switch_vals[self.step_count])
+        mask = self.switch_vals[self.step_count] <= P_switch
+        #print("mask",mask)
+        for i in range(len(self.agent_list)):
+            if mask[i]:
+                self.agent_list[i].c_bool = not self.agent_list[i].c_bool          
+
 
     def append_data(self):
         self.history_p_t.append(self.p_t)
         self.history_d_t.append(self.d_t)
         self.history_time.append(self.step_count)
         self.history_X_it.append(self.X_it)
+        self.history_weighting_matrix.append(self.weighting_matrix)
 
     def next_step(self):
         """
@@ -432,7 +483,7 @@ class Market:
 
 
         #Recieve expectations of mean and variances
-        self.dt_expectations_mean, self.dt_expectations_variance = self.get_consumers_dt_mean_variance()
+        self.dt_expectations_mean, self.dt_expectations_variance, self.expectations_theta_mean_vector = self.get_consumers_dt_mean_variance()
 
         #Compute aggregate price
         self.p_t = self.compute_price()
@@ -446,9 +497,15 @@ class Market:
         #update network signal
         self.lambda_i = self.compute_network_signal()
 
-       
+        if self.dynamic_weighting_matrix:
+           self.weighting_matrix = self.update_weighting_matrix()
 
-       
-        if self.save_data:
-            self.append_data()
+        if self.endogenous_c_switching:
+            self.update_c_bools()
+
         self.step_count +=1  
+       
+        if (self.step_count % self.compression_factor == 0) and (self.save_timeseries_data):
+            self.append_data()
+
+        

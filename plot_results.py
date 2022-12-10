@@ -56,7 +56,8 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
     ax.set_ylabel("%s" % y_title)
 
     if property_y == "history_expectation_mean":
-        ax.plot(Data.history_time, Data.theta_t, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        #Data.theta_t[::Data.compression_factor]
+        ax.plot(Data.history_time, Data.theta_t[::Data.compression_factor], linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
     #elif property_y == "history_profit":
         #ax.axhline(y= Data.R*Data.W_0, linestyle = 'dashed', color = 'black',linewidth=2, alpha=0.5)
 
@@ -90,7 +91,7 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
     ax.set_ylabel("%s" % y_title)
 
     if property_y == "history_expectation_mean":
-        ax.plot(Data.history_time, np.cumsum(Data.theta_t), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        ax.plot(Data.history_time, np.cumsum(Data.theta_t[::Data.compression_factor]), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
     elif property_y == "history_profit":
         ax.plot(Data.history_time, np.cumsum([-Data.c_info]*len(Data.history_time)), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
 
@@ -141,10 +142,10 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     ax.set_ylabel("%s" % y_title)
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
-        #ax.plot(Data.history_time, (Data.d + Data.theta_t)/Data.R, linestyle='dashed',color="green" , linewidth=2)
+        #ax.plot(Data.history_time, (Data.d + Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed',color="green" , linewidth=2)
         #ax.plot(Data.history_time, [(Data.d)/Data.R], "--")
-        ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t)/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
-        #print(np.sum(data-(Data.d + Data.theta_t)/Data.R))
+        ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        #print(np.sum(data-(Data.d + Data.theta_t[::Data.compression_factor])/Data.R))
         #ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
 
     plotName = fileName + "/Plots"
@@ -155,7 +156,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
 def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
 
     fig, ax = plt.subplots()
-    data = Data.theta_t*Data.gamma_t/np.abs(Data.theta_t*Data.gamma_t)
+    data = Data.theta_t[::Data.compression_factor]*Data.gamma_t/np.abs(Data.theta_t[::Data.compression_factor]*Data.gamma_t)
 
     # bodge
     ax.scatter(Data.history_time, data, color="blue")
@@ -209,44 +210,27 @@ def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
     return pos_culture_network
 
-def anim_value_network(
-    FILENAME: str,
+def anim_weighting_matrix(
+    fileName: str,
     Data: list,
-    network_structure: str,
-    colour_bar_label:str,
-    property_value: str,
-    fps:int,
-    round_dec:int,
-    cmap,
+    cmap_weighting,
     interval: int,
-    norm_value,
-    node_size,
+    fps: int,
+    round_dec: int,
 ):
-
-    data_matrix = np.asarray([eval("Data.agent_list[%s].%s" % (v,property_value)) for v in range(Data.I)]).T
-
-    def update(i, Data, data_matrix, ax, cmap, network_structure, title,round_dec,norm_value):
+    def update(i, Data, ax, title):
 
         ax.clear()
 
-        #individual_value_list = [eval("Data.agent_list[%s].%s[%s]" % (v,property_value,i)) for v in range(Data.I)]
-        #print("individual_value_list",individual_value_list)
-        colour_adjust = norm_value(data_matrix[i])
-        ani_step_colours = cmap(colour_adjust)
-
-        G = nx.from_numpy_matrix(Data.adjacency_matrix)
-
-        # get pos
-        pos = prod_pos(network_structure, G)
-
-        nx.draw(
-            G,
-            node_color=ani_step_colours,
-            ax=ax,
-            pos=pos,
-            node_size=node_size,
-            edgecolors="black",
+        ax.matshow(
+            Data.history_weighting_matrix[i],
+            cmap=cmap_weighting,
+            norm=Normalize(vmin=0, vmax=1),
+            aspect="auto",
         )
+
+        ax.set_xlabel("Individual $j$")
+        ax.set_ylabel("Individual $i$")
 
         title.set_text(
             "Time= {}".format(round(Data.history_time[i], round_dec))
@@ -254,37 +238,37 @@ def anim_value_network(
 
     fig, ax = plt.subplots()
 
-
+    # plt.tight_layout()
 
     title = plt.suptitle(t="", fontsize=20)
 
-    cbar_culture = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap),
+    cbar_weight = fig.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap_weighting),
         ax=ax,
         location="right",
-    )  #
-    cbar_culture.set_label(colour_bar_label)
+    )  # This does a mapabble on the fly i think, not sure
+    cbar_weight.set_label(r"Social network weighting, $\alpha_{i,j}$")
+
+    # need to generate the network from the matrix
+    # G = nx.from_numpy_matrix(Data_list[0].history_weighting_matrix[0])
 
     ani = animation.FuncAnimation(
         fig,
         update,
         frames=int(len(Data.history_time)),
-        fargs=(Data, data_matrix, ax, cmap, network_structure, title,round_dec,norm_value),
+        fargs=(Data, ax, title),
         repeat_delay=500,
         interval=interval,
     )
 
     # save the video
-    animateName = FILENAME + "/Animations"
-    f = (
-        animateName
-        + "/anim_value_network_%s.mp4" % property_value
-    )
-    # print("f", f)
+    animateName = fileName + "/Animations"
+    f = animateName + "/nimate_weighting_matrix.mp4"
     writervideo = animation.FFMpegWriter(fps=fps)
     ani.save(f, writer=writervideo)
 
     return ani
+
 
 def plot_network_shape(    
     fileName: str,
@@ -295,6 +279,7 @@ def plot_network_shape(
     cmap,
     norm_value,
     node_size,
+    dpi_save
 ):  
 
     data_matrix = np.asarray([eval("Data.agent_list[%s].%s" % (v,property_value)) for v in range(Data.I)]).T
@@ -423,6 +408,29 @@ def degree_distribution_single(
     #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def plot_line_weighting_matrix(
+    fileName,
+    Data,
+    dpi_save,
+):
+    fig, ax = plt.subplots()
+    data = np.asarray(Data.history_weighting_matrix)
+
+    ###dumb way       
+    for i in Data.I_array:
+        for j in Data.I_array:
+            ax.plot(Data.history_time, data[:,i,j])
+
+    ax.set_xlabel("Steps")
+    ax.set_ylabel(r"Link strength, $\alpha_{i,j}$")
+
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_line_weighting_matrix"
+    # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+
 dpi_save = 600
 red_blue_c = True
 
@@ -445,49 +453,54 @@ if __name__ == "__main__":
         start_time = time.time()
 
     if single_shot:
-        fileName = "results/single_shot_11_39_28__06_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_19_52_32__08_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
 
+        #print(Data.history_time)
+
         #consumers
-        #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        #plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
-        #plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+        plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
+        plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
+        plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         ##
-        # plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-        #plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #consumer X list and weighting
-        #plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
-        #plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{\theta}$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
-        #plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
+        ##plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
+        if not base_params["accuracy_weighting"]:
+            plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{\theta}$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
+        plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
         #network
-        #plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
-        #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
-        #plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-        plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size)
-        #plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
+        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
+        plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
+        ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
+        plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
+        ##plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
         plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
+        #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
 
         #network trasnspose
-        #plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+        ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
         
 
         #cumsum
-        #plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        #plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
-        #plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
-        #plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-        #plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        ##plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
+        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
+        ##plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+        ##plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        ##plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #inital prior distributions
         if base_params["heterogenous_priors"]:
             plot_inital_priors = plot_initial_priors_hist(fileName,Data,dpi_save)
 
         #Animation BROKE
-        #anim_c_bool = anim_value_network(fileName,Data,base_params["network_structure"], "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
+        ##anim_c_bool = anim_value_network(fileName,Data,base_params["network_structure"], "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
+        #anim_weighting_m = anim_weighting_matrix(fileName,Data,cmap, interval, fps, round_dec)
 
     elif single_param_vary:
         fileName = "results/single_vary_T_h_prop_20_59_46__01_12_2022"

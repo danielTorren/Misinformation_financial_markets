@@ -6,9 +6,6 @@ Created: 10/10/2022
 """
 # imports
 import json
-
-import numpy as np
-from market import Market
 from utility import (
     createFolder, 
     save_object,
@@ -18,8 +15,6 @@ from utility import (
 from generate_data import (
     generate_data_single
     )
-
-RUN = 1
 
 if __name__ == "__main__":
     #load in exogenous parameters
