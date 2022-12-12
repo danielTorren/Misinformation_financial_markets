@@ -130,7 +130,7 @@ def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,n
     
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
     #fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
-    
+
 def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
 
     fig, ax = plt.subplots()
@@ -143,11 +143,12 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
         #ax.plot(Data.history_time, (Data.d + Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed',color="green" , linewidth=2)
-        #ax.plot(Data.history_time, [(Data.d)/Data.R], "--")
-        ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        #ax.hline([(Data.d)/Data.R], linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        #ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
         #print(np.sum(data-(Data.d + Data.theta_t[::Data.compression_factor])/Data.R))
-        #ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
-
+        ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
+    # elif property_y == "history_informed_proportion":
+    #     ax.plot(Data.history_time, Data.epsilon_t, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)    
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
     # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
@@ -453,7 +454,7 @@ if __name__ == "__main__":
         start_time = time.time()
 
     if single_shot:
-        fileName = "results/single_shot_19_52_32__08_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_21_56_21__11_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -461,9 +462,9 @@ if __name__ == "__main__":
         #print(Data.history_time)
 
         #consumers
-        plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
+        #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
         plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
-        plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+        #plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         ##
         plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
         plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
@@ -475,12 +476,13 @@ if __name__ == "__main__":
         plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{\theta}$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
         #network
-        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")    
-        plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
+        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
+        plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
+        #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
         plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
         ##plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
-        plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
+        #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
 
         #network trasnspose
@@ -503,7 +505,7 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix(fileName,Data,cmap, interval, fps, round_dec)
 
     elif single_param_vary:
-        fileName = "results/single_vary_T_h_prop_20_59_46__01_12_2022"
+        fileName = "results/single_shot_18_57_21__10_12_2022"
         createFolder(fileName)
 
         Data_list = load_object(fileName + "/Data", "financial_market_list")

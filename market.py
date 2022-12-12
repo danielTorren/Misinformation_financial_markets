@@ -75,6 +75,7 @@ class Market:
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.phi_sigma = parameters["gamma_sigma"] 
         self.zeta_threshold = parameters["zeta_threshold"]
+        self.switch_s = parameters["switch_s"]  #elasticty of the switch probability to the accuracy
         if self.dynamic_weighting_matrix:
             self.psi = parameters["psi"]
 
@@ -91,7 +92,8 @@ class Market:
         self.c_info = parameters["c_info"]
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
-
+        self.theta_mean = parameters["theta_mean"]
+        self.gamma_mean = parameters["gamma_mean"]
         self.step_count = 0
         self.total_steps = parameters["total_steps"]
         
@@ -103,8 +105,8 @@ class Market:
         #print("self.T_h", self.T_h)
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
-        self.gamma_t = np.random.normal(0, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
-        self.theta_t = np.random.normal(0, self.theta_sigma, self.total_steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
+        self.gamma_t = np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
+        self.theta_t = np.random.normal(self.gamma_mean, self.theta_sigma, self.total_steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
         self.zeta_t = self.compute_zeta_t()
         
         self.num_c = int(round(parameters["c_prop"]*self.I))
@@ -188,6 +190,7 @@ class Market:
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
             self.history_weighting_matrix = [self.weighting_matrix]
+            self.history_informed_proportion = [parameters["c_prop"]]
         
         #self.update_vector_v = np.vectorize(self.update_vector)
 
@@ -216,8 +219,8 @@ class Market:
         
         """
 
-        zeta = [(self.theta_t[i] + self.gamma_t[i]) if (np.abs(self.theta_t[i]) + np.abs(self.gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.total_steps+1)]#+1 is for the zeroth step update of the signal
-
+        #zeta = [(self.theta_t[i] + self.gamma_t[i]) if (np.abs(self.theta_t[i]) + np.abs(self.gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.total_steps+1)]#+1 is for the zeroth step update of the signal
+        zeta = self.gamma_t #try with self.gamma_t
         return zeta
         
 
@@ -412,6 +415,7 @@ class Market:
     def update_consumers(self):
 
         theta_v = [self.theta_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
+        #print(theta_v)
         zeta = self.zeta_t[self.step_count]
 
         for i in self.I_array:
@@ -447,14 +451,18 @@ class Market:
         norm_ME_array = np.abs((self.d_t -  (self.d + self.expectations_theta_mean_vector))/self.d_t)
         #print(" - norm_ME_array",- norm_ME_array)
         #print("np.exp(-norm_ME_array)",np.exp(-norm_ME_array))
-        P_switch = (1/(1+np.exp(-norm_ME_array))) - 0.5
+        #P_switch = (1/(1+ self.switch_s*np.exp(-norm_ME_array))) - 0.5
+        profit_vector = np.asarray([(self.d_t  - self.p_t/self.R)*self.X_it[i] - self.c_info  if self.agent_list[i].c_bool else (self.d_t  - self.p_t/self.R)*self.X_it[i] for i in self.I_array])
+        P_switch = [1/(1+ self.switch_s*np.exp(profit_vector[i])) - 0.5 if profit_vector[i] < 0.0 else 0.0 for i in range(len(profit_vector))]
         #print("P_switch",P_switch)
         #print("self.switch_vals[self.step_count]",self.switch_vals[self.step_count])
         mask = self.switch_vals[self.step_count] <= P_switch
         #print("mask",mask)
         for i in range(len(self.agent_list)):
             if mask[i]:
-                self.agent_list[i].c_bool = not self.agent_list[i].c_bool          
+                self.agent_list[i].c_bool = not self.agent_list[i].c_bool
+                
+        return np.sum([self.agent_list[i].c_bool for i in range(len(self.agent_list))])/len(self.agent_list)           
 
 
     def append_data(self):
@@ -463,6 +471,7 @@ class Market:
         self.history_time.append(self.step_count)
         self.history_X_it.append(self.X_it)
         self.history_weighting_matrix.append(self.weighting_matrix)
+        self.history_informed_proportion.append(self.informed_proportion)
 
     def next_step(self):
         """
@@ -501,7 +510,7 @@ class Market:
            self.weighting_matrix = self.update_weighting_matrix()
 
         if self.endogenous_c_switching:
-            self.update_c_bools()
+            self.informed_proportion = self.update_c_bools()
 
         self.step_count +=1  
        

@@ -184,7 +184,7 @@ class Consumer:
 
     def calc_squared_error_norm(self, d_t, d, S_k):
         #print("(d_t - (d + S_k))/d_t", (d_t - (d + S_k))/d_t)
-        return np.square((d_t - (d + S_k))/d_t)
+        return np.abs((d_t - (d + S_k)))/d_t
 
     def calc_weighting_vector_accuracy(self,non_nan_index_list,nan_index_list,weighting_vector,squared_error_list):
         
