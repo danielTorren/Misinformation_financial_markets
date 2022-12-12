@@ -220,7 +220,7 @@ class Market:
         """
 
         #zeta = [(self.theta_t[i] + self.gamma_t[i]) if (np.abs(self.theta_t[i]) + np.abs(self.gamma_t[i]) > self.zeta_threshold) else 0 for i in range(0,self.total_steps+1)]#+1 is for the zeroth step update of the signal
-        zeta = self.gamma_t #try with self.gamma_t
+        zeta = self.gamma_t #-self.theta_t #try with self.gamma_t
         return zeta
         
 
@@ -461,6 +461,8 @@ class Market:
         for i in range(len(self.agent_list)):
             if mask[i]:
                 self.agent_list[i].c_bool = not self.agent_list[i].c_bool
+                if not self.agent_list[i].c_bool:
+                    self.agent_list[i].weighting_vector[0] = 0.0
                 
         return np.sum([self.agent_list[i].c_bool for i in range(len(self.agent_list))])/len(self.agent_list)           
 
