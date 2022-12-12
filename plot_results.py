@@ -454,7 +454,7 @@ if __name__ == "__main__":
         start_time = time.time()
 
     if single_shot:
-        fileName = "results/single_shot_21_56_21__11_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_15_57_22__12_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")

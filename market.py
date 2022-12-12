@@ -105,8 +105,8 @@ class Market:
         #print("self.T_h", self.T_h)
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
-        self.gamma_t = np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
-        self.theta_t = np.random.normal(self.gamma_mean, self.theta_sigma, self.total_steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
+        self.theta_t = np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
+        self.gamma_t = np.random.normal(self.gamma_mean, self.theta_sigma, self.total_steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
         self.zeta_t = self.compute_zeta_t()
         
         self.num_c = int(round(parameters["c_prop"]*self.I))
