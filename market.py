@@ -448,7 +448,7 @@ class Market:
 
     def update_c_bools(self):
         #repetition FIX
-        norm_ME_array = np.abs((self.d_t -  (self.d + self.expectations_theta_mean_vector))/self.d_t)
+        #norm_ME_array = np.abs((self.d_t -  (self.d + self.expectations_theta_mean_vector))/self.d_t)
         #print(" - norm_ME_array",- norm_ME_array)
         #print("np.exp(-norm_ME_array)",np.exp(-norm_ME_array))
         #P_switch = (1/(1+ self.switch_s*np.exp(-norm_ME_array))) - 0.5
