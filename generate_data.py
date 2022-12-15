@@ -5,11 +5,9 @@ from joblib import Parallel, delayed
 from market import Market
 import multiprocessing
 
-def generate_data_single(params):
+def generate_data_single(params,print_simu):
 
     #generate the inital data, move forward in time and return
-
-    print_simu = 1  # Whether of not to print how long the single shot simulation took
 
     if print_simu:
         start_time = time.time()
@@ -27,7 +25,7 @@ def generate_data_single(params):
         )
     return financial_market
 
-def generate_data_parallel(params_list):
+def generate_data_parallel(params_list,print_simu):
     """
     Generate data from a list of parameter dictionaries, parallelize the execution of each single shot simulation
 
@@ -46,7 +44,7 @@ def generate_data_parallel(params_list):
     num_cores = multiprocessing.cpu_count()
     #data_parallel = [generate_data(i) for i in params_dict]
     data_parallel = Parallel(n_jobs=num_cores, verbose=10)(
-        delayed(generate_data_single)(i) for i in params_list
+        delayed(generate_data_single)(i, print_simu) for i in params_list
     )
     
     return data_parallel

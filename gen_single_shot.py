@@ -16,6 +16,9 @@ from generate_data import (
     generate_data_single
     )
 
+
+print_simu = 1
+
 if __name__ == "__main__":
     #load in exogenous parameters
     f = open("constants/base_params.json")
@@ -25,7 +28,7 @@ if __name__ == "__main__":
     fileName = produce_name_datetime(rootName)
     print("FILENAME:", fileName)
 
-    Data = generate_data_single(params)  # run the simulation
+    Data = generate_data_single(params,print_simu)  # run the simulation
 
     createFolder(fileName)#put after run so that you dont create folder unless you got to the end of the simulation
 

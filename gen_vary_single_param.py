@@ -74,6 +74,7 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
 
 
 RUN = 1
+print_simu = 1
 
 if __name__ == "__main__":
     #load in exogenous parameters
@@ -91,7 +92,7 @@ if __name__ == "__main__":
 
     params_list = gen_param_list(params, property_list, property_varied)
 
-    Data_list = generate_data_parallel(params_list)  # run the simulation
+    Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation
 
     createFolder(fileName)
 

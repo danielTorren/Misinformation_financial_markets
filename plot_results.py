@@ -13,9 +13,11 @@ import matplotlib.animation as animation
 from matplotlib.colors import Normalize
 from matplotlib.cm import get_cmap
 import collections
+import os
 from utility import (
     createFolder, 
     load_object, 
+    save_object,
 )
 
 SMALL_SIZE = 14
@@ -41,7 +43,7 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
 
     if red_blue_c:
         for v in range(len(Data.agent_list)):
-            if (Data.agent_list[v].history_c_bool[0]):
+            if (Data.agent_list[v].c_bool):
                 color = "blue"
             else:
                 color = "red"
@@ -76,7 +78,7 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
 
     if red_blue_c:
         for v in range(len(Data.agent_list)):
-            if (Data.agent_list[v].history_c_bool[0]):
+            if (Data.agent_list[v].c_bool):
                 color = "blue"
             else:
                 color = "red"
@@ -148,6 +150,9 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
         #ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
         #print(np.sum(data-(Data.d + Data.theta_t[::Data.compression_factor])/Data.R))
         ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
+        ax.axhline(y = (Data.d + Data.theta_mean)/Data.R, linestyle='dashdot', color="green" , linewidth=2)
+        ax.axhline(y = (Data.d + Data.broadcast_quality*Data.theta_mean +  (1 - Data.broadcast_quality)*Data.gamma_mean)/Data.R, linestyle='dashdot', color="purple" , linewidth=2)
+
     # elif property_y == "history_informed_proportion":
     #     ax.plot(Data.history_time, Data.epsilon_t, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)    
     plotName = fileName + "/Plots"
@@ -176,8 +181,8 @@ def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,prop
     data = np.asarray(eval("Data.%s" % property_y)).T
 
     #print("Data.agent_list[i].c_bool[0]", Data.agent_list[0].history_c_bool[0], ~(Data.agent_list[0].history_c_bool[0]))
-    data_c = [data[i] for i in range(Data.I) if (Data.agent_list[i].history_c_bool[0])]
-    data_no_c = [data[i] for i in range(Data.I) if not (Data.agent_list[i].history_c_bool[0])]
+    data_c = [data[i] for i in range(Data.I) if (Data.agent_list[i].c_bool)]
+    data_no_c = [data[i] for i in range(Data.I) if not (Data.agent_list[i].c_bool)]
     # bodge
     for v in range(len(data_c)):
         ax.plot(Data.history_time, data_c[v], color="blue")
@@ -211,6 +216,67 @@ def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
         raise Exception("Invalid layout given")
 
     return pos_culture_network
+
+def anim_weighting_matrix_combined(
+    fileName: str,
+    Data: list,
+    cmap_weighting,
+    interval: int,
+    fps: int,
+    round_dec: int,
+    weighting_matrix_time_series
+):
+    
+    def update(i, Data, ax, title, weighting_matrix_time_series):
+
+        ax.clear()
+
+        ax.matshow(
+            np.asarray(weighting_matrix_time_series[i]),
+            cmap=cmap_weighting,
+            norm=Normalize(vmin=0, vmax=1),
+            aspect="auto",
+        )
+
+        ax.set_xlabel("Individual $j$")
+        ax.set_ylabel("Individual $i$")
+
+        title.set_text(
+            "Time= {}".format(round(Data.history_time[i], round_dec))
+        )
+
+    fig, ax = plt.subplots()
+
+    # plt.tight_layout()
+
+    title = plt.suptitle(t="", fontsize=20)
+
+    cbar_weight = fig.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap_weighting),
+        ax=ax,
+        location="right",
+    )  # This does a mapabble on the fly i think, not sure
+    cbar_weight.set_label(r"Social network weighting, $\alpha_{i,j}$")
+
+    # need to generate the network from the matrix
+    # G = nx.from_numpy_matrix(Data_list[0].history_weighting_matrix[0])
+
+    ani = animation.FuncAnimation(
+        fig,
+        update,
+        frames=int(len(Data.history_time)),
+        fargs=(Data, ax, title,weighting_matrix_time_series),
+        repeat_delay=500,
+        interval=interval,
+    )
+
+    # save the video
+    animateName = fileName + "/Animations"
+    f = animateName + "/nimate_weighting_matrix.mp4"
+    writervideo = animation.FFMpegWriter(fps=fps)
+    ani.save(f, writer=writervideo)
+
+    return ani
 
 def anim_weighting_matrix(
     fileName: str,
@@ -435,6 +501,74 @@ def plot_line_weighting_matrix(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
+def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
+
+    ######
+    #calc the neighbours to normalise
+    neighbour_count_vector = np.sum(Data.adjacency_matrix, axis = 1)     
+    #print("neighbour_count_vector",neighbour_count_vector,neighbour_count_vector.shape )   
+    neighbour_count_vector_omega = np.concatenate((np.asarray([Data.I]), neighbour_count_vector), axis = 0)
+    #print("neighbour_count_vector_omega", neighbour_count_vector_omega)
+    ###########
+    #how many people are using each turn
+    history_c_bool_matrix = []
+    for v in range(len(Data.agent_list)):
+        history_c_bool_matrix.append(Data.agent_list[v].history_c_bool)
+
+    history_c_bool_matrix_array = np.asarray(history_c_bool_matrix).T#row rperesent 1 time step , column is a person
+
+    history_c_bool_matrix_array_sums = np.nansum(history_c_bool_matrix_array, axis = 1)# ow many people use theta signal at time
+
+    
+    history_c_bool_matrix_array_sums[history_c_bool_matrix_array_sums == 0] = np.nan
+    #print("history_c_bool_matrix_array_sums", history_c_bool_matrix_array_sums)
+
+    ###########################################
+    #Get the WEIGHTING maTrIX
+
+    influence_vector_time_series = []
+    for t in range(len(Data.history_time)):
+        b = np.asarray(weighting_matrix_timeseries[t])
+        #print("b",b, b.shape)
+        a = np.nansum(b, axis = 0)
+        #print("a",a, a.shape)
+        norm_vector = np.concatenate(([history_c_bool_matrix_array_sums[t]],neighbour_count_vector_omega), axis = 0)
+        #print("norm_vector", norm_vector)
+        normalised_influence = a/norm_vector
+        #print("normalised_influence", normalised_influence)
+        influence_vector_time_series.append(list(normalised_influence))
+
+    influence_vector_time_serie_array = np.asarray(influence_vector_time_series).T
+
+    fig, ax = plt.subplots()
+
+    for v in range(len(Data.agent_list) + 2):
+        if v == 0:
+            ax.plot(Data.history_time, influence_vector_time_serie_array[v], label = "Private signal", linestyle = "--")
+        elif v == 1:
+            ax.plot(Data.history_time, influence_vector_time_serie_array[v], label = "Public broadcast", linestyle = "dashdot")
+        else:
+            ax.plot(Data.history_time, influence_vector_time_serie_array[v])
+
+    ax.legend()
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("Node normalised influence")
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_line_weighting_matrix"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def calc_weighting_matrix_time_series(Data):
+    influence_vector_time_series = []
+    for t in range(len(Data.history_time)):
+        weighting_matrix_time_series_at_t = []
+        for v in range(len(Data.agent_list)):
+            weighting_matrix_time_series_at_t.append(Data.agent_list[v].history_weighting_vector[t])
+        influence_vector_time_series.append(weighting_matrix_time_series_at_t)
+    #print("nfluence_vector_time_series array ", np.asarray(influence_vector_time_series).shape)
+    return influence_vector_time_series
+
 dpi_save = 600
 red_blue_c = True
 
@@ -457,36 +591,45 @@ if __name__ == "__main__":
         start_time = time.time()
 
     if single_shot:
-        fileName = "results/single_shot_16_54_16__12_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_20_11_40__15_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
+        print("base_params", base_params)
+
+        if os.path.isfile("results/Data/weighting_matrix_time_series"):
+            weighting_matrix_time_series = load_object(fileName + "/Data","weighting_matrix_time_series")
+        else:
+            weighting_matrix_time_series = calc_weighting_matrix_time_series(Data)
+            save_object(weighting_matrix_time_series, fileName + "/Data", "weighting_matrix_time_series")
+
 
         #print(Data.history_time)
 
         #consumers
-        #plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        #plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
-        #plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
+        plot_history_c = plot_time_series_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
+        plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
+        ##plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         ##
-        #plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-        #plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #consumer X list and weighting
         ##plot_history_demand = plot_time_series_consumer_triple(fileName,Data,"Theoretical whole demand, $X_k$",dpi_save,"history_theoretical_X_list", 3, ["$X_{\theta}$", "$X_{\zeta}$", "$X_{\lambda}$"],red_blue_c)
-        if not base_params["accuracy_weighting"]:
-            plot_history_theoretical_profit = plot_time_series_consumer_triple(fileName,Data,"Theoretical profits, $\pi_k$",dpi_save,"history_theoretical_profit_list", 3, ["$\pi_{ \\theta }$", "$\pi_{\zeta}$", "$\pi_{\lambda}$"],red_blue_c)
+ 
         #plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{ \\theta }$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
         #network
-        #plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        #plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
+        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
+        plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
         #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-        #plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
+        plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
         ##plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
-        #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
+        plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
+        
+        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save, weighting_matrix_time_series)
 
         #network trasnspose
         ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
@@ -494,7 +637,7 @@ if __name__ == "__main__":
 
         #cumsum
         ##plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        #plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
+        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
         ##plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         ##plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
         ##plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
@@ -505,7 +648,8 @@ if __name__ == "__main__":
 
         #Animation BROKE
         ##anim_c_bool = anim_value_network(fileName,Data,base_params["network_structure"], "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
-        anim_weighting_m = anim_weighting_matrix(fileName,Data,cmap, interval, fps, round_dec)
+        #anim_weighting_m = anim_weighting_matrix(fileName,Data,cmap, interval, fps, round_dec)
+        #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
         fileName = "results/single_shot_18_57_21__10_12_2022"
