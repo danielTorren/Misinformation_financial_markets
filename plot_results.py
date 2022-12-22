@@ -508,7 +508,7 @@ def plot_line_weighting_matrix(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
-def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
+def plot_node_influence(fileName,Data,dpi_save):
 
     ######
     #calc the neighbours to normalise
@@ -536,7 +536,7 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
 
     influence_vector_time_series = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(weighting_matrix_timeseries[t])
+        b = np.asarray(Data.weighting_matrix_timeseries[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         #print("a",a, a.shape)
@@ -589,7 +589,7 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
     
     influence_vector_time_series_unorm = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(weighting_matrix_timeseries[t])
+        b = np.asarray(Data.weighting_matrix_timeseries[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         influence_vector_time_series_unorm.append(list(a))
@@ -702,13 +702,6 @@ if __name__ == "__main__":
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
 
-        if os.path.isfile("results/Data/weighting_matrix_time_series"):
-            weighting_matrix_time_series = load_object(fileName + "/Data","weighting_matrix_time_series")
-        else:
-            weighting_matrix_time_series = calc_weighting_matrix_time_series(Data)
-            save_object(weighting_matrix_time_series, fileName + "/Data", "weighting_matrix_time_series")
-
-
         #print(Data.history_time)
 
         #consumers
@@ -734,7 +727,7 @@ if __name__ == "__main__":
         #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
         
-        #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save, weighting_matrix_time_series)
+        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
 
         #network trasnspose
         ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
