@@ -184,7 +184,7 @@ class Market:
             self.history_X_it = [[0]*self.I]
             #self.history_weighting_matrix = [self.weighting_matrix]
             self.history_informed_proportion = [parameters["c_prop"]]
-            self.history_weighting_matrix = self.weighting_matrix
+            self.history_weighting_matrix = [self.weighting_matrix]
 
     def compute_zeta_t(self):
 
