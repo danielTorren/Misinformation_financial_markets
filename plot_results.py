@@ -652,6 +652,8 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
 
 
 def calc_weighting_matrix_time_series(Data):
+    #THIS IS PRODUCIGN MASSIVE FILES, FIX
+    """
     influence_vector_time_series = []
     for t in range(len(Data.history_time)):
         weighting_matrix_time_series_at_t = []
@@ -659,6 +661,21 @@ def calc_weighting_matrix_time_series(Data):
             weighting_matrix_time_series_at_t.append(Data.agent_list[v].history_weighting_vector[t])
         influence_vector_time_series.append(weighting_matrix_time_series_at_t)
     #print("nfluence_vector_time_series array ", np.asarray(influence_vector_time_series).shape)
+
+    """
+
+    influence_vector_time_series = np.asarray([[v.history_weighting_vector[t] for v in Data.agent_list] for t in range(len(Data.history_time))])
+
+    """
+    def calc_weighting_matrix_time_series_alt(Data):
+        weighting_matrix_time_series_i_t = []
+        for v in range(len(Data.agent_list)):
+            weighting_matrix_time_series_i_k_t.append(Data.agent_list[v].history_weighting_vector)
+
+        weighting_matrix_time_series_t_i_k = np.asarrayy(weighting_matrix_time_series_at_t).T
+        return weighting_matrix_time_series_at_t
+    """
+
     return influence_vector_time_series
 
 dpi_save = 300
@@ -679,7 +696,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_18_53_19__19_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_16_33_30__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -717,7 +734,7 @@ if __name__ == "__main__":
         #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
         
-        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save, weighting_matrix_time_series)
+        #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save, weighting_matrix_time_series)
 
         #network trasnspose
         ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
