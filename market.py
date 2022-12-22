@@ -383,7 +383,7 @@ class Market:
             self.agent_list[i].next_step(self.d_t,self.p_t,self.X_it[i], theta_v[i], zeta, self.S_lambda_matrix[i],self.step_count)
 
     def get_weighting_matrix(self):
-        return np.asarray([v.history_weighting_vector for v in self.agent_list])
+        return np.asarray([v.weighting_vector for v in self.agent_list])
 
     def append_data(self):
         self.history_p_t.append(self.p_t)
@@ -429,7 +429,7 @@ class Market:
             self.informed_proportion = self.update_c_bools()
         
         self.weighting_matrix = self.get_weighting_matrix()
-        
+
         self.step_count +=1  
        
         if (self.step_count % self.compression_factor == 0) and (self.save_timeseries_data):
