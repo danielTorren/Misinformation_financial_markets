@@ -9,7 +9,6 @@ import json
 from utility import (
     createFolder, 
     save_object,
-    produce_name, 
     produce_name_datetime,
 )
 from generate_data import (
