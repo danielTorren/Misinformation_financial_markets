@@ -1,5 +1,8 @@
 import yaml
 import io
+import numpy as np
+
+
 
 # Define data
 data = {

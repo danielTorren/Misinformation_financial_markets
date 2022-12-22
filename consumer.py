@@ -30,6 +30,7 @@ class Consumer:
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
         self.c_0 = parameters["c_info"]
+        self.tol_err = parameters["error_tolerance"]
 
         #cost 
         self.c_bool = c_bool
@@ -100,15 +101,16 @@ class Consumer:
         #print("(d_t - (d + S_k))/d_t", (d_t - (d + S_k))/d_t)
         return np.abs((d_t - (d + S_k)))/d_t
 
-    def calc_weighting_vector_accuracy(self,non_nan_index_list,nan_index_list,weighting_vector,squared_error_list):
-        
+    def calc_weighting_vector_accuracy(self,non_nan_index_list,nan_index_list,weighting_vector,squared_error_list): 
         if not non_nan_index_list:#empty list therefore all signal are nan, keep weighting static - DO NOTHING
             #print("DO NOTHERING LIST EMPTY, ALL NANs")
             pass
         else:#at least one non nan in signal
             #plug those into the equation
+            squared_error_list[squared_error_list < self.tol_err] = self.tol_err
             denominator_weighting = sum(np.exp(-self.beta*squared_error_list[i]) for i in non_nan_index_list)
-
+            if denominator_weighting == 0.0:
+                denominator_weighting = 0.001
             #print("denominator_weighting",denominator_weighting)
 
             if not nan_index_list:#if all values are present
@@ -127,8 +129,10 @@ class Consumer:
                 weighting_vector = weighting_vector_short*(1-sum(weighting_vector[v] for v in nan_index_list))#1 - the effect of others?
                 print("before weighting_vector",weighting_vector)
                 """
+
                 weighting_vector = np.asarray([np.exp(-self.beta*squared_error_list[i])/denominator_weighting for i in non_nan_index_list])
-                #print("weighting_vector_short",weighting_vector)
+                if any(np.isnan(weighting_vector)):
+                    print("list", squared_error_list, "denominator", denominator_weighting)
 
                 for v in nan_index_list:
                     weighting_vector = np.insert(weighting_vector, v ,self.weighting_vector[v])# DOES THIS PUT IT IN THE RIGHT PLACE?
@@ -152,6 +156,7 @@ class Consumer:
         weighting_vector = self.weighting_vector
 
         squared_error_list = self.calc_squared_error_norm(self.d_t, self.d, np.asarray(self.S_list))
+        
         weighting_vector = self.calc_weighting_vector_accuracy(non_nan_index_list,nan_index_list,weighting_vector,squared_error_list)     
 
         return np.asarray(weighting_vector)   

@@ -54,6 +54,7 @@ class Market:
         self.heterogenous_wealth = parameters["heterogenous_wealth"]
         self.endogenous_c_switching = parameters["endogenous_c_switching"]
         self.broadcast_quality = parameters["broadcast_quality"]
+        self.tol_err = parameters["error_tolerance"]
 
         #########################################################################################
         #model parameters
@@ -246,7 +247,8 @@ class Market:
             "beta": self.beta,
             "delta":self.delta,
             "c_info": self.c_info,
-            "T_h": self.T_h, 
+            "T_h": self.T_h,
+            "error_tolerance": self.tol_err 
         }
 
         if self.heterogenous_priors:
@@ -397,8 +399,6 @@ class Market:
         -------
         None
         """
-        
-        print(self.step_count)
 
         #compute and return profits
         self.update_consumers()
@@ -425,5 +425,7 @@ class Market:
        
         if (self.step_count % self.compression_factor == 0) and (self.save_timeseries_data):
             self.append_data()
+        if self.step_count % 10 == 0:
+            print(self.step_count)
 
         
