@@ -99,7 +99,7 @@ class Consumer:
 
     def calc_squared_error_norm(self, d_t, d, S_k):
         #print("(d_t - (d + S_k))/d_t", (d_t - (d + S_k))/d_t)
-        return np.abs((d_t - (d + S_k)))/d_t
+        return np.abs((d_t - (d + S_k))/d_t)
 
     def calc_weighting_vector_accuracy(self,non_nan_index_list,nan_index_list,weighting_vector,squared_error_list): 
         if not non_nan_index_list:#empty list therefore all signal are nan, keep weighting static - DO NOTHING
@@ -107,10 +107,10 @@ class Consumer:
             pass
         else:#at least one non nan in signal
             #plug those into the equation
-            squared_error_list[squared_error_list < self.tol_err] = self.tol_err
+            #squared_error_list[squared_error_list < self.tol_err] = self.tol_err
             denominator_weighting = sum(np.exp(-self.beta*squared_error_list[i]) for i in non_nan_index_list)
-            if denominator_weighting == 0.0:
-                denominator_weighting = 0.001
+            # if denominator_weighting == 0.0:
+            #     denominator_weighting = 0.001
             #print("denominator_weighting",denominator_weighting)
 
             if not nan_index_list:#if all values are present
