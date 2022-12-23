@@ -8,10 +8,11 @@
     "broadcast_quality":0.0,
     "T_h_prop": 0.0,
     "c_prop": 0.4,
-    "total_steps": 400,
+    "total_steps": 1000,
     "compression_factor": 1,
-    "I": 150,
+    "I": 200,
     "K": 10,
+    "k_new_node": 5,
     "prob_rewire": 0.1,
     "set_seed": 0,
     "R": 1.01,
@@ -33,7 +34,6 @@
     "zeta_threshold": 0.63245553202,
     "error_tolerance" : 0.01,
     "delta":1e-5,
-    "k_new_node": 2,
     "non_c_W_0": 80,
     "priors_beta_a_no_c": 2,
     "priors_beta_b_no_c": 3,
@@ -44,5 +44,4 @@
     "network_gamma" : 0.2,
     "network_delta_in" : 0.1,
     "network_delta_out" : 0.1
-    
 }
