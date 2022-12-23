@@ -43,7 +43,7 @@ class Consumer:
         self.signal_variances = self.compute_signal_variances()
 
         if self.save_timeseries_data:
-            self.history_weighting_vector = [list(self.weighting_vector)] 
+            #self.history_weighting_vector = [list(self.weighting_vector)] 
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_expectation_theta_mean = [self.expectation_theta_mean]
             self.history_expectation_theta_variance = [self.expectation_theta_variance] 
@@ -190,7 +190,7 @@ class Consumer:
         return posterior_theta_mean,posterior_theta_variance 
 
     def append_data(self):
-        self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
+        #self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
         self.history_expectation_theta_mean.append(self.expectation_theta_mean) 
         self.history_expectation_theta_variance.append(self.expectation_theta_variance) 

@@ -508,7 +508,7 @@ def plot_line_weighting_matrix(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
-def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
+def plot_node_influence(fileName,Data,dpi_save):
 
     ######
     #calc the neighbours to normalise
@@ -516,6 +516,7 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
     #print("neighbour_count_vector",neighbour_count_vector,neighbour_count_vector.shape )   
     neighbour_count_vector_omega = np.concatenate((np.asarray([Data.I]), neighbour_count_vector), axis = 0)
     #print("neighbour_count_vector_omega", neighbour_count_vector_omega)
+
     ###########
     #how many people are using each turn
     history_c_bool_matrix = []
@@ -535,7 +536,7 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
 
     influence_vector_time_series = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(weighting_matrix_timeseries[t])
+        b = np.asarray(Data.weighting_matrix_timeseries[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         #print("a",a, a.shape)
@@ -546,9 +547,13 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
         influence_vector_time_series.append(list(normalised_influence))
 
     influence_vector_time_serie_array = np.asarray(influence_vector_time_series).T
+    print("influence_vector_time_serie_array shape",influence_vector_time_serie_array.shape)
+
     Matrix = np.vstack([np.array([influence_vector_time_serie_array[0]]),influence_vector_time_serie_array[1]])
     network_average = influence_vector_time_serie_array[2:].mean(axis = 0)
     Matrix = np.vstack([Matrix, network_average])
+    
+    
     fig, ax = plt.subplots(figsize=(10,5))
     cax = ax.matshow(Matrix, cmap=plt.cm.Blues, aspect='auto')
     fig.colorbar(cax)
@@ -556,6 +561,79 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
     ax.set_xlabel("Steps")
     ax.set_ylabel("Node normalised influence")
 
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_node_influence_three"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+    ###############################################################################
+    #line plot!
+    fig2, ax2 = plt.subplots(figsize=(10,6))
+    #### plot the three steps as time series
+    ax2.plot(Data.history_time, influence_vector_time_serie_array[0], label = "$\theta$")#theta
+    ax2.plot(Data.history_time, influence_vector_time_serie_array[1], label = "$\zeta$")#zeta
+    ax2.plot(Data.history_time, network_average, label = "Network")#network
+
+    #ax.set_yticklabels(['']+['CI','FI','Network'])
+    ax2.set_xlabel("Steps")
+    ax2.set_ylabel("Node normalised influence")
+    ax2.legend()
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_node_influence_norm"
+    fig2.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig2.savefig(f + ".png", dpi=dpi_save, format="png")
+
+    #######################################################################################
+    #unormalised influence
+    
+    influence_vector_time_series_unorm = []
+    for t in range(len(Data.history_time)):
+        b = np.asarray(Data.weighting_matrix_timeseries[t])
+        #print("b",b, b.shape)
+        a = np.nansum(b, axis = 0)
+        influence_vector_time_series_unorm.append(list(a))
+
+    influence_vector_time_serie_array_unorm = np.asarray(influence_vector_time_series_unorm).T
+    network_average_unorm = influence_vector_time_serie_array_unorm[2:].mean(axis = 0)
+
+    fig3, ax3 = plt.subplots(figsize=(10,6))
+    #### plot the three steps as time series
+    ax3.plot(Data.history_time, influence_vector_time_serie_array_unorm[0], label = "$\theta$")#theta
+    ax3.plot(Data.history_time, influence_vector_time_serie_array_unorm[1], label = "$\zeta$")#zeta
+    ax3.plot(Data.history_time, network_average_unorm, label = "Network")#network
+
+    #ax.set_yticklabels(['']+['CI','FI','Network'])
+    ax3.set_xlabel("Steps")
+    ax3.set_ylabel("Node influence")
+    ax3.legend()
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_node_influence"
+    fig3.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig3.savefig(f + ".png", dpi=dpi_save, format="png")
+
+    ############################################################################################
+    #unorm all the lines!
+
+    fig4, ax4 = plt.subplots(figsize=(10,6))
+    #### plot the three steps as time series
+    ax4.plot(Data.history_time, influence_vector_time_serie_array_unorm[0], label = "$\theta$")#theta
+    ax4.plot(Data.history_time, influence_vector_time_serie_array_unorm[1], label = "$\zeta$")#zeta
+    for i in range(Data.I):
+        ax4.plot(Data.history_time, influence_vector_time_serie_array_unorm[i + 2])#network
+
+    
+    ax4.legend()
+
+    #ax.set_yticklabels(['']+['CI','FI','Network'])
+    ax4.set_xlabel("Steps")
+    ax4.set_ylabel("Node influence")
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_node_influence_all the lines"
+    fig4.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig4.savefig(f + ".png", dpi=dpi_save, format="png")
 
     # fig, ax = plt.subplots()
 
@@ -571,12 +649,11 @@ def plot_node_influence(fileName,Data,dpi_save, weighting_matrix_timeseries):
     # ax.set_xlabel("Steps")
     # ax.set_ylabel("Node normalised influence")
 
-    plotName = fileName + "/Plots"
-    f = plotName + "/plot_line_weighting_matrix"
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
-    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
 
 def calc_weighting_matrix_time_series(Data):
+    #THIS IS PRODUCIGN MASSIVE FILES, FIX
+    """
     influence_vector_time_series = []
     for t in range(len(Data.history_time)):
         weighting_matrix_time_series_at_t = []
@@ -584,6 +661,21 @@ def calc_weighting_matrix_time_series(Data):
             weighting_matrix_time_series_at_t.append(Data.agent_list[v].history_weighting_vector[t])
         influence_vector_time_series.append(weighting_matrix_time_series_at_t)
     #print("nfluence_vector_time_series array ", np.asarray(influence_vector_time_series).shape)
+
+    """
+
+    influence_vector_time_series = np.asarray([[v.history_weighting_vector[t] for v in Data.agent_list] for t in range(len(Data.history_time))])
+
+    """
+    def calc_weighting_matrix_time_series_alt(Data):
+        weighting_matrix_time_series_i_t = []
+        for v in range(len(Data.agent_list)):
+            weighting_matrix_time_series_i_k_t.append(Data.agent_list[v].history_weighting_vector)
+
+        weighting_matrix_time_series_t_i_k = np.asarrayy(weighting_matrix_time_series_at_t).T
+        return weighting_matrix_time_series_at_t
+    """
+
     return influence_vector_time_series
 
 dpi_save = 300
@@ -603,23 +695,12 @@ round_dec = 2
 
 
 if __name__ == "__main__":
-    print_simu = 1  # Whether of not to print how long the single shot simulation took
-    if print_simu:
-        start_time = time.time()
-
     if single_shot:
-        fileName = "results/single_shot_15_27_42__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_16_33_30__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
-
-        if os.path.isfile("results/Data/weighting_matrix_time_series"):
-            weighting_matrix_time_series = load_object(fileName + "/Data","weighting_matrix_time_series")
-        else:
-            weighting_matrix_time_series = calc_weighting_matrix_time_series(Data)
-            save_object(weighting_matrix_time_series, fileName + "/Data", "weighting_matrix_time_series")
-
 
         #print(Data.history_time)
 
@@ -628,7 +709,7 @@ if __name__ == "__main__":
         #plot_history_profit = plot_time_series_consumers(fileName,Data,"Profit",dpi_save,"history_profit",red_blue_c)
         ##plot_history_lambda_t = plot_time_series_consumers(fileName,Data,"Network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         ##
-        plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Individual posterior mean",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        #plot_history_expectation_theta_mean = plot_time_series_consumers(fileName,Data,"Individual posterior mean",dpi_save,"history_expectation_theta_mean",red_blue_c)
         #plot_history_expectation_theta_variance = plot_time_series_consumers(fileName,Data,"Expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #consumer X list and weighting
@@ -646,7 +727,7 @@ if __name__ == "__main__":
         #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
         
-        #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save, weighting_matrix_time_series)
+        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
 
         #network trasnspose
         ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
@@ -684,10 +765,4 @@ if __name__ == "__main__":
         plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
         plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
         
-
-    if print_simu:
-        print(
-            "PLOT time taken: %s minutes" % ((time.time() - start_time) / 60),
-            "or %s s" % ((time.time() - start_time)),
-        )
     plt.show()
