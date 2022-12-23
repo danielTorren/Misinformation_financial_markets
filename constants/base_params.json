@@ -44,5 +44,4 @@
     "network_gamma" : 0.2,
     "network_delta_in" : 0.1,
     "network_delta_out" : 0.1
-    
 }

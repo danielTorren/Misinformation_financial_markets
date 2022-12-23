@@ -536,7 +536,7 @@ def plot_node_influence(fileName,Data,dpi_save):
 
     influence_vector_time_series = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(Data.weighting_matrix_timeseries[t])
+        b = np.asarray(Data.history_weighting_matrix[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         #print("a",a, a.shape)
@@ -589,7 +589,7 @@ def plot_node_influence(fileName,Data,dpi_save):
     
     influence_vector_time_series_unorm = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(Data.weighting_matrix_timeseries[t])
+        b = np.asarray(Data.history_weighting_matrix[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         influence_vector_time_series_unorm.append(list(a))
@@ -696,7 +696,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_16_33_30__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_19_29_49__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -722,12 +722,12 @@ if __name__ == "__main__":
         #plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
         #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-        #plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
+        plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
         ##plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
-        #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
+        plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
         
-        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
+        #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
 
         #network trasnspose
         ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
