@@ -395,7 +395,7 @@ def plot_network_shape(
     #print("ani_step_colours",ani_step_colours)
 
     values = ["red", "blue"]
-    c_list = ["Uninformed","Informed"]
+    c_list = ["Not paying the cost","Paying the cost"]
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
 
