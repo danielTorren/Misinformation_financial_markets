@@ -45,10 +45,12 @@ def plot_prob_loosing_money(c_start = 0.0, c_end = 1.0, w_start = 1, w_end = 2, 
     for w in range(w_start,w_end,w_step):
         y = [prob_loosing_money(i, N = N, window=w) for i in x]
         ax.plot(x,y)   
-    ax.set_xlabel('p(loss)')
-    ax.set_ylabel('cost of information')    
+    ax.set_xlabel('cost of information')
+    ax.set_ylabel('p(loss)')    
     plt.savefig('results\p_loss.png', dpi = 300)
     plt.show()
+
+plot_prob_loosing_money(N = 10**6)
 
 def prob_smaller_theta_error(N = 10**5, window = 1):
     k = window
