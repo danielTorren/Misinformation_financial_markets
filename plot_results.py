@@ -508,7 +508,7 @@ def plot_line_weighting_matrix(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
-def plot_node_influence(fileName,Data,dpi_save):
+def plot_node_influence(fileName,Data,dpi_save, history_weighting_matrix):
 
     ######
     #calc the neighbours to normalise
@@ -536,7 +536,7 @@ def plot_node_influence(fileName,Data,dpi_save):
 
     influence_vector_time_series = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(Data.history_weighting_matrix[t])
+        b = np.asarray(history_weighting_matrix[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         #print("a",a, a.shape)
@@ -589,7 +589,7 @@ def plot_node_influence(fileName,Data,dpi_save):
     
     influence_vector_time_series_unorm = []
     for t in range(len(Data.history_time)):
-        b = np.asarray(Data.history_weighting_matrix[t])
+        b = np.asarray(history_weighting_matrix[t])
         #print("b",b, b.shape)
         a = np.nansum(b, axis = 0)
         influence_vector_time_series_unorm.append(list(a))
@@ -696,12 +696,17 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_19_29_49__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_16_23_24__23_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
-        print("base_params", base_params)
+        history_weighting_matrix=np.load(fileName + "/Data" + "/history_weighting_matrix.npz")
 
+        print("base_params", base_params)
+        print("history_weighting_matrix",history_weighting_matrix)
+        print("list(d.keys())", list(history_weighting_matrix.keys()))
+        print("history_weighting_matrix",history_weighting_matrix['arr_0'])
+        quit()
         #print(Data.history_time)
 
         #consumers
@@ -727,8 +732,9 @@ if __name__ == "__main__":
         plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
         
-        #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
+        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save, history_weighting_matrix)
 
+        
         #network trasnspose
         ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
         

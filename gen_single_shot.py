@@ -14,7 +14,7 @@ from utility import (
 from generate_data import (
     generate_data_single
     )
-
+import numpy as np
 
 print_simu = 1
 
@@ -31,6 +31,13 @@ if __name__ == "__main__":
 
     createFolder(fileName)#put after run so that you dont create folder unless you got to the end of the simulation
 
+    #save matrix
+    matrix_to_save = Data.history_weighting_matrix
+    np.savez_compressed(fileName + "/Data/history_weighting_matrix", *matrix_to_save)
+    save_object(matrix_to_save, fileName + "/Data", "history_weighting_matrix")
+    #delete matrix
+    delattr(Data, "history_weighting_matrix")
+    #save the financial market
     save_object(Data, fileName + "/Data", "financial_market")
     save_object(params, fileName + "/Data", "base_params")
 
