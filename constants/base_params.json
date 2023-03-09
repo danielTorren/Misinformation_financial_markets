@@ -6,7 +6,6 @@
     "heterogenous_wealth":0,
     "endogenous_c_switching": 1,
     "broadcast_quality":0.0,
-    "T_h_prop": 0.0,
     "c_prop": 0.4,
     "total_steps": 100,
     "compression_factor": 1,

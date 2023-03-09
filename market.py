@@ -49,7 +49,6 @@ class Market:
 
         #######################################################################################
         #Model hyperparameters, dictate what type of run it will be
-        self.degroot_aggregation = parameters["degroot_aggregation"]
         self.heterogenous_priors = parameters["heterogenous_priors"]
         self.heterogenous_wealth = parameters["heterogenous_wealth"]
         self.endogenous_c_switching = parameters["endogenous_c_switching"]
@@ -70,10 +69,10 @@ class Market:
         self.R = parameters["R"]
         self.a = parameters["a"]
         self.d = parameters["d"]
+        self.log_d_t = np.log(self.d)
         self.theta_sigma = parameters["theta_sigma"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.phi_sigma = parameters["gamma_sigma"] 
-        self.zeta_threshold = parameters["zeta_threshold"]
         self.switch_s = parameters["switch_s"]  #elasticty of the switch probability to the accuracy
 
         self.W_0 = parameters["W_0"]
@@ -97,9 +96,6 @@ class Market:
         if self.endogenous_c_switching:
             self.switch_vals = np.random.uniform(size = (self.total_steps,self.I)) #use numpy for the sake of seed setting
 
-        self.T_h_prop = parameters["T_h_prop"]
-        self.T_h = int(round(self.T_h_prop*self.total_steps))
-        #print("self.T_h", self.T_h)
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
         self.theta_t = np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
@@ -172,14 +168,14 @@ class Market:
         self.agent_list = self.create_agent_list()
 
         self.d_t = self.d #uninformed expectation
-        self.p_t = self.d / self.R #uninformed price
+        self.p_t = self.d/self.R #uninformed price
         self.X_it = [0]*self.I
 
         self.weighting_matrix = self.get_weighting_matrix()
 
         if self.save_timeseries_data:
-            self.history_p_t = [0]
-            self.history_d_t= [0]
+            self.history_p_t = [self.p_t]
+            self.history_d_t= [self.d_t]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
             #self.history_weighting_matrix = [self.weighting_matrix]
@@ -250,7 +246,6 @@ class Market:
             "beta": self.beta,
             "delta":self.delta,
             "c_info": self.c_info,
-            "T_h": self.T_h,
             "error_tolerance": self.tol_err 
         }
 
@@ -309,16 +304,15 @@ class Market:
 
     def get_consumers_dt_mean_variance(self):
 
-        expectations_theta_mean_vector = np.asarray([i.expectation_theta_mean for i in self.agent_list])
-        expectations_theta_variance_vector = np.asarray([i.expectation_theta_variance for i in self.agent_list])
+        
+        data_expectations = [(i.dt_expectations_mean,i.dt_expectations_variance, i.expectation_theta_variance) for i in self.agent_list]
+        dt_expectations_mean_list, dt_expectations_variance_list, expectations_theta_variance_list = zip(*data_expectations)
 
-        #print("expectations_theta_mean_vector", expectations_theta_mean_vector)
-        #print("expectations_theta_variance_vector ",expectations_theta_variance_vector )
+        expectations_theta_mean_vector = np.asarray(dt_expectations_mean_list)
+        dt_expectations_variance_vector = np.asarray(dt_expectations_variance_list)
+        expectations_theta_variance_vector = np.asarray(expectations_theta_variance_list)
 
-        dt_expectations_mean = self.d + expectations_theta_mean_vector
-        dt_expectations_variance = self.epsilon_sigma**2 + expectations_theta_variance_vector
-
-        return dt_expectations_mean, dt_expectations_variance,expectations_theta_mean_vector
+        return expectations_theta_mean_vector , dt_expectations_variance_vector , expectations_theta_mean_vector
 
     def compute_price(self):
 
@@ -348,11 +342,15 @@ class Market:
 
     def compute_dividends(self):
         
-        d_t = self.d + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
+        #d_t = self.d + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
+
+        log_d_t = self.d + self.log_d_t + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
 
         #print("dividend at t", d_t)
 
-        return d_t
+        d_t = np.exp(log_d_t)
+
+        return d_t, log_d_t
 
     def update_c_bools(self):
         #repetition FIX
@@ -375,8 +373,6 @@ class Market:
         theta_v = [self.theta_t[self.step_count] if i.c_bool else np.nan for i in self.agent_list]#those with c recieve signal else they dont?
         #print(theta_v)
         zeta = self.zeta_t[self.step_count]
-
-        
 
         for i in self.I_array:
             #print("theta_v[i], zeta, self.S_lambda_matrix[i]",theta_v[i], zeta, self.S_lambda_matrix[i])
@@ -420,7 +416,7 @@ class Market:
         self.X_it = self.compute_demand()
 
         #simulate dividend
-        self.d_t = self.compute_dividends()
+        self.d_t,self.log_d_t = self.compute_dividends()
 
         #update network signal
         self.S_lambda_matrix = self.get_s_lambda()

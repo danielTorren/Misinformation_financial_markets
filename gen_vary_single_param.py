@@ -81,7 +81,7 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    property_varied = "T_h_prop"
+    property_varied = ""
     property_list = [0, 0.02, 0.05, 0.1, 0.2]
 
     rootName = "single_vary_" + property_varied

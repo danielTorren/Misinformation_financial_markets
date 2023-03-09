@@ -26,7 +26,6 @@ class Consumer:
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
-        self.T_h = parameters["T_h"]
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
         self.c_0 = parameters["c_info"]
@@ -43,7 +42,7 @@ class Consumer:
         self.signal_variances = self.compute_signal_variances()
 
         if self.save_timeseries_data:
-            #self.history_weighting_vector = [list(self.weighting_vector)] 
+            self.history_weighting_vector = [list(self.weighting_vector)] 
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_expectation_theta_mean = [self.expectation_theta_mean]
             self.history_expectation_theta_variance = [self.expectation_theta_variance] 
@@ -52,7 +51,7 @@ class Consumer:
 
     def compute_profit(self,d_t,p_t,X_t):
         if self.c_bool:
-            profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - self.c_0 - self.R*self.W_0
+            profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - self.R*self.W_0  - self.c_0
         else:
             profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - self.R*self.W_0
 
@@ -189,8 +188,17 @@ class Consumer:
 
         return posterior_theta_mean,posterior_theta_variance 
 
+    def calc_expectation_d_t(self):
+        if self.c_bool:
+            E_d_t = (self.d_t*np.exp(self.d + (self.epsilon_sigma**2/2) +  (self.expectation_theta_mean) ))
+        else:
+            E_d_t = (self.d_t*np.exp(self.d + (self.epsilon_sigma**2/2) +  (self.expectation_theta_variance/2)))
+
+        
+        return E_d_t, V_d_t
+
     def append_data(self):
-        #self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
+        self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
         self.history_expectation_theta_mean.append(self.expectation_theta_mean) 
         self.history_expectation_theta_variance.append(self.expectation_theta_variance) 
@@ -223,9 +231,8 @@ class Consumer:
     
         #compute posterior expectations
         self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_list)
-        #print("self.expectation_theta_mean",self.expectation_theta_mean)
-        #print("self.expectation_theta_variance",self.expectation_theta_variance)
-        #quit()
+
+        self.dt_expectations_mean, self.dt_expectations_variance = self.calc_expectation_d_t()
 
         if  (steps % self.compression_factor == 0) and (self.save_timeseries_data):  
             self.append_data()

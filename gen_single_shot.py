@@ -18,9 +18,9 @@ import numpy as np
 
 print_simu = 1
 
-if __name__ == "__main__":
+def main(BASE_PARAMS = "constants/base_params.json"):
     #load in exogenous parameters
-    f = open("constants/base_params.json")
+    f = open(BASE_PARAMS)
     params = json.load(f)
 
     rootName = "single_shot"
@@ -40,4 +40,7 @@ if __name__ == "__main__":
     #save the financial market
     save_object(Data, fileName + "/Data", "financial_market")
     save_object(params, fileName + "/Data", "base_params")
+
+if __name__ == "__main__":
+    main(BASE_PARAMS = "constants/base_params_alt.json")
 
