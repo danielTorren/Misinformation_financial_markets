@@ -42,5 +42,5 @@ def main(BASE_PARAMS = "constants/base_params.json"):
     save_object(params, fileName + "/Data", "base_params")
 
 if __name__ == "__main__":
-    main(BASE_PARAMS = "constants/base_params_alt.json")
+    main(BASE_PARAMS = "constants/base_params.json")
 

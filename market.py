@@ -69,7 +69,7 @@ class Market:
         self.R = parameters["R"]
         self.a = parameters["a"]
         self.d = parameters["d"]
-        self.log_d_t = np.log(self.d)
+        self.b = parameters["b"]
         self.theta_sigma = parameters["theta_sigma"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.phi_sigma = parameters["gamma_sigma"] 
@@ -301,9 +301,8 @@ class Market:
         #quit()
 
         return S_matrix
-
+    """
     def get_consumers_dt_mean_variance(self):
-
         
         data_expectations = [(i.dt_expectations_mean,i.dt_expectations_variance, i.expectation_theta_variance) for i in self.agent_list]
         dt_expectations_mean_list, dt_expectations_variance_list, expectations_theta_variance_list = zip(*data_expectations)
@@ -312,7 +311,21 @@ class Market:
         dt_expectations_variance_vector = np.asarray(dt_expectations_variance_list)
         expectations_theta_variance_vector = np.asarray(expectations_theta_variance_list)
 
-        return expectations_theta_mean_vector , dt_expectations_variance_vector , expectations_theta_mean_vector
+        return expectations_theta_mean_vector , dt_expectations_variance_vector , expectations_theta_variance_vector
+    """
+
+    def get_consumers_dt_mean_variance(self):
+
+        expectations_theta_mean_vector = np.asarray([i.expectation_theta_mean for i in self.agent_list])
+        expectations_theta_variance_vector = np.asarray([i.expectation_theta_variance for i in self.agent_list])
+
+        #print("expectations_theta_mean_vector", expectations_theta_mean_vector)
+        #print("expectations_theta_variance_vector ",expectations_theta_variance_vector )
+
+        dt_expectations_mean = self.d + self.b*self.d_t + expectations_theta_mean_vector
+        dt_expectations_variance = self.epsilon_sigma**2 + expectations_theta_variance_vector
+
+        return dt_expectations_mean, dt_expectations_variance,expectations_theta_mean_vector
 
     def compute_price(self):
 
@@ -343,14 +356,10 @@ class Market:
     def compute_dividends(self):
         
         #d_t = self.d + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
+        #print("HI",self.b, self.d_t )
+        d_t = self.d + self.b*self.d_t + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
 
-        log_d_t = self.d + self.log_d_t + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
-
-        #print("dividend at t", d_t)
-
-        d_t = np.exp(log_d_t)
-
-        return d_t, log_d_t
+        return d_t
 
     def update_c_bools(self):
         #repetition FIX
@@ -416,7 +425,7 @@ class Market:
         self.X_it = self.compute_demand()
 
         #simulate dividend
-        self.d_t,self.log_d_t = self.compute_dividends()
+        self.d_t = self.compute_dividends()
 
         #update network signal
         self.S_lambda_matrix = self.get_s_lambda()
