@@ -84,17 +84,18 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
             else:
                 color = "red"
             data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
-            ax.plot(np.asarray(Data.history_time), np.cumsum(data_ind), color = color)
+            ax.plot(np.asarray(Data.history_time), (data_ind), color = color)
     else:
         for v in range(len(Data.agent_list)):
             data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
-            ax.plot(np.asarray(Data.history_time), np.cumsum(data_ind))
+            ax.plot(np.asarray(Data.history_time), (data_ind))
 
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
 
     if property_y == "history_expectation_mean":
-        ax.plot(Data.history_time, np.cumsum(Data.theta_t[::Data.compression_factor]), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        
+        ax.plot(Data.history_time, (Data.theta_t[::Data.compression_factor]), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
     elif property_y == "history_profit":
         ax.plot(Data.history_time, np.cumsum([-Data.c_info]*len(Data.history_time)), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
 
@@ -141,21 +142,29 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     data = eval("Data.%s" % property_y)
 
     # bodge
-    ax.plot(Data.history_time, data, linestyle='solid', color="blue",  linewidth=2)
+    
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
-        #ax.plot(Data.history_time, (Data.d + Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed',color="green" , linewidth=2)
+        ax.plot(Data.history_time, (((Data.d + Data.theta_t)/Data.R - np.array(data))), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+        #ax.plot(Data.history_time, np.cumsum(-Data.c_info + (Data.R-1)* Data.W_0 + ((Data.d + Data.theta_t[::Data.compression_factor] - Data.R*np.array(data))/(Data.a*Data.epsilon_sigma**2))* (Data.d_t - Data.R * np.array(data))), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+        # ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
+        # color = 'tab:green'
+        # ax2.set_ylabel('theta_t', color=color )  # we already handled the x-label with ax1
+        # ax2.plot(Data.history_time, (Data.theta_t[::Data.compression_factor]), linestyle='dashed',color=color , linewidth=2)
+        # #ax2.tick_params(axis='theta_t', labelcolor=color)   
+        
         #ax.hline([(Data.d)/Data.R], linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
         #ax.plot(Data.history_time, Data.d + np.asarray(Data.theta_t[::Data.compression_factor])/Data.R, linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
         #print(np.sum(data-(Data.d + Data.theta_t[::Data.compression_factor])/Data.R))
-        ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
+        #ax.axhline(y = (Data.d)/Data.R, linestyle='dashdot', color="red" , linewidth=2)
         #ax.axhline(y = (Data.d + Data.theta_mean)/Data.R, linestyle='dashdot', color="green" , linewidth=2)
         #ax.axhline(y = (Data.d + Data.broadcast_quality*Data.theta_mean +  (1 - Data.broadcast_quality)*Data.gamma_mean)/Data.R, linestyle='dashdot', color="purple" , linewidth=2)
-        labels = labels = ["Price", "Uninformed price"]
-        fig.legend(labels = labels,loc = 'lower right', borderaxespad=10)
-    #elif property_y == "history_informed_proportion":
+        #labels = labels = ["Price", "Uninformed price"]
+        #fig.legend(labels = labels,loc = 'lower right', borderaxespad=10)
+    elif property_y == "history_informed_proportion":
+        ax.plot(Data.history_time, data , linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
         # ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
         # color = 'tab:blue'
         # ax2.set_ylabel('informed_profit', color=color )  # we already handled the x-label with ax1
@@ -696,7 +705,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_16_33_30__22_12_2022"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_16_51_37__10_05_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -718,31 +727,31 @@ if __name__ == "__main__":
         #plot_history_weighting = plot_time_series_consumer_triple(fileName,Data,"Signal weighting, $\phi_k$",dpi_save,"history_weighting_vector", 3, ["$S_{ \\theta }$", "$S_{\zeta}$", "$S_{\lambda}$"],red_blue_c)
 
         #network
-        #plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        #plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
+        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
+        plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
         #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-        plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
+        #plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
         ##plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
         #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
         
-        plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
+        #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
 
         #network trasnspose
-        ##plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+        #plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
         
 
         #cumsum
         ##plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        #plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
+        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
         ##plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
-        ##plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-        ##plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #inital prior distributions
-        if base_params["heterogenous_priors"]:
-            plot_inital_priors = plot_initial_priors_hist(fileName,Data,dpi_save)
+        #if base_params["heterogenous_priors"]:
+        #    plot_inital_priors = plot_initial_priors_hist(fileName,Data,dpi_save)
 
         #Animation BROKE
         ##anim_c_bool = anim_value_network(fileName,Data,base_params["network_structure"], "c bool","history_c_bool", fps, round_dec,cmap, interval, norm_zero_one, node_size)
@@ -750,7 +759,7 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_shot_18_57_21__10_12_2022"
+        fileName = "results/single_shot_20_22_46__09_05_2023"
         createFolder(fileName)
 
         Data_list = load_object(fileName + "/Data", "financial_market_list")

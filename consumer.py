@@ -16,11 +16,11 @@ class Consumer:
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
-
         self.W_0 = W_0
         self.expectation_theta_mean = parameters["mu_0"]
         self.expectation_theta_variance = parameters["var_0"]
-        
+        self.baseline_theta_mean = parameters["mu_0"]
+        self.baseline_theta_var = parameters["var_0"]
         self.weighting_vector = weighting_vector
         self.R = parameters["R"]
         self.a = parameters["a"]
@@ -59,8 +59,8 @@ class Consumer:
         return profit
 
     def compute_X(self,S):
-        E = self.d + S
-        V = self.epsilon_sigma
+        E = self.d + S #Individual expected value
+        V = self.epsilon_sigma # Individual variance
 
         #print("EEEE", E, "self.R*self.p_t",self.R*self.p_t)
         X_t_source = (E - self.R*self.p_t)/(self.a*V)
@@ -163,7 +163,7 @@ class Consumer:
         
 
     def compute_signal_variances(self):
-        signal_variances = -1/(10*np.log(1 + self.delta - self.weighting_vector))
+        signal_variances = (self.delta + self.weighting_vector)**(-0.5) - 1
         return signal_variances
 
     def compute_posterior_mean_variance(self,S_list):
@@ -180,12 +180,18 @@ class Consumer:
         full_signal_variances = full_signal_variances_dirty[nan_mask]
 
         denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
-        posterior_theta_variance = np.prod(full_signal_variances)/denominator
+        if self.c_bool:
+            posterior_theta_variance = 0.0
+        else:
+            posterior_theta_variance = np.prod(full_signal_variances)/denominator 
 
         #mean
         numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
 
-        posterior_theta_mean = numerator_mean/denominator
+        if self.c_bool:
+            posterior_theta_mean = S_list[0]
+        else:
+            posterior_theta_mean = numerator_mean/denominator
 
         return posterior_theta_mean,posterior_theta_variance 
 
@@ -198,7 +204,9 @@ class Consumer:
         self.history_c_bool.append(self.c_bool)
 
     def next_step(self,d_t,p_t,X_t, S_theta, S_omega, S_lamba,steps):
-        #print("NEXT")
+        #First we reset the expectations and variance
+        self.expectation_theta_mean = self.baseline_theta_mean
+        self.expectation_theta_variance = self.baseline_theta_var
         #recieve dividend and demand
         #compute profit
         self.d_t = d_t

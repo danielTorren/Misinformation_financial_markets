@@ -1,13 +1,16 @@
-{
-    "save_timeseries_data": 1, 
-    "network_structure": "small_world",
+from market import Market
+
+if __name__ == "_main_":
+
+    params = {"save_timeseries_data": 1, 
+    "network_structure": "barabasi_albert_graph",
     "degroot_aggregation": 1,
     "heterogenous_priors": 0,
     "heterogenous_wealth":0,
     "endogenous_c_switching": 1,
     "broadcast_quality":0.0,
     "T_h_prop": 0.0,
-    "c_prop": 0.2,
+    "c_prop": 0.4,
     "total_steps": 300,
     "compression_factor": 1,
     "I": 100,
@@ -28,7 +31,7 @@
     "phi_theta": 0.33,
     "phi_omega": 0.33,
     "W_0": 100,
-    "c_info": 0.01,
+    "c_info": 0.1,
     "beta": 1,
     "switch_s": 1.0,
     "zeta_threshold": 0.63245553202,
@@ -45,3 +48,14 @@
     "network_delta_in" : 0.1,
     "network_delta_out" : 0.1
 }
+    #start_time = time.time()
+    financial_market = Market(params)
+
+    #### RUN TIME STEPS
+    while financial_market.step_count < params["total_steps"]:
+        financial_market.next_step()
+    
+    #print(
+    #    "SIMULATION time taken: %s minutes" % ((time.time() - start_time) / 60),
+    #    "or %s s" % ((time.time() - start_time)),
+    #)

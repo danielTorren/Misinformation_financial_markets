@@ -217,6 +217,7 @@ class Market:
         adjacency_matrix = nx.to_numpy_array(G)
 
         print("Network density:", nx.density(G))
+        print("Netwrok type: ", self.network_structure)
 
         nan_adjacency_matrix = np.copy(adjacency_matrix)
 
@@ -327,7 +328,7 @@ class Market:
         #print("compute price term 1", term_1)
         #print("compute price term 2", term_2)
 
-        aggregate_price = term_1*term_2/self.R
+        aggregate_price = (term_1*term_2)/self.R
 
         #print("aggregate price", aggregate_price)
 
@@ -358,7 +359,7 @@ class Market:
         #repetition FIX
 
         profit_vector = np.asarray([(self.d_t  - self.p_t/self.R)*self.X_it[i] - self.c_info  if self.agent_list[i].c_bool else (self.d_t  - self.p_t/self.R)*self.X_it[i] for i in self.I_array])
-        P_switch = [1/(1+ self.switch_s*np.exp(profit_vector[i])) - 0.5 if profit_vector[i] < 0.0 else 0.0 for i in range(len(profit_vector))]
+        P_switch = [(np.tanh(-profit_vector[i])) if profit_vector[i] < 0.0 else 0.0 for i in range(len(profit_vector))] #1/(1+ self.switch_s*np.exp(profit_vector[i]))
 
         mask = self.switch_vals[self.step_count] <= P_switch
 
