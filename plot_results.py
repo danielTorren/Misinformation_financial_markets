@@ -79,10 +79,12 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
 
     if red_blue_c:
         for v in range(len(Data.agent_list)):
-            if (Data.agent_list[v].c_bool):
+            if (Data.agent_list[v].dogmatic_state == "theta"):
                 color = "blue"
-            else:
+            elif(Data.agent_list[v].dogmatic_state == "gamma"):
                 color = "red"
+            else:
+                color = "black"
             data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
             ax.plot(np.asarray(Data.history_time), (data_ind), color = color)
     else:
@@ -96,8 +98,8 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
     if property_y == "history_expectation_mean":
         
         ax.plot(Data.history_time, (Data.theta_t[::Data.compression_factor]), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
-    elif property_y == "history_profit":
-        ax.plot(Data.history_time, np.cumsum([-Data.c_info]*len(Data.history_time)), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+    #elif property_y == "history_profit":
+    #    ax.plot(Data.history_time, np.cumsum([-Data.c_info]*len(Data.history_time)), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
 
         #ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
     plt.tight_layout()
@@ -687,11 +689,39 @@ def calc_weighting_matrix_time_series(Data):
 
     return influence_vector_time_series
 
+def plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, property_y):
+    
+    fig, axes = plt.subplots(nrows=1, ncols=len(Data_list), sharey=True, sharex=True, figsize=(10,6))
+    #print(property_y)
+
+    for i, ax in enumerate(axes.flat):
+        for v in range(len(Data_list[i].agent_list)):
+            if (Data_list[i].agent_list[v].dogmatic_state == "theta"):
+                color = "blue"
+            elif(Data_list[i].agent_list[v].dogmatic_state == "gamma"):
+                color = "red"
+            else:
+                color = "black"
+            data_ind = np.asarray(eval("Data_list[%s].agent_list[%s].%s" % (str(i),str(v), property_y)))
+            ax.plot(np.asarray(Data_list[i].history_time), (data_ind), color = color)
+
+        ax.set_xlabel("Steps")
+        ax.set_ylabel("%s" % property_y)
+        ax.set_title("%s = %s" % (property_title, property_list[i]))
+    plt.tight_layout()
+
+    plotName = fileName + "/Plots"
+    f = plotName + "/plot_multi_time_series_%s_%s" % (property_varied,property_y)
+    #print("f",f)
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+
 dpi_save = 300
 red_blue_c = True
 
-single_shot = 1
-single_param_vary = 0
+single_shot = 0
+single_param_vary = 1
 
 ###PLOT STUFF
 node_size = 200
@@ -705,7 +735,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_16_51_37__10_05_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_18_22_04__17_05_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -728,7 +758,7 @@ if __name__ == "__main__":
 
         #network
         plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
+        #plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
         #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
         #plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
@@ -759,19 +789,20 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_shot_20_22_46__09_05_2023"
-        createFolder(fileName)
+        fileName = "results/single_vary_proportion_dogmatic_theta_18_24_47__17_05_2023"
 
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
 
-        property_title = "$T_{h}$"
-        titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
+        property_title = "Proportion dogmatic theta"
+        #titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
         #print("titles", titles)
 
+        plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
+        plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
 
-        plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
-        plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
+        #plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
+        #plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
         
     plt.show()
