@@ -28,18 +28,15 @@ class Consumer:
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.T_h = parameters["T_h"]
         self.beta = parameters["beta"]
-        self.delta = parameters["delta"]
         self.c_0 = parameters["c_info"]
-        self.tol_err = parameters["error_tolerance"]
+       
 
         #cost 
         self.c_bool = c_bool
-
         if self.c_bool:
             pass
         else:
-            self.weighting_vector[0] = 0#np.nan
-
+            self.weighting_vector[0] = 0
         self.signal_variances = self.compute_signal_variances()
 
         if self.save_timeseries_data:
@@ -58,35 +55,26 @@ class Consumer:
 
         return profit
 
-    def compute_X(self,S):
+    def compute_X(self,S, V): 
+        """
+        DELETE?
+        """
         E = self.d + S #Individual expected value
-        V = self.epsilon_sigma # Individual variance
-
-        #print("EEEE", E, "self.R*self.p_t",self.R*self.p_t)
-        X_t_source = (E - self.R*self.p_t)/(self.a*V)
-
+        Var = self.epsilon_sigma + V # Individual variance
+        X_t_source = (E - self.R*self.p_t)/(self.a*Var)
         return X_t_source            
 
     
     def calc_weighting_vector(self,non_nan_index_list,nan_index_list,weighting_vector,theoretical_profit_list_mean_history):
         if not non_nan_index_list:
             #empty list therefore all signal are nan, keep weighting static - DO NOTHING
-            #print("DO NOTHERING LIST EMPTY, ALL NANs")
             pass
         else:
-            #print("AT LEAST ONE NON NAN")
-            #plug those into the equation
             denominator_weighting = sum(np.exp(self.beta*theoretical_profit_list_mean_history [i]) for i in non_nan_index_list)
-
-            #print("denominator_weighting",denominator_weighting)
-
             if not nan_index_list:#if all values are present
-                #print("ALL VALUES PRESENT")
                 weighting_vector = [np.exp(self.beta*profit)/denominator_weighting for profit in theoretical_profit_list_mean_history]
             else:
-                #print("AT LEAST ONE NAN")
                 #at least 1 nan value
-                #print("non nan profit", [self.beta*theoretical_profit_list_mean_history[i] for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_mean_history[i]) for i in non_nan_index_list],[np.exp(self.beta*theoretical_profit_list_mean_history[i])/denominator_weighting for i in non_nan_index_list])
                 weighting_vector_short = np.asarray([np.exp(self.beta*theoretical_profit_list_mean_history[i])/denominator_weighting for i in non_nan_index_list])
                 #print("weighting_vector_short",weighting_vector_short)
                 weighting_vector = weighting_vector_short*(1-sum(weighting_vector[v] for v in nan_index_list))#1 - the effect of others?
@@ -163,7 +151,7 @@ class Consumer:
         
 
     def compute_signal_variances(self):
-        signal_variances = (self.delta + self.weighting_vector)**(-0.5) - 1
+        signal_variances = ( self.weighting_vector)**(-0.5) - 1
         return signal_variances
 
     def compute_posterior_mean_variance(self,S_list):
