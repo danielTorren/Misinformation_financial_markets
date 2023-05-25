@@ -13,7 +13,6 @@ from market import Market
 from utility import (
     createFolder, 
     save_object, 
-    produce_name,
     produce_name_datetime,
 )
 from generate_data import (
@@ -81,17 +80,14 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    property_varied = "T_h_prop"
-    property_list = [0, 0.02, 0.05, 0.1, 0.2]
+    property_varied = "proportion_dogmatic_theta"
+    property_list = [0.1, 0.2, 0.4, 0.6]
 
     rootName = "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)
     print("FILENAME:", fileName)
 
-    
-
     params_list = gen_param_list(params, property_list, property_varied)
-
     Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation
 
     createFolder(fileName)

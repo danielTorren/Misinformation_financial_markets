@@ -32,16 +32,8 @@
     "beta": 1,
     "switch_s": 1.0,
     "zeta_threshold": 0.63245553202,
-    "error_tolerance" : 0.01,
-    "delta":1e-5,
     "non_c_W_0": 80,
-    "priors_beta_a_no_c": 2,
-    "priors_beta_b_no_c": 3,
-    "priors_beta_a_c": 3,
-    "priors_beta_b_c": 2,
-    "network_alpha" : 0.4,
-    "network_beta": 0.4,
-    "network_gamma" : 0.2,
-    "network_delta_in" : 0.1,
-    "network_delta_out" : 0.1
+    "proportion_dogmatic_theta": 0.3,
+    "proportion_dogmatic_gamma": 0.2,
+    "delta": 1e-5
 }
