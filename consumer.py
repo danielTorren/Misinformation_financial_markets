@@ -12,26 +12,23 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, W_0, weighting_vector,dogmatic_state, baseline_theta_mean, baseline_theta_var):
+    def __init__(self, parameters: dict, W_0, weighting_vector,dogmatic_state, baseline_theta_mean, baseline_theta_var, adj_vector):
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
         self.W_0 = W_0
-
         self.baseline_theta_mean = baseline_theta_mean
         self.baseline_theta_var = baseline_theta_var
-
         self.expectation_theta_mean =  self.baseline_theta_mean
         self.expectation_theta_variance = self.baseline_theta_var
         self.dogmatic_state = dogmatic_state
-
         self.weighting_vector = weighting_vector
         self.R = parameters["R"]
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
-
+        self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.signal_variances = self.compute_signal_variances()
 
         if self.save_timeseries_data:
@@ -46,20 +43,20 @@ class Consumer:
         return profit        
 
     def calc_squared_error_norm(self, d_t, d, S_k):
-        return np.abs((d_t - (d + S_k))/d_t)
+        full_errors = np.abs((d_t - (d + S_k))/d_t)*self.adj_vector
+        return full_errors[~np.isnan(full_errors)]
 
     def calc_weighting_vector(self,squared_error_array): 
         denominator_weighting = sum(np.exp(-self.beta*squared_error_array))
 
-        weighting_vector = np.exp(-self.beta*squared_error_array)/denominator_weighting
+        weighting_vector = (np.exp(-self.beta*squared_error_array))/denominator_weighting
 
         #weighting_vector = [np.exp(-self.beta*squared_error)/denominator_weighting for squared_error in squared_error_array]
         return weighting_vector#np.asarray(weighting_vector)
 
     def compute_weighting_vector(self):
         squared_error_array = self.calc_squared_error_norm(self.d_t, self.d, self.S_array)
-        weighting_vector = self.calc_weighting_vector(squared_error_array)  
-
+        weighting_vector = self.calc_weighting_vector(squared_error_array)
         return weighting_vector 
         
     def compute_signal_variances(self):
@@ -69,21 +66,18 @@ class Consumer:
     def compute_posterior_mean_variance(self,S_array):
         prior_theta_variance = self.expectation_theta_variance
         prior_theta_mean = self.expectation_theta_mean
-
         #add priors for cycling, tour de france
         full_signal_variances= np.append(self.signal_variances, prior_theta_variance)
-        full_signal_means = np.append(S_array, prior_theta_mean) 
-
+        full_signal_means = np.append(S_array[~np.isnan(S_array)], prior_theta_mean) 
+        #print("length of mean vector is: ", len(full_signal_means), "length of var vector is: ", len(full_signal_variances))
         #for both mean and variance
         denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
-        
         #mean
         numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
         posterior_theta_mean = numerator_mean/denominator
-
+        #print(numerator_mean)
         #variance
         posterior_theta_variance = np.prod(full_signal_variances)/denominator
-
         return posterior_theta_mean,posterior_theta_variance 
 
     def append_data(self):
@@ -95,25 +89,21 @@ class Consumer:
     def next_step(self,d_t,p_t,X_t,S,steps, expectation_theta_mean = None):
         
         if expectation_theta_mean is None:
-            self.expectation_theta_mean = self.baseline_theta_mean# correspeonds to the normal case
+            pass# correspeonds to the normal case
         else:
             #First we reset the expectations and variance
             self.expectation_theta_mean = expectation_theta_mean# corresponds to the dogmatic case
-
-        self.expectation_theta_variance = self.baseline_theta_var#same for all time!
+            self.expectation_theta_variance = 0#same for all time!
 
         #recieve dividend and demand
         #compute profit
         self.d_t = d_t
         self.p_t = p_t
-
         self.S_array = S
-
         self.profit = self.compute_profit(self.d_t,self.p_t,X_t)
 
         #update weighting
         self.weighting_vector = self.compute_weighting_vector()
-
         self.signal_variances = self.compute_signal_variances()
     
         #compute posterior expectations
@@ -121,3 +111,5 @@ class Consumer:
 
         if  (steps % self.compression_factor == 0) and (self.save_timeseries_data):  
             self.append_data()
+            
+            

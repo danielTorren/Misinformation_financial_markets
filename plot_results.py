@@ -86,20 +86,20 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
             else:
                 color = "black"
             data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
-            ax.plot(np.asarray(Data.history_time), (data_ind), color = color)
+            ax.plot(np.asarray(Data.history_time), ((data_ind)), color = color)
     else:
         for v in range(len(Data.agent_list)):
             data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
-            ax.plot(np.asarray(Data.history_time), (data_ind))
+            ax.plot(np.asarray(Data.history_time), ((data_ind)))
 
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
 
-    if property_y == "history_expectation_mean":
+    if property_y == "history_expectation_theta_mean":
         
-        ax.plot(Data.history_time, (Data.theta_t[::Data.compression_factor]), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        ax.plot(Data.history_time, (Data.theta_t[::Data.compression_factor]), linestyle='dashed', color="green",  linewidth=2, alpha=0.5)
     #elif property_y == "history_profit":
-    #    ax.plot(Data.history_time, np.cumsum([-Data.c_info]*len(Data.history_time)), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
+        #ax.plot(Data.history_time, np.cumsum(data_ind), linestyle='dashed', color="black",  linewidth=2, alpha=0.5)
 
         #ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
     plt.tight_layout()
@@ -149,7 +149,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     ax.set_ylabel("%s" % y_title)
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
-        ax.plot(Data.history_time, (((Data.d + Data.theta_t)/Data.R - np.array(data))), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+        ax.plot(Data.history_time, np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
         #ax.plot(Data.history_time, np.cumsum(-Data.c_info + (Data.R-1)* Data.W_0 + ((Data.d + Data.theta_t[::Data.compression_factor] - Data.R*np.array(data))/(Data.a*Data.epsilon_sigma**2))* (Data.d_t - Data.R * np.array(data))), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
         # ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
         # color = 'tab:green'
@@ -177,6 +177,8 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     f = plotName + "/" + property_y + "_timeseries"
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+
 
 def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
 
@@ -703,7 +705,7 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
             else:
                 color = "black"
             data_ind = np.asarray(eval("Data_list[%s].agent_list[%s].%s" % (str(i),str(v), property_y)))
-            ax.plot(np.asarray(Data_list[i].history_time), (data_ind), color = color)
+            ax.plot(np.asarray(Data_list[i].history_time), (np.cumsum(data_ind)), color = color)
 
         ax.set_xlabel("Steps")
         ax.set_ylabel("%s" % property_y)
@@ -720,8 +722,8 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
 dpi_save = 300
 red_blue_c = True
 
-single_shot = 0
-single_param_vary = 1
+single_shot = 1
+single_param_vary = 0
 
 ###PLOT STUFF
 node_size = 200
@@ -735,7 +737,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_18_22_04__17_05_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_14_34_51__07_06_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -789,7 +791,7 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_vary_proportion_dogmatic_theta_18_24_47__17_05_2023"
+        fileName = "results/single_shot_12_36_11__07_06_2023"
 
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")

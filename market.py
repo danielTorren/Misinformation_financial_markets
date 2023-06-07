@@ -51,9 +51,7 @@ class Market:
         #model parameters
         self.set_seed = parameters["set_seed"]
         np.random.seed(self.set_seed)
-
         self.save_timeseries_data = parameters["save_timeseries_data"]
-
         self.compression_factor = parameters["compression_factor"]
         self.I = parameters["I"]
         self.K = parameters["K"]
@@ -61,24 +59,21 @@ class Market:
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.delta = parameters["delta"]
-
         self.W_0 = parameters["W_0"]
-        
         self.W_0_list = np.asarray([self.W_0]*self.I)
-        
         self.beta = parameters["beta"]
         self.step_count = 0
         self.total_steps = parameters["total_steps"]
-
         self.theta_mean = parameters["theta_mean"]
         self.gamma_mean = parameters["gamma_mean"]
         self.theta_sigma = parameters["theta_sigma"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
-        self.phi_sigma = parameters["gamma_sigma"] 
+        self.gamma_sigma = parameters["gamma_sigma"] 
         self.switch_s = parameters["switch_s"]  #elasticty of the switch probability to the accurac
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
-        self.theta_t = np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1) #+1 is for the zeroth step update of the signal
-        self.gamma_t = np.random.normal(self.gamma_mean, self.theta_sigma, self.total_steps+1)#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
+        #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
+        self.theta_t = np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
+        self.gamma_t = np.cumsum(np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1))#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
 
         #create network
         self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
@@ -88,8 +83,7 @@ class Market:
             self.adjacency_matrix,
             self.network,
         ) = self.create_adjacency_matrix()
-
-
+        
         #self.expectations_theta_mean_vector = np.asarray([self.mu_0]*self.I)
         #self.S_matrix = #self.calc_s() # get the influence of neighbors
         #### here have to create a weighting matrix that include all of the people and the signal?
@@ -101,24 +95,15 @@ class Market:
         self.num_dogmatic_gamma = int(np.floor(self.I*parameters["proportion_dogmatic_gamma"]))#number of dogmatic gamma
 
         self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[0],0)]*self.num_dogmatic_theta + [("gamma",self.gamma_t[0],0)]*self.num_dogmatic_gamma + [("normal",0,self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
-        
-        #print("BEFORE self.dogmatic_state_theta_mean_var_vector", self.dogmatic_state_theta_mean_var_vector)
-        #alright now mix them!
         np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
-        #print("AFTER self.dogmatic_state_theta_mean_var_vector", self.dogmatic_state_theta_mean_var_vector)
-
-        #quit()
-
         self.agent_list = self.create_agent_list()
-
         self.S_matrix = self.init_calc_S(np.asarray([v.expectation_theta_mean for v in self.agent_list]))
-
         self.d_t = self.d #uninformed expectation
         self.p_t = self.d / self.R #uninformed price
         self.X_it = [0]*self.I
 
         if self.save_timeseries_data:
-            self.history_p_t = [0]
+            self.history_p_t = [self.d/self.R]
             self.history_d_t= [0]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
@@ -173,7 +158,9 @@ class Market:
 
         agent_list = [
             Consumer(
-                consumer_params,self.W_0_list[i], self.weighting_matrix[i], self.dogmatic_state_theta_mean_var_vector[i][0], self.dogmatic_state_theta_mean_var_vector[i][1], self.dogmatic_state_theta_mean_var_vector[i][2]
+                consumer_params,self.W_0_list[i], self.weighting_matrix[i], 
+                self.dogmatic_state_theta_mean_var_vector[i][0], self.dogmatic_state_theta_mean_var_vector[i][1], 
+                self.dogmatic_state_theta_mean_var_vector[i][2], self.adjacency_matrix[i]
             )
             for i in range(self.I)
         ]
@@ -181,14 +168,14 @@ class Market:
         return agent_list
 
     def init_calc_S(self, expectations_theta_mean_vector):
-        reshape_expectations_theta = expectations_theta_mean_vector[:, np.newaxis]
-        neighbour_influence = self.adjacency_matrix*reshape_expectations_theta
-
+        reshape_expectations_theta = expectations_theta_mean_vector#[:, np.newaxis]
+        neighbour_influence =  np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_expectations_theta
+        #print(neighbour_influence)
         return neighbour_influence
 
     def calc_S(self):
-        reshape_expectations_theta = self.expectations_theta_mean_vector[:, np.newaxis]
-        neighbour_influence = self.adjacency_matrix*reshape_expectations_theta
+        reshape_expectations_theta = self.expectations_theta_mean_vector#[:, np.newaxis]
+        neighbour_influence = np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_expectations_theta
 
         return neighbour_influence
 
@@ -285,5 +272,6 @@ class Market:
             self.append_data()
         if self.step_count % 10 == 0:
             print(self.step_count)
+            
 
         
