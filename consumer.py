@@ -28,6 +28,7 @@ class Consumer:
         self.d = parameters["d"]
         self.beta = parameters["beta"]
         self.delta = parameters["delta"]
+        self.ar_1_coefficient = parameters["ar_1_coefficient"]
         self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.signal_variances = self.compute_signal_variances()
 
@@ -43,11 +44,14 @@ class Consumer:
         return profit        
 
     def calc_squared_error_norm(self, d_t, d, S_k):
-        full_errors = np.abs((d_t - (d + S_k))/d_t)*self.adj_vector
-        return full_errors[~np.isnan(full_errors)]
+        full_errors = (((d_t - (d + S_k)))**2)*self.adj_vector
+        #full_errors = np.abs((d_t - (d + S_k)))*self.adj_vector
+        #or in percentage term
+        #full_errors = np.abs((d_t - (d + S_k))/d_t)*self.adj_vector
+        return full_errors #full_errors[~np.isnan(full_errors)]
 
     def calc_weighting_vector(self,squared_error_array): 
-        denominator_weighting = sum(np.exp(-self.beta*squared_error_array))
+        denominator_weighting = np.nansum(np.exp(-self.beta*squared_error_array))
 
         weighting_vector = (np.exp(-self.beta*squared_error_array))/denominator_weighting
 
@@ -60,14 +64,14 @@ class Consumer:
         return weighting_vector 
         
     def compute_signal_variances(self):
-        signal_variances = (self.delta + self.weighting_vector)**(-0.5) - 1#delta as some of the weightings may be zero? but this is unlikley? delta should be very very very small
+        signal_variances = 1/(self.delta + self.weighting_vector) - 1#delta as some of the weightings may be zero? but this is unlikley? delta should be very very very small
         return signal_variances
 
     def compute_posterior_mean_variance(self,S_array):
         prior_theta_variance = self.expectation_theta_variance
         prior_theta_mean = self.expectation_theta_mean
         #add priors for cycling, tour de france
-        full_signal_variances= np.append(self.signal_variances, prior_theta_variance)
+        full_signal_variances= np.append(self.signal_variances[~np.isnan(self.signal_variances)], prior_theta_variance)
         full_signal_means = np.append(S_array[~np.isnan(S_array)], prior_theta_mean) 
         #print("length of mean vector is: ", len(full_signal_means), "length of var vector is: ", len(full_signal_variances))
         #for both mean and variance
@@ -89,7 +93,9 @@ class Consumer:
     def next_step(self,d_t,p_t,X_t,S,steps, expectation_theta_mean = None):
         
         if expectation_theta_mean is None:
-            pass# correspeonds to the normal case
+            #pass
+            self.expectation_theta_mean = self.expectation_theta_mean * self.ar_1_coefficient
+            self.expectation_theta_variance = self.baseline_theta_var#Normal case
         else:
             #First we reset the expectations and variance
             self.expectation_theta_mean = expectation_theta_mean# corresponds to the dogmatic case

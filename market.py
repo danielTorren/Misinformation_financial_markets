@@ -69,11 +69,12 @@ class Market:
         self.theta_sigma = parameters["theta_sigma"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.gamma_sigma = parameters["gamma_sigma"] 
-        self.switch_s = parameters["switch_s"]  #elasticty of the switch probability to the accurac
+        self.switch_s = parameters["switch_s"]
+        self.ar_1_coefficient = parameters["ar_1_coefficient"]  #elasticty of the switch probability to the accurac
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
-        self.theta_t = np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
-        self.gamma_t = np.cumsum(np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1))#np.sin(np.linspace(-4*np.pi, 4*np.pi, self.total_steps + 1)) + 
+        self.theta_t = self.generate_ar1(0,self.ar_1_coefficient, self.theta_mean, self.theta_sigma, self.total_steps+1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
+        self.gamma_t = -self.theta_t #+ np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1)
 
         #create network
         self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
@@ -108,6 +109,13 @@ class Market:
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
             self.history_weighting_matrix = [self.weighting_matrix]
+
+    def generate_ar1(self, mean, acf, mu, sigma, N):
+        data = [mean]
+        for i in range(1,N):
+            noise = np.random.normal(mu,sigma)
+            data.append(acf * data[-1] + noise)
+        return np.array(data)
 
     def create_adjacency_matrix(self) -> tuple[npt.NDArray, npt.NDArray, nx.Graph]:
         """
@@ -153,7 +161,8 @@ class Market:
             "a": self.a,
             "d": self.d,
             "beta": self.beta,
-            "delta":self.delta
+            "delta":self.delta,
+            "ar_1_coefficient":self.ar_1_coefficient
         }
 
         agent_list = [
@@ -229,7 +238,6 @@ class Market:
         self.history_d_t.append(self.d_t)
         self.history_time.append(self.step_count)
         self.history_X_it.append(self.X_it)
-        #self.history_weighting_matrix.append(self.weighting_matrix)
         #self.history_informed_proportion.append(self.informed_proportion)
         self.history_weighting_matrix.append(self.weighting_matrix)
 

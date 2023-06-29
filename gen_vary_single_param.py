@@ -80,8 +80,8 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    property_varied = "proportion_dogmatic_theta"
-    property_list = [0.1, 0.2, 0.4, 0.6]
+    property_varied = "K"
+    property_list = [2, 5, 10]
 
     rootName = "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)

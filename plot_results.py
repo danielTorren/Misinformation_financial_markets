@@ -8,6 +8,7 @@ Created: 10/10/2022
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import networkx as nx
 import matplotlib.animation as animation
 from matplotlib.colors import Normalize
@@ -150,7 +151,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
-        #ax.plot(Data.history_time, np.cumsum(-Data.c_info + (Data.R-1)* Data.W_0 + ((Data.d + Data.theta_t[::Data.compression_factor] - Data.R*np.array(data))/(Data.a*Data.epsilon_sigma**2))* (Data.d_t - Data.R * np.array(data))), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+        ax.plot(Data.history_time, ((Data.d + Data.theta_t[::Data.compression_factor])/ Data.R), linestyle='dashed', color="red")
         # ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
         # color = 'tab:green'
         # ax2.set_ylabel('theta_t', color=color )  # we already handled the x-label with ax1
@@ -359,6 +360,7 @@ def anim_weighting_matrix(
 
 
 def plot_network_shape(    
+    #fileName, Data, base_params["network_structure"], "c bool","history_c_bool"
     fileName: str,
     Data: list,
     network_structure,
@@ -374,15 +376,17 @@ def plot_network_shape(
 
     fig, ax = plt.subplots()
 
-    colour_adjust = norm_value(data_matrix[-1])
-    ani_step_colours = cmap(colour_adjust)
+    #colour_adjust = norm_value(data_matrix[-1])
+    #ani_step_colours = cmap(colour_adjust)
 
     G = nx.from_numpy_matrix(Data.adjacency_matrix)
 
     # get pos
     pos = prod_pos(network_structure, G)
-
-    node_colours = ["blue" if x.c_bool else "red" for x in Data.agent_list ]
+    purple = (0.5, 0, 0.5)  # RGB values for purple
+    yellow = (0.9, 0.8, 0.2)  # RGB values for yellow
+    node_colours = ["blue" if x.dogmatic_state == "theta" else "red" for x in Data.agent_list ]
+    #node_colours = [purple if x.dogmatic_state == "theta" else yellow for x in Data.agent_list ]
 
     #print(" node_colours", node_colours)
 
@@ -395,26 +399,13 @@ def plot_network_shape(
         node_size=node_size,
         edgecolors="black",
     )
-    
-    """
-    cbar_culture = fig.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap),
-        ax=ax,
-        location="right"
-    )  #
-    cbar_culture.set_label(colour_bar_label)
-    """
-
-    #print("ani_step_colours",ani_step_colours)
 
     values = ["red", "blue"]
-    c_list = ["Not paying the cost","Paying the cost"]
+    c_list = ["Generalists","Specialists"]
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
 
-        
-    ax.legend()
-
+    ax.legend(loc='upper right')
 
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_value + "_plot_network_shape"
@@ -430,12 +421,7 @@ def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,p
 
     for i, ax in enumerate(axes.flat):
         for v in range(len(Data_list[i].agent_list)):
-            #if (Data_list[i].agent_list[v].history_c_bool[0]):
-            #    color = "blue"
-            #else:
-            #    color = "red"
             data_ind = np.asarray(eval("Data_list[%s].agent_list[%s].%s" % (str(i),str(v), property_y)))#get the list of data for that specific agent
-            #print(data_ind[:, i])
             ax.plot(np.asarray(Data_list[i].history_time), data_ind[:, signal])#plot the ith column in the weighting matrix which is [T x num_signals] where T is total steps
             #ax.plot(np.asarray(Data_list[i].history_time), data_ind[:, signal], color = color)#plot the ith column in the weighting matrix which is [T x num_signals] where T is total steps
         
@@ -495,6 +481,32 @@ def degree_distribution_single(
 
     plotName = fileName + "/Prints"
     f = plotName + "/degree_distribution"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def plot_final_wighting_matrix(
+        fileName,
+        Data,
+        dpi_save
+):
+#To plot the final weighting matrix
+    fig, ax = plt.subplots()
+    data = np.asarray(Data.history_weighting_matrix[-1])
+
+    # Create the heatmap
+    heatmap = ax.imshow(data, cmap='viridis')
+
+    # Add a colorbar
+    cbar = plt.colorbar(heatmap)
+
+    # Add labels, title, and axis ticks
+    #ax.set_xlabel('X-axis')
+    #ax.set_ylabel('Y-axis')
+    ax.set_title('Confidence Matrix')
+
+    #saving
+    plotName = fileName + "/Plots"
+    f = plotName + "/final_weighting_matrix"
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
@@ -705,7 +717,7 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
             else:
                 color = "black"
             data_ind = np.asarray(eval("Data_list[%s].agent_list[%s].%s" % (str(i),str(v), property_y)))
-            ax.plot(np.asarray(Data_list[i].history_time), (np.cumsum(data_ind)), color = color)
+            ax.plot(np.asarray(Data_list[i].history_time), data_ind, color = color)
 
         ax.set_xlabel("Steps")
         ax.set_ylabel("%s" % property_y)
@@ -718,8 +730,30 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, property_y):
+    fig, axes = plt.subplots(nrows=1, ncols=len(Data_list), sharey=True, sharex=True, figsize=(10,6))
+    for i, ax in enumerate(axes.flat):
+        data = eval("Data_list[%s].%s" % (str(i),property_y))
+        if property_y == "history_p_t":
+            ax.plot(np.asarray(Data_list[i].history_time), np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+            ax.plot(np.asarray(Data_list[i].history_time), np.array((Data_list[i].d + Data_list[i].theta_t)/Data_list[i].R), linestyle='dashed', color="red")
+        else:
+            ax.plot(np.asarray(Data_list[i].history_time), np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+        ax.set_xlabel("Steps")
+        ax.set_ylabel("%s" % property_y)
+        ax.set_title("%s = %s" % (property_title, property_list[i]))
+  
+    
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f =plotName + "/plot_multi_time_series_%s_%s" % (property_varied,property_y)
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
-dpi_save = 300
+
+
+
+dpi_save = 600
 red_blue_c = True
 
 single_shot = 1
@@ -737,12 +771,13 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_14_34_51__07_06_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_18_57_45__18_06_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
-
+        print("mean price is: ", np.mean(Data.history_p_t), "mean variance is: ", np.var(Data.history_p_t), "autocorr is: ", np.corrcoef(Data.history_p_t[:-1],Data.history_p_t[1:])[0,1])
+        print("mean_rational price is: ", np.mean(Data.d + Data.theta_t/ Data.R),"mean_rational variance is: ", np.var(Data.d + Data.theta_t/ Data.R), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
         #print(Data.history_time)
 
         #consumers
@@ -763,11 +798,11 @@ if __name__ == "__main__":
         #plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
         #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
-        #plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","history_c_bool",cmap, norm_zero_one, node_size,dpi_save)
+        plot_network_c = plot_network_shape(fileName, Data, base_params["network_structure"], "c bool","dogmatic_state",cmap, norm_zero_one, node_size,dpi_save)
         ##plot_history_pulsing = plot_time_series_market_pulsing(fileName,Data,"$In phase?$",dpi_save)
         #plot_degree_distribution = degree_distribution_single(fileName,Data,dpi_save)
         #plot_weighting_matrix_relations = plot_line_weighting_matrix(fileName,Data,dpi_save)
-        
+        plot_final_wighting_m = plot_final_wighting_matrix(fileName, Data, dpi_save)
         #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
 
         #network trasnspose
@@ -791,16 +826,15 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_shot_12_36_11__07_06_2023"
-
+        fileName = "results/single_vary_K_18_50_13__18_06_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
 
-        property_title = "Proportion dogmatic theta"
+        property_title = "epsilon_sigma"
         #titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
         #print("titles", titles)
-
+        plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
         plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
         plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
 
