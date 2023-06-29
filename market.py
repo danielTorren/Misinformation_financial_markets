@@ -200,7 +200,7 @@ class Market:
     def get_consumers_dt_mean_variance(self):
         expectations_theta_mean_vector = np.asarray([i.expectation_theta_mean for i in self.agent_list])
         expectations_theta_variance_vector = np.asarray([i.expectation_theta_variance for i in self.agent_list])
-        dt_expectations_mean = self.d + expectations_theta_mean_vector
+        dt_expectations_mean = (self.d*self.R)/(self.R-1) + expectations_theta_mean_vector
         dt_expectations_variance = self.epsilon_sigma**2 + expectations_theta_variance_vector
         return dt_expectations_mean, dt_expectations_variance,expectations_theta_mean_vector
 

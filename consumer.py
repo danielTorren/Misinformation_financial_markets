@@ -78,10 +78,10 @@ class Consumer:
         denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
         #mean
         numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
-        posterior_theta_mean = numerator_mean/denominator
+        posterior_theta_mean = (numerator_mean/denominator)*(self.R/(self.R - self.ar_1_coefficient))
         #print(numerator_mean)
         #variance
-        posterior_theta_variance = np.prod(full_signal_variances)/denominator
+        posterior_theta_variance = (np.prod(full_signal_variances)/denominator)*(1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
         return posterior_theta_mean,posterior_theta_variance 
 
     def append_data(self):
