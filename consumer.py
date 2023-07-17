@@ -12,15 +12,17 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, W_0, weighting_vector,dogmatic_state, baseline_theta_mean, baseline_theta_var, adj_vector):
+    def __init__(self, parameters: dict, W_0, weighting_vector,dogmatic_state, baseline_mean, baseline_var, adj_vector):
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
         self.W_0 = W_0
-        self.baseline_theta_mean = baseline_theta_mean
-        self.baseline_theta_var = baseline_theta_var
-        self.expectation_theta_mean =  self.baseline_theta_mean
-        self.expectation_theta_variance = self.baseline_theta_var
+        self.baseline_mean = baseline_mean
+        self.baseline_var = baseline_var
+        self.prior_mean =  self.baseline_mean
+        self.prior_variance = self.baseline_var
+        self.payoff_expectation = self.prior_mean
+        self.payoff_variance = self.prior_variance
         self.dogmatic_state = dogmatic_state
         self.weighting_vector = weighting_vector
         self.R = parameters["R"]
@@ -30,90 +32,72 @@ class Consumer:
         self.delta = parameters["delta"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
         self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
-        self.signal_variances = self.compute_signal_variances()
+        self.source_variance = 1
 
         if self.save_timeseries_data:
             #self.history_weighting_vector = [list(self.weighting_vector)] 
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
-            self.history_expectation_theta_mean = [self.expectation_theta_mean]
-            self.history_expectation_theta_variance = [self.expectation_theta_variance] 
+            self.history_prior_mean = [self.prior_mean]
+            self.history_prior_variance = [self.prior_variance] 
+            self.history_source_variance = [self.source_variance]
 
-    def compute_profit(self,d_t,p_t,X_t):
-        profit = self.R*(self.W_0 - p_t*X_t) + d_t*X_t - self.R*self.W_0
-
+    def compute_profit(self,d_t, p_t, p_t1, X_t1):
+        profit = (d_t + p_t - self.R * p_t1)*X_t1
         return profit        
 
-    def calc_squared_error_norm(self, d_t, d, S_k):
-        full_errors = (((d_t - (d + S_k)))**2)*self.adj_vector
-        #full_errors = np.abs((d_t - (d + S_k)))*self.adj_vector
-        #or in percentage term
-        #full_errors = np.abs((d_t - (d + S_k))/d_t)*self.adj_vector
-        return full_errors #full_errors[~np.isnan(full_errors)]
 
-    def calc_weighting_vector(self,squared_error_array): 
-        denominator_weighting = np.nansum(np.exp(-self.beta*squared_error_array))
-
-        weighting_vector = (np.exp(-self.beta*squared_error_array))/denominator_weighting
-
-        #weighting_vector = [np.exp(-self.beta*squared_error)/denominator_weighting for squared_error in squared_error_array]
-        return weighting_vector#np.asarray(weighting_vector)
-
-    def compute_weighting_vector(self):
-        squared_error_array = self.calc_squared_error_norm(self.d_t, self.d, self.S_array)
-        weighting_vector = self.calc_weighting_vector(squared_error_array)
-        return weighting_vector 
-        
-    def compute_signal_variances(self):
-        signal_variances = 1/(self.delta + self.weighting_vector) - 1#delta as some of the weightings may be zero? but this is unlikley? delta should be very very very small
-        return signal_variances
+    def compute_source_variance(self, d_t, p_t, S_k, steps):
+        current_error = (d_t + p_t - S_k)**2
+        if steps < 2:
+            source_variance = current_error
+        else:
+            source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
+        return source_variance
 
     def compute_posterior_mean_variance(self,S_array):
-        prior_theta_variance = self.expectation_theta_variance
-        prior_theta_mean = self.expectation_theta_mean
+        prior_variance = self.prior_variance
+        prior_mean = self.prior_mean
         #add priors for cycling, tour de france
-        full_signal_variances= np.append(self.signal_variances[~np.isnan(self.signal_variances)], prior_theta_variance)
-        full_signal_means = np.append(S_array[~np.isnan(S_array)], prior_theta_mean) 
+        full_signal_variances= np.append(self.source_variance[~np.isnan(self.source_variance)], prior_variance)
+        full_signal_means = np.append(S_array[~np.isnan(S_array)], prior_mean) 
         #print("length of mean vector is: ", len(full_signal_means), "length of var vector is: ", len(full_signal_variances))
         #for both mean and variance
         denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
         #mean
         numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
-        posterior_theta_mean = (numerator_mean/denominator)*(self.R/(self.R - self.ar_1_coefficient))
-        #print(numerator_mean)
-        #variance
-        posterior_theta_variance = (np.prod(full_signal_variances)/denominator)*(1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
-        return posterior_theta_mean,posterior_theta_variance 
+        posterior_mean = (numerator_mean/denominator)
+        posterior_variance = (np.prod(full_signal_variances)/denominator)
+        return posterior_mean,posterior_variance 
 
     def append_data(self):
         #self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
-        self.history_expectation_theta_mean.append(self.expectation_theta_mean) 
-        self.history_expectation_theta_variance.append(self.expectation_theta_variance) 
+        self.history_prior_mean.append(self.prior_mean) 
+        self.history_prior_variance.append(self.prior_variance) 
 
-    def next_step(self,d_t,p_t,X_t,S,steps, expectation_theta_mean = None):
+    def next_step(self,d_t,p_t, p_t1,X_t,X_t1, S,steps, informed_expectation = None):
         
-        if expectation_theta_mean is None:
-            #pass
-            self.expectation_theta_mean = self.expectation_theta_mean * self.ar_1_coefficient
-            self.expectation_theta_variance = self.baseline_theta_var#Normal case
+        if informed_expectation is None:
+            pass
+            
         else:
             #First we reset the expectations and variance
-            self.expectation_theta_mean = expectation_theta_mean# corresponds to the dogmatic case
-            self.expectation_theta_variance = 0#same for all time!
+            self.prior_mean = informed_expectation# corresponds to the dogmatic case
+            self.prior_variance = self.baseline_var
 
         #recieve dividend and demand
         #compute profit
         self.d_t = d_t
         self.p_t = p_t
+        self.p_t1 = p_t1
         self.S_array = S
-        self.profit = self.compute_profit(self.d_t,self.p_t,X_t)
+        self.profit = self.compute_profit(self.d_t,self.p_t, self.p_t1, X_t1)
 
         #update weighting
-        self.weighting_vector = self.compute_weighting_vector()
-        self.signal_variances = self.compute_signal_variances()
+        self.source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array, steps)
     
         #compute posterior expectations
-        self.expectation_theta_mean, self.expectation_theta_variance = self.compute_posterior_mean_variance(self.S_array)
+        self.payoff_expectation, self.payoff_variance = self.compute_posterior_mean_variance(self.S_array)
 
         if  (steps % self.compression_factor == 0) and (self.save_timeseries_data):  
             self.append_data()

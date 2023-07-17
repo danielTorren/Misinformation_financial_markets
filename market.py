@@ -89,25 +89,29 @@ class Market:
         #self.S_matrix = #self.calc_s() # get the influence of neighbors
         #### here have to create a weighting matrix that include all of the people and the signal?
 
-        self.weighting_matrix = self.gen_init_weighing_matrix()
+        self.weighting_matrix = self.adjacency_matrix
 
         self.num_dogmatic_theta = int(np.floor(self.I*parameters["proportion_dogmatic_theta"])) #number of dogmatic theta
         #print("self.num_dogmatic_theta", self.num_dogmatic_theta, self.I)
         self.num_dogmatic_gamma = int(np.floor(self.I*parameters["proportion_dogmatic_gamma"]))#number of dogmatic gamma
 
-        self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[0],0)]*self.num_dogmatic_theta + [("gamma",self.gamma_t[0],0)]*self.num_dogmatic_gamma + [("normal",0,self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
+        self.dogmatic_state_theta_mean_var_vector = [("theta",(self.d * self.R)/(self.R -1) + (self.R * self.theta_t[0])/(self.R - self.ar_1_coefficient), self.epsilon_sigma**2)]*self.num_dogmatic_theta + [("gamma",(self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[0])/(self.R - self.ar_1_coefficient),self.epsilon_sigma**2)]*self.num_dogmatic_gamma + [("normal",(self.d*self.R)/(self.R - 1) ,self.epsilon_sigma**2 + self.theta_sigma**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
         self.agent_list = self.create_agent_list()
-        self.S_matrix = self.init_calc_S(np.asarray([v.expectation_theta_mean for v in self.agent_list]))
-        self.d_t = self.d #uninformed expectation
+        self.S_matrix = self.init_calc_S(np.asarray([v.payoff_expectation for v in self.agent_list]))
+        self.d_t1 = self.d #future dividends
         self.p_t = self.d / self.R #uninformed price
+        self.p_t1 = self.p_t #previous price
         self.X_it = [0]*self.I
+        self.X_it1 = [0]*self.I #previous demand
 
         if self.save_timeseries_data:
             self.history_p_t = [self.d/self.R]
-            self.history_d_t= [0]
+            self.history_p_t1 = [self.d/self.R]
+            self.history_d_t1 = [self.d]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
+            self.history_X_it1 = [[0]*self.I]
             self.history_weighting_matrix = [self.weighting_matrix]
 
     def generate_ar1(self, mean, acf, mu, sigma, N):
@@ -176,58 +180,47 @@ class Market:
 
         return agent_list
 
-    def init_calc_S(self, expectations_theta_mean_vector):
-        reshape_expectations_theta = expectations_theta_mean_vector#[:, np.newaxis]
-        neighbour_influence =  np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_expectations_theta
+    def init_calc_S(self, payoff_expectations):
+        reshape_payoff_expectations = payoff_expectations#[:, np.newaxis]
+        neighbour_influence =  np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_payoff_expectations 
         #print(neighbour_influence)
         return neighbour_influence
 
     def calc_S(self):
-        reshape_expectations_theta = self.expectations_theta_mean_vector#[:, np.newaxis]
-        neighbour_influence = np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_expectations_theta
+        reshape_payoff_expectations = self.payoff_expectations#[:, np.newaxis]
+        neighbour_influence = np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_payoff_expectations
 
         return neighbour_influence
 
-    def gen_init_weighing_matrix(self):
-        """
-        equal weighting amongst all neighbours at first step?
-        """
-        neighbour_count_vector = np.sum(self.adjacency_matrix, axis = 1)        
-        network_weighting_vector = (1/neighbour_count_vector)        
-
-        return network_weighting_vector
-
-    def get_consumers_dt_mean_variance(self):
-        expectations_theta_mean_vector = np.asarray([i.expectation_theta_mean for i in self.agent_list])
-        expectations_theta_variance_vector = np.asarray([i.expectation_theta_variance for i in self.agent_list])
-        dt_expectations_mean = (self.d*self.R)/(self.R-1) + expectations_theta_mean_vector
-        dt_expectations_variance = self.epsilon_sigma**2 + expectations_theta_variance_vector
-        return dt_expectations_mean, dt_expectations_variance,expectations_theta_mean_vector
+    def get_consumers_payoff_expectations(self):
+        payoff_expectations = np.asarray([i.payoff_expectation for i in self.agent_list])
+        payoff_variances = np.asarray([i.payoff_variance for i in self.agent_list])
+        return payoff_expectations, payoff_variances
 
     def compute_price(self):
-        term_1 = sum((self.dt_expectations_mean)/(self.dt_expectations_variance))
-        term_2 = 1/(sum(1/self.dt_expectations_variance ))
+        term_1 = sum((self.payoff_expectations)/(self.payoff_variances))
+        term_2 = 1/(sum(1/self.payoff_variances))
         aggregate_price = (term_1*term_2)/self.R
         return aggregate_price
 
     def compute_demand(self):
-        demand_numerator = self.dt_expectations_mean - self.R*self.p_t
-        demand_denominator = self.a*self.dt_expectations_variance
+        demand_numerator = self.payoff_expectations - self.R*self.p_t
+        demand_denominator = self.a*self.payoff_variances
         demand_vector = demand_numerator/demand_denominator
         return demand_vector
 
     def compute_dividends(self):
         d_t = self.d + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
-        return d_t         
+        return d_t       
     
     def update_consumers(self):
         for i,agent in enumerate(self.agent_list):
             if agent.dogmatic_state =="theta":
-                agent.next_step(self.d_t,self.p_t,self.X_it[i], self.S_matrix[i],self.step_count, self.theta_t[self.step_count])
+                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count, (self.d * self.R)/(self.R -1) + (self.R * self.theta_t[self.step_count])/(self.R - self.ar_1_coefficient))
             elif agent.dogmatic_state =="gamma": #dogmatic gamma
-                agent.next_step(self.d_t,self.p_t,self.X_it[i], self.S_matrix[i],self.step_count, self.gamma_t[self.step_count])
+                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count, (self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[self.step_count])/(self.R - self.ar_1_coefficient))
             else:
-                agent.next_step(self.d_t,self.p_t,self.X_it[i], self.S_matrix[i],self.step_count)
+                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count)
             #                                 d_t,     p_t,     X_t,     S,               steps,         expectation_theta_mean = None, expectation_theta_var = None
 
     def get_weighting_matrix(self):
@@ -235,9 +228,11 @@ class Market:
 
     def append_data(self):
         self.history_p_t.append(self.p_t)
-        self.history_d_t.append(self.d_t)
+        self.history_p_t1.append(self.p_t1)
+        self.history_d_t1.append(self.d_t)
         self.history_time.append(self.step_count)
         self.history_X_it.append(self.X_it)
+        self.history_X_it1.append(self.X_it1)
         #self.history_informed_proportion.append(self.informed_proportion)
         self.history_weighting_matrix.append(self.weighting_matrix)
 
@@ -254,16 +249,15 @@ class Market:
         None
         """
 
-        #compute and return profits
-        self.update_consumers()
-
         #Recieve expectations of mean and variances
-        self.dt_expectations_mean, self.dt_expectations_variance, self.expectations_theta_mean_vector = self.get_consumers_dt_mean_variance()
+        self.payoff_expectations, self.payoff_variances = self.get_consumers_payoff_expectations()
 
         #Compute aggregate price
+        self.p_t1 = self.p_t
         self.p_t = self.compute_price()
 
         #compute indivdiual demands
+        self.X_it1 = self.X_it
         self.X_it = self.compute_demand()
 
         #simulate dividend
@@ -271,8 +265,10 @@ class Market:
 
         #update network signal
         self.S_matrix = self.calc_S()
-        
         self.weighting_matrix = self.get_weighting_matrix()
+
+        #update consumers
+        self.update_consumers()
 
         self.step_count +=1  
        

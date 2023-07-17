@@ -58,14 +58,11 @@ def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blu
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
 
-    if property_y == "history_expectation_mean":
+    if property_y == "history_payoff_expectation":
         #Data.theta_t[::Data.compression_factor]
         ax.plot(Data.history_time, Data.d + Data.theta_t[::Data.compression_factor], linestyle='dashed', color="black",  linewidth=2, alpha=0.5) 
     elif property_y == "history_profit":
         ax.plot(Data.history_time, (Data.theta_t - Data.gamma_t)*(Data.theta_t + Data.epsilon_t) - Data.c_info, linestyle='dashdot', color="green" , linewidth=2)
-    elif property_y == "history_expectation_theta_mean":
-        ax.axhline(y = 0.0, linestyle='dashdot', color="grey" , linewidth=2, alpha = 0.9)
-        #ax.set_ylim([Data.R*Data.W_0 - 0.2, Data.R*Data.W_0 + 0.2])
     plt.tight_layout()
 
     plotName = fileName + "/Plots"
@@ -735,8 +732,8 @@ def plot_time_series_market_multi(fileName,Data_list,property_list, property_var
     for i, ax in enumerate(axes.flat):
         data = eval("Data_list[%s].%s" % (str(i),property_y))
         if property_y == "history_p_t":
-            ax.plot(np.asarray(Data_list[i].history_time), np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
-            ax.plot(np.asarray(Data_list[i].history_time), np.array((Data_list[i].d + Data_list[i].theta_t)/Data_list[i].R), linestyle='dashed', color="red")
+            ax.plot(np.asarray(Data_list[i].history_time[10:]), np.array(data)[10:], linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+            ax.plot(np.asarray(Data_list[i].history_time[10:]), np.array((Data_list[i].d + Data_list[i].theta_t)/Data_list[i].R)[10:], linestyle='dashed', color="red")
         else:
             ax.plot(np.asarray(Data_list[i].history_time), np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
         ax.set_xlabel("Steps")
@@ -771,7 +768,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_11_14_15__29_06_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_10_41_00__17_07_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -813,8 +810,8 @@ if __name__ == "__main__":
         ##plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
         plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
         ##plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
-        plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
-        plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
+        #plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
+        #plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_expectation_theta_variance",red_blue_c)
 
         #inital prior distributions
         #if base_params["heterogenous_priors"]:
