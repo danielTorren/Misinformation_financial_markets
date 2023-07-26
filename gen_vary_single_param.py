@@ -7,6 +7,7 @@ Created: 1/12/2022
 # imports
 import json
 import time
+import pyperclip
 
 import numpy as np
 from market import Market
@@ -81,11 +82,14 @@ if __name__ == "__main__":
     params = json.load(f)
 
     property_varied = "K"
-    property_list = [2, 5, 10]
+    property_list = list(np.arange(2, 20, 1))
+    print(property_list)
 
     rootName = "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)
     print("FILENAME:", fileName)
+    #copy the filename variable to the clipboard
+    pyperclip.copy(fileName)
 
     params_list = gen_param_list(params, property_list, property_varied)
     Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation

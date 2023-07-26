@@ -100,14 +100,14 @@ class Market:
         self.agent_list = self.create_agent_list()
         self.S_matrix = self.init_calc_S(np.asarray([v.payoff_expectation for v in self.agent_list]))
         self.d_t1 = self.d #future dividends
-        self.p_t = self.d / self.R #uninformed price
+        self.p_t = self.d / (self.R - 1) #uninformed price
         self.p_t1 = self.p_t #previous price
         self.X_it = [0]*self.I
         self.X_it1 = [0]*self.I #previous demand
 
         if self.save_timeseries_data:
-            self.history_p_t = [self.d/self.R]
-            self.history_p_t1 = [self.d/self.R]
+            self.history_p_t = [self.p_t]
+            self.history_p_t1 = [self.p_t1]
             self.history_d_t1 = [self.d]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]

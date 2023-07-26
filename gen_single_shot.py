@@ -6,6 +6,7 @@ Created: 10/10/2022
 """
 # imports
 import json
+import pyperclip
 from utility import (
     createFolder, 
     save_object,
@@ -26,6 +27,8 @@ if __name__ == "__main__":
     rootName = "single_shot"
     fileName = produce_name_datetime(rootName)
     print("FILENAME:", fileName)
+    #copy the filename variable to the clipboard
+    pyperclip.copy(fileName)
 
     Data = generate_data_single(params,print_simu)  # run the simulation
 
@@ -34,3 +37,4 @@ if __name__ == "__main__":
     save_object(Data, fileName + "/Data", "financial_market")
     save_object(params, fileName + "/Data", "base_params")
 
+    
