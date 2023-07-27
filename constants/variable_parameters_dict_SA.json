@@ -1,0 +1,14 @@
+{
+    "N":{"property": "N","min":100,"max":1000, "title": "$N$", "round":1},
+    "M":{"property":"M","min":1,"max": 30, "title": "$M$", "round":1},
+    "K":{"property":"K","min":5,"max":99 , "title": "$K$", "round":1},
+    "cultural_inertia_real":{"property":"cultural_inertia_real","min":1,"max": 3000, "title": "$T_{\\rho}$", "round":0},
+    "learning_error_scale":{"property":"learning_error_scale","min":0.0,"max":1 , "title": "$\\epsilon$", "round":0 },
+    "a_attitude":{"property":"a_attitude","min":0.05, "max": 8, "title": "Initial attitude Beta $a_A$", "round":0},
+    "b_attitude":{"property":"b_attitude","min":0.05, "max":8 , "title": "Initial attitude Beta $n_A$", "round":0},
+    "a_threshold":{"property":"a_threshold","min":0.05, "max": 8, "title": "Initial threshold Beta $a_T$", "round":0},
+    "b_threshold":{"property":"b_threshold","min":0.05, "max": 8, "title": "Initial threshold Beta $b_T$", "round":0},
+    "discount_factor":{"property":"discount_factor","min":0.0, "max":1.0 , "title": "$\\delta$", "round":0},
+    "homophily": {"property": "homophily","min": 0.0,"max": 1.0,"title": "$h$", "round":0},
+    "confirmation_bias":{"property":"confirmation_bias","min":-50.0, "max":200 , "title": "$\\theta$", "round":0}
+}

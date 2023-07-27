@@ -409,7 +409,7 @@ def plot_network_shape(
     # fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
-def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,property_y,signal, property_varied, property_list,titles):
+def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,property_y,signal, propertprice_autocorried, property_list,titles):
     
     ncols = len(property_list)
     nrows = 1
@@ -432,7 +432,7 @@ def plot_time_series_consumer_triple_multi(fileName,Data_list,y_title,dpi_save,p
     plt.tight_layout()
 
     plotName = fileName + "/Prints"
-    f = plotName + "/plot_time_series_consumer_triple_multi_%s_%s" % (property_varied,signal)
+    f = plotName + "/plot_time_series_consumer_triple_multi_%s_%s" % (propertprice_autocorried,signal)
     
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
@@ -700,7 +700,7 @@ def calc_weighting_matrix_time_series(Data):
 
     return influence_vector_time_series
 
-def plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, property_y):
+def plot_multi_time_series(fileName,Data_list,property_list, propertprice_autocorried, property_title, property_y):
     
     fig, axes = plt.subplots(nrows=1, ncols=len(Data_list), sharey=True, sharex=True, figsize=(10,6))
     #print(property_y)
@@ -722,12 +722,12 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
     plt.tight_layout()
 
     plotName = fileName + "/Plots"
-    f = plotName + "/plot_multi_time_series_%s_%s" % (property_varied,property_y)
+    f = plotName + "/plot_multi_time_series_%s_%s" % (propertprice_autocorried,property_y)
     #print("f",f)
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
-def plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, property_y):
+def plot_time_series_market_multi(fileName,Data_list,property_list, propertprice_autocorried, property_title, property_y):
     fig, axes = plt.subplots(nrows=1, ncols=len(Data_list), sharey=True, sharex=True, figsize=(10,6))
     for i, ax in enumerate(axes.flat):
         data = eval("Data_list[%s].%s" % (str(i),property_y))
@@ -743,7 +743,7 @@ def plot_time_series_market_multi(fileName,Data_list,property_list, property_var
     
     fig.tight_layout()
     plotName = fileName + "/Plots"
-    f =plotName + "/plot_multi_time_series_%s_%s" % (property_varied,property_y)
+    f =plotName + "/plot_multi_time_series_%s_%s" % (propertprice_autocorried,property_y)
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
@@ -825,17 +825,17 @@ if __name__ == "__main__":
     elif single_param_vary:
         fileName = "results/single_vary_K_18_50_13__18_06_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
-        property_varied =  load_object(fileName + "/Data", "property_varied")
+        propertprice_autocorried =  load_object(fileName + "/Data", "propertprice_autocorried")
         property_list = load_object(fileName + "/Data", "property_list")
 
         property_title = "epsilon_sigma"
         #titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
         #print("titles", titles)
-        plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
-        plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
-        plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
+        plot_time_series_market_multi(fileName,Data_list,property_list, propertprice_autocorried, property_title, "history_p_t")
+        plot_multi_time_series(fileName,Data_list,property_list, propertprice_autocorried, property_title, "history_profit")
+        plot_multi_time_series(fileName,Data_list,property_list, propertprice_autocorried, property_title, "history_expectation_theta_mean")
 
-        #plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
-        #plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
+        #plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, propertprice_autocorried, property_list, titles)
+        #plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, propertprice_autocorried, property_list, titles)
         
     plt.show()

@@ -43,7 +43,7 @@ def generate_data(params):
         )
     return financial_market
 
-def gen_param_list(params: dict, property_list: list, property_varied: str) -> list[dict]:
+def gen_param_list(params: dict, property_list: list, propertprice_autocorried: str) -> list[dict]:
 
     """
     Produce a list of the dicts for each experiment
@@ -54,7 +54,7 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
         base parameters
     porperty_list: list
         list of values for the property to be varied
-    property_varied: str
+    propertprice_autocorried: str
         property to be varied
 
     Returns
@@ -65,7 +65,7 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
 
     params_list = []
     for i in property_list:
-        params[property_varied] = i
+        params[propertprice_autocorried] = i
         params_list.append(
             params.copy()
         )  # have to make a copy so that it actually appends a new dict and not just the location of the params dict
@@ -80,20 +80,20 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    property_varied = "K"
+    propertprice_autocorried = "K"
     property_list = [2, 5, 10]
 
-    rootName = "single_vary_" + property_varied
+    rootName = "single_vary_" + propertprice_autocorried
     fileName = produce_name_datetime(rootName)
     print("FILENAME:", fileName)
 
-    params_list = gen_param_list(params, property_list, property_varied)
+    params_list = gen_param_list(params, property_list, propertprice_autocorried)
     Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation
 
     createFolder(fileName)
 
     save_object(Data_list, fileName + "/Data", "financial_market_list")
-    save_object(property_varied, fileName + "/Data", "property_varied")
+    save_object(propertprice_autocorried, fileName + "/Data", "propertprice_autocorried")
     save_object(property_list, fileName + "/Data", "property_list")
     save_object(params, fileName + "/Data", "base_params")
 
