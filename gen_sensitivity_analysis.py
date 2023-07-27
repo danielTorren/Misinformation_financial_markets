@@ -9,7 +9,7 @@ Created: 10/10/2022
 import json
 import numpy as np
 from scipy.stats import skew
-from SALib.sample import saltelli
+from SALib.sample import sobol
 import numpy.typing as npt
 from joblib import Parallel, delayed
 import multiprocessing
@@ -19,7 +19,7 @@ from utility import (
     produce_name_datetime,
 )
 from generate_data import generate_data_single
-
+import pyperclip
 
 # modules
 def generate_sensitivity_output(params: dict):
@@ -28,6 +28,8 @@ def generate_sensitivity_output(params: dict):
 
     """
 
+    print_simu = 0
+
     price_mean_list = []
     price_var_list = []
     price_autocorr_list = []
@@ -35,7 +37,7 @@ def generate_sensitivity_output(params: dict):
 
     for v in params["seed_list"]:
         params["set_seed"] = v
-        data = generate_data_single(params)
+        data = generate_data_single(params, print_simu)
         
         price_mean = np.mean(data.history_p_t)
         price_var = np.var(data.history_p_t)
@@ -69,6 +71,7 @@ def parallel_run_sa(
     """
 
     #print("params_dict", params_dict)
+
     num_cores = multiprocessing.cpu_count()
     #res = [generate_sensitivity_output(i) for i in params_dict]
     res = Parallel(n_jobs=num_cores, verbose=10)(
@@ -186,7 +189,6 @@ def produce_param_list_SA(
     return params_list
 
 def main(
-        N_samples = 1024,
         BASE_PARAMS_LOAD = "package/constants/base_params.json",
         VARIABLE_PARAMS_LOAD = "package/constants/variable_parameters_dict_SA.json"
          ) -> str: 
@@ -196,6 +198,7 @@ def main(
     # load base params
     f = open(BASE_PARAMS_LOAD)
     base_params = json.load(f)
+    N_samples = base_params["N_samples"]
 
     # load variable params
     f_variable_parameters = open(VARIABLE_PARAMS_LOAD)
@@ -206,14 +209,15 @@ def main(
     AV_reps = len(base_params["seed_list"])
     print("Average reps: ", AV_reps)
 
-    problem, fileName, param_values = generate_problem(
+    problem = generate_problem(
         variable_parameters_dict, N_samples, AV_reps, calc_second_order
     )
 
         ########################################
 
     # GENERATE PARAMETER VALUES
-    param_values = saltelli.sample(
+    print("problem, N_samples", problem, N_samples, type( N_samples))
+    param_values = sobol.sample(
         problem, N_samples, calc_second_order=calc_second_order
     )  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
 
@@ -238,6 +242,7 @@ def main(
     root = "sensitivity_analysis"
     fileName = produce_name_datetime(root)
     print("fileName:", fileName)
+    pyperclip.copy(fileName)
 
     createFolder(fileName)
 
@@ -258,7 +263,6 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    N_samples = 16,
-    BASE_PARAMS_LOAD = "package/constants/base_params_SA.json",
-    VARIABLE_PARAMS_LOAD = "package/constants/variable_parameters_dict_SA.json"
+    BASE_PARAMS_LOAD = "constants/base_params_SA.json",
+    VARIABLE_PARAMS_LOAD = "constants/variable_parameters_dict_SA.json"
 )

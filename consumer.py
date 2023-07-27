@@ -12,30 +12,28 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, W_0, weighting_vector,dogmatic_state, baseline_mean, baseline_var, adj_vector):
+    def __init__(self, parameters: dict, weighting_vector ,dogmatic_state, baseline_mean, baseline_var, adj_vector):
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
-        self.W_0 = W_0
         self.baseline_mean = baseline_mean
         self.baseline_var = baseline_var
+
         self.prior_mean =  self.baseline_mean
         self.prior_variance = self.baseline_var
         self.payoff_expectation = self.prior_mean
         self.payoff_variance = self.prior_variance
+
         self.dogmatic_state = dogmatic_state
         self.weighting_vector = weighting_vector
+
         self.R = parameters["R"]
-        self.a = parameters["a"]
-        self.d = parameters["d"]
-        self.beta = parameters["beta"]
-        self.delta = parameters["delta"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
         self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.source_variance = 1
 
         if self.save_timeseries_data:
-            #self.history_weighting_vector = [list(self.weighting_vector)] 
+
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_prior_mean = [self.prior_mean]
             self.history_prior_variance = [self.prior_variance] 
@@ -70,7 +68,6 @@ class Consumer:
         return posterior_mean,posterior_variance 
 
     def append_data(self):
-        #self.history_weighting_vector.append(list(self.weighting_vector))#convert it for plotting
         self.history_profit.append(self.profit)
         self.history_prior_mean.append(self.prior_mean) 
         self.history_prior_variance.append(self.prior_variance) 

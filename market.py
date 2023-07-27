@@ -53,33 +53,31 @@ class Market:
         np.random.seed(self.set_seed)
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
-        self.I = parameters["I"]
-        self.K = parameters["K"]
+
+        self.network_density = parameters["network_density"]
+        self.I = int(round(parameters["I"]))
+        self.K = int(round((self.I - 1)*self.network_density)) #reverse engineer the links per person using the density  d = 2m/n(n-1) where n is nodes and m number of edges
+        #self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
+
         self.R = parameters["R"]
         self.a = parameters["a"]
         self.d = parameters["d"]
-        self.delta = parameters["delta"]
-        self.W_0 = parameters["W_0"]
-        self.W_0_list = np.asarray([self.W_0]*self.I)
-        self.beta = parameters["beta"]
-        self.step_count = 0
-        self.total_steps = parameters["total_steps"]
         self.theta_mean = parameters["theta_mean"]
-        self.gamma_mean = parameters["gamma_mean"]
         self.theta_sigma = parameters["theta_sigma"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
-        self.gamma_sigma = parameters["gamma_sigma"] 
-        self.switch_s = parameters["switch_s"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]  #elasticty of the switch probability to the accurac
+        self.prob_rewire = parameters["prob_rewire"]
+
+        self.step_count = 0
+        self.total_steps = parameters["total_steps"]
+
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
         self.theta_t = self.generate_ar1(0,self.ar_1_coefficient, self.theta_mean, self.theta_sigma, self.total_steps+1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
         self.gamma_t = -self.theta_t #+ np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1)
 
+
         #create network
-        self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
-        self.prob_rewire = parameters["prob_rewire"]
-        
         (
             self.adjacency_matrix,
             self.network,
@@ -100,14 +98,14 @@ class Market:
         self.agent_list = self.create_agent_list()
         self.S_matrix = self.init_calc_S(np.asarray([v.payoff_expectation for v in self.agent_list]))
         self.d_t1 = self.d #future dividends
-        self.p_t = self.d / self.R #uninformed price
+        self.p_t = self.d / (self.R - 1) #uninformed price
         self.p_t1 = self.p_t #previous price
         self.X_it = [0]*self.I
         self.X_it1 = [0]*self.I #previous demand
 
         if self.save_timeseries_data:
-            self.history_p_t = [self.d/self.R]
-            self.history_p_t1 = [self.d/self.R]
+            self.history_p_t = [self.p_t]
+            self.history_p_t1 = [self.p_t1]
             self.history_d_t1 = [self.d]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
@@ -140,7 +138,7 @@ class Market:
 
         G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small-world graph,watts_strogatz_graph( n, k, p[, seed])
         adjacency_matrix = nx.to_numpy_array(G)
-        print("Network density:", nx.density(G))
+        #print("Network density:", nx.density(G))
         return (
             adjacency_matrix,
             G,
@@ -162,16 +160,12 @@ class Market:
             "save_timeseries_data": self.save_timeseries_data,
             "compression_factor": self.compression_factor,
             "R":self.R,
-            "a": self.a,
-            "d": self.d,
-            "beta": self.beta,
-            "delta":self.delta,
             "ar_1_coefficient":self.ar_1_coefficient
         }
 
         agent_list = [
             Consumer(
-                consumer_params,self.W_0_list[i], self.weighting_matrix[i], 
+                consumer_params, self.weighting_matrix[i],
                 self.dogmatic_state_theta_mean_var_vector[i][0], self.dogmatic_state_theta_mean_var_vector[i][1], 
                 self.dogmatic_state_theta_mean_var_vector[i][2], self.adjacency_matrix[i]
             )
@@ -229,12 +223,12 @@ class Market:
     def append_data(self):
         self.history_p_t.append(self.p_t)
         self.history_p_t1.append(self.p_t1)
-        self.history_d_t1.append(self.d_t)
-        self.history_time.append(self.step_count)
-        self.history_X_it.append(self.X_it)
-        self.history_X_it1.append(self.X_it1)
+        #self.history_d_t1.append(self.d_t)
+        #self.history_time.append(self.step_count)
+        #self.history_X_it.append(self.X_it)
+        #self.history_X_it1.append(self.X_it1)
         #self.history_informed_proportion.append(self.informed_proportion)
-        self.history_weighting_matrix.append(self.weighting_matrix)
+        #self.history_weighting_matrix.append(self.weighting_matrix)
 
     def next_step(self):
         """
@@ -274,8 +268,8 @@ class Market:
        
         if (self.step_count % self.compression_factor == 0) and (self.save_timeseries_data):
             self.append_data()
-        if self.step_count % 10 == 0:
-            print(self.step_count)
+        #if self.step_count % 10 == 0:
+            #print(self.step_count)
             
 
         

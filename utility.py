@@ -96,5 +96,5 @@ def load_object(fileName, objectName) -> dict:
     return data
 
 def produce_name_datetime(root):
-    fileName = "results/" + root +  "_" + datetime.datetime.now().strftime("%H_%M_%S__%d_%m_%Y")
+    fileName = "results/" + root +  "_" + datetime.datetime.now().strftime("%H_%M_%S_%d_%m_%Y")
     return fileName

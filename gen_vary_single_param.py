@@ -7,6 +7,7 @@ Created: 1/12/2022
 # imports
 import json
 import time
+import pyperclip
 
 import numpy as np
 from market import Market
@@ -23,7 +24,7 @@ def generate_data(params):
 
     #generate the inital data, move forward in time and return
 
-    print_simu = 1  # Whether of not to print how long the single shot simulation took
+    print_simu = 0  # Whether of not to print how long the single shot simulation took
 
     if print_simu:
         start_time = time.time()
@@ -43,7 +44,7 @@ def generate_data(params):
         )
     return financial_market
 
-def gen_param_list(params: dict, property_list: list, propertprice_autocorried: str) -> list[dict]:
+def gen_param_list(params: dict, property_list: list, property_varied: str) -> list[dict]:
 
     """
     Produce a list of the dicts for each experiment
@@ -54,7 +55,7 @@ def gen_param_list(params: dict, property_list: list, propertprice_autocorried: 
         base parameters
     porperty_list: list
         list of values for the property to be varied
-    propertprice_autocorried: str
+    property_varied: str
         property to be varied
 
     Returns
@@ -65,7 +66,7 @@ def gen_param_list(params: dict, property_list: list, propertprice_autocorried: 
 
     params_list = []
     for i in property_list:
-        params[propertprice_autocorried] = i
+        params[property_varied] = i
         params_list.append(
             params.copy()
         )  # have to make a copy so that it actually appends a new dict and not just the location of the params dict
@@ -80,20 +81,22 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    propertprice_autocorried = "K"
-    property_list = [2, 5, 10]
+    property_varied = "K"
+    property_list = list(np.arange(2, 20, 1))
+    print(property_list)
 
-    rootName = "single_vary_" + propertprice_autocorried
+    rootName = "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)
     print("FILENAME:", fileName)
+    #copy the filename variable to the clipboard
+    pyperclip.copy(fileName)
 
-    params_list = gen_param_list(params, property_list, propertprice_autocorried)
+    params_list = gen_param_list(params, property_list, property_varied)
     Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation
 
     createFolder(fileName)
 
     save_object(Data_list, fileName + "/Data", "financial_market_list")
-    save_object(propertprice_autocorried, fileName + "/Data", "propertprice_autocorried")
+    save_object(property_varied, fileName + "/Data", "property_varied")
     save_object(property_list, fileName + "/Data", "property_list")
     save_object(params, fileName + "/Data", "base_params")
-

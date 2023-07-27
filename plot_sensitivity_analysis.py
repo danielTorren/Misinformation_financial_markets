@@ -253,7 +253,7 @@ def analyze_results(
     return Si_price_mean , Si_mu , Si_var , Si_price_skew
 
 def main(
-    fileName = "results\SA_AV_reps_5_samples_15360_D_vars_13_N_samples_1024",
+    fileName = " results/sensitivity_analysis_16_29_30__27_07_2023",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0
@@ -263,31 +263,29 @@ def main(
         "price_mean": {"title": r"price mean", "colour": "red", "linestyle": "--"},
         "price_var": {"title": r"price var", "colour": "blue", "linestyle": "-"},
         "price_autocorr": {"title": r"price autocorrelation", "colour": "green", "linestyle": "*"},
-        "price_skew": {"title": r"$\sigma/\mu$","colour": "orange","linestyle": "-.",},
+        "price_skew": {"title": r"price_skew","colour": "orange","linestyle": "-.",},
     }
 
     titles = [
-        r"Number of individuals, $N$", 
-        r"Number of behaviours, $M$", 
-        r"Mean neighbours, $K$",
-        r"Cultural inertia, $\rho$",
-        r"Social learning error, $ \sigma_{ \varepsilon}$ ",
-        r"Initial attitude Beta, $a_A$",
-        r"Initial attitude Beta, $b_A$",
-        r"Initial threshold Beta, $a_T$",
-        r"Initial threshold Beta, $b_T$",
-        r"Discount factor, $\delta$",
-        r"Attribute homophily, $h$",
-        r"Confirmation bias, $\theta$"
+        r'network density', 
+        r'$Prob rewire$', 
+        r'$d$', 
+        r'$\Theta$', 
+        r'$\sigma_\Theta$', 
+        r'$\sigma_\epsilon$', 
+        r'$\% \mathrm{dogmatic}_\Theta$', 
+        r'$\% \mathrm{dogmatic}_\Gamma$', 
+        r'$\mathrm{AR}(1)$'
     ]
 
 
-    problem = load_object(fileName + "/Data", "problem")
+    
     price_mean = load_object(fileName + "/Data", "price_mean")
     price_var = load_object(fileName + "/Data", "price_var")
     price_autocorr = load_object(fileName + "/Data", "price_autocorr")
     price_skew = load_object(fileName + "/Data", "price_skew")
     N_samples = load_object(fileName + "/Data","N_samples" )
+    problem = load_object(fileName + "/Data", "problem")
     calc_second_order = load_object(fileName + "/Data", "calc_second_order")
 
     data_sa_dict_total, data_sa_dict_first = get_plot_data(problem, price_mean, price_var, price_autocorr, price_skew, calc_second_order)
@@ -297,8 +295,16 @@ def main(
     
     ###############################
 
-    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_first,plot_outputs, titles, dpi_save, N_samples, "First", latex_bool = latex_bool)
-    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_total,plot_outputs, titles, dpi_save, N_samples, "Total", latex_bool = latex_bool)
+    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_first,plot_outputs, titles, dpi_save, N_samples, "First")
+    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_total,plot_outputs, titles, dpi_save, N_samples, "Total")
 
     plt.show()
+
+if __name__ == '__main__':
+    fileName_Figure_6 = main(
+    fileName = "results/sensitivity_analysis_16_54_24_27_07_2023",
+    plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
+    dpi_save = 1200,
+    latex_bool = 0
+    )
 
