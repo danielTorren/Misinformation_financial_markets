@@ -242,7 +242,7 @@ def main(
     root = "sensitivity_analysis"
     fileName = produce_name_datetime(root)
     print("fileName:", fileName)
-    pyperclip.copy(fileName)
+    #pyperclip.copy(fileName)
 
     createFolder(fileName)
 
