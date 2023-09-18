@@ -223,10 +223,10 @@ class Market:
     def append_data(self):
         self.history_p_t.append(self.p_t)
         self.history_p_t1.append(self.p_t1)
-        #self.history_d_t1.append(self.d_t)
-        #self.history_time.append(self.step_count)
-        #self.history_X_it.append(self.X_it)
-        #self.history_X_it1.append(self.X_it1)
+        self.history_d_t1.append(self.d_t)
+        self.history_time.append(self.step_count)
+        self.history_X_it.append(self.X_it)
+        self.history_X_it1.append(self.X_it1)
         #self.history_informed_proportion.append(self.informed_proportion)
         #self.history_weighting_matrix.append(self.weighting_matrix)
 
