@@ -1,6 +1,6 @@
 
 {
-    "N_samples": 32,
+    "N_samples": 4,
     "save_timeseries_data": 1, 
     "total_steps": 500,
     "compression_factor": 1,
