@@ -54,10 +54,10 @@ class Market:
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
 
-        self.network_density = parameters["network_density"]
+        #self.network_density = parameters["network_density"]
         self.I = int(round(parameters["I"]))
-        self.K = int(round((self.I - 1)*self.network_density)) #reverse engineer the links per person using the density  d = 2m/n(n-1) where n is nodes and m number of edges
-        #self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
+        #self.K = int(round((self.I - 1)*self.network_density)) #reverse engineer the links per person using the density  d = 2m/n(n-1) where n is nodes and m number of edges
+        self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
 
         self.R = parameters["R"]
         self.a = parameters["a"]
@@ -223,12 +223,12 @@ class Market:
     def append_data(self):
         self.history_p_t.append(self.p_t)
         self.history_p_t1.append(self.p_t1)
-        #self.history_d_t1.append(self.d_t)
-        #self.history_time.append(self.step_count)
-        #self.history_X_it.append(self.X_it)
-        #self.history_X_it1.append(self.X_it1)
+        self.history_d_t1.append(self.d_t)
+        self.history_time.append(self.step_count)
+        self.history_X_it.append(self.X_it)
+        self.history_X_it1.append(self.X_it1)
         #self.history_informed_proportion.append(self.informed_proportion)
-        #self.history_weighting_matrix.append(self.weighting_matrix)
+        self.history_weighting_matrix.append(self.weighting_matrix)
 
     def next_step(self):
         """

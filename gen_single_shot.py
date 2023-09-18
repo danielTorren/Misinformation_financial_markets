@@ -26,7 +26,7 @@ if __name__ == "__main__":
     print("FILENAME:", fileName)
     #copy the filename variable to the clipboard
     pyperclip.copy(fileName)
-    print_simu = 0
+    print_simu = 1
     Data = generate_data_single(params,print_simu)  # run the simulation
 
     createFolder(fileName)#put after run so that you dont create folder unless you got to the end of the simulation

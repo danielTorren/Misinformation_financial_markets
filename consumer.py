@@ -46,11 +46,14 @@ class Consumer:
 
     def compute_source_variance(self, d_t, p_t, S_k, steps):
         current_error = (d_t + p_t - S_k)**2
-        if steps < 2:
-            source_variance = current_error
-        else:
-            source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
-        return source_variance
+
+        #all history
+        # if steps < 2:
+        #     source_variance = current_error
+        # else:
+        #     source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
+        # return source_variance
+        return current_error
 
     def compute_posterior_mean_variance(self,S_array):
         prior_variance = self.prior_variance
