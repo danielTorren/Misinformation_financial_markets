@@ -43,6 +43,7 @@ def generate_data_parallel(params_list,print_simu):
 
     num_cores = multiprocessing.cpu_count()
     #data_parallel = [generate_data(i) for i in params_dict]
+    print(params_list)
     data_parallel = Parallel(n_jobs=num_cores, verbose=10)(
         delayed(generate_data_single)(i, print_simu) for i in params_list
     )

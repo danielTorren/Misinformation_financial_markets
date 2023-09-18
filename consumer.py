@@ -21,13 +21,15 @@ class Consumer:
 
         self.prior_mean =  self.baseline_mean
         self.prior_variance = self.baseline_var
-        self.payoff_expectation = self.prior_mean
-        self.payoff_variance = self.prior_variance
+        self.theta_expectation = self.prior_mean
+        self.theta_variance = self.prior_variance
 
         self.dogmatic_state = dogmatic_state
         self.weighting_vector = weighting_vector
 
         self.R = parameters["R"]
+        self.d = parameters["d"]
+        self.theta_prior_variance = parameters["theta_variance"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
         self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.source_variance = 1
@@ -45,14 +47,13 @@ class Consumer:
 
 
     def compute_source_variance(self, d_t, p_t, S_k, steps):
-        current_error = (d_t + p_t - S_k)**2
-
-        #all history
-        # if steps < 2:
-        #     source_variance = current_error
-        # else:
-        #     source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
-        # return source_variance
+        prediction = (self.d * self.R)/(self.R -1) + (self.R * S_k)/(self.R - self.ar_1_coefficient)
+        current_error = (d_t + p_t - prediction)**2
+        if steps < 2:
+            source_variance = current_error
+        else:
+            source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
+        return source_variance
         return current_error
 
     def compute_posterior_mean_variance(self,S_array):
@@ -78,7 +79,8 @@ class Consumer:
     def next_step(self,d_t,p_t, p_t1,X_t,X_t1, S,steps, informed_expectation = None):
         
         if informed_expectation is None:
-            pass
+            
+            self.prior_variance = self.theta_prior_variance
             
         else:
             #First we reset the expectations and variance
@@ -97,7 +99,7 @@ class Consumer:
         self.source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array, steps)
     
         #compute posterior expectations
-        self.payoff_expectation, self.payoff_variance = self.compute_posterior_mean_variance(self.S_array)
+        self.theta_expectation, self.theta_variance = self.compute_posterior_mean_variance(self.S_array)
 
         if  (steps % self.compression_factor == 0) and (self.save_timeseries_data):  
             self.append_data()

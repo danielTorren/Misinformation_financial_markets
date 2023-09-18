@@ -11,10 +11,12 @@
     "a": 5.5,
     "d": 1,
     "theta_mean" : 0.0,
-    "theta_sigma" :1,
+    "theta_sigma" :2,
     "epsilon_sigma": 1,
     "beta": 1.0,
+    "gamma_mean" : -1.0,
+    "gamma_sigma" :2,
     "proportion_dogmatic_theta": 0.1,
     "proportion_dogmatic_gamma": 0.1,
-    "ar_1_coefficient": 0.80
+    "ar_1_coefficient": 0.70
 }

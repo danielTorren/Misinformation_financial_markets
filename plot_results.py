@@ -15,6 +15,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import get_cmap
 import collections
 import os
+from scipy.stats import skew
 from utility import (
     createFolder, 
     load_object, 
@@ -42,18 +43,10 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue_c):
     fig, ax = plt.subplots()
 
-    if red_blue_c:
-        for v in range(len(Data.agent_list)):
-            if (Data.agent_list[v].c_bool):
-                color = "blue"
-            else:
-                color = "red"
-            data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
-            ax.plot(np.asarray(Data.history_time), data_ind, color = color)
-    else:
-        for v in range(len(Data.agent_list)):
-            data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
-            ax.plot(np.asarray(Data.history_time), data_ind)
+    
+    for v in range(len(Data.agent_list)):
+        data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
+        ax.plot(np.asarray(Data.history_time), data_ind)
 
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
@@ -147,7 +140,6 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     ax.set_ylabel("%s" % y_title)
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
-        
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
         ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
 
@@ -730,7 +722,7 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, property_y):
-    fig, axes = plt.subplots(nrows=1, ncols=len(Data_list), sharey=True, sharex=True, figsize=(10,6))
+    fig, axes = plt.subplots(nrows=len(Data_list), ncols=1, sharey=True, sharex=True, figsize=(10,6))
     for i, ax in enumerate(axes.flat):
         data = eval("Data_list[%s].%s" % (str(i),property_y))
         if property_y == "history_p_t":
@@ -766,6 +758,35 @@ def plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title):
+    fig, ax = plt.subplots()
+    y_values = []
+    for i in range(len(Data_list)):
+        y_value = np.var(Data_list[i].history_p_t)
+        y_values.append(y_value) 
+    ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+    ax.set_xlabel("%s" % property_varied)
+    ax.set_ylabel("Variance")
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f =plotName + "/plot_variance_price_multi_%s" % (property_varied)
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title):
+    fig, ax = plt.subplots()
+    y_values = []
+    for i in range(len(Data_list)):
+        y_value = skew(Data_list[i].history_p_t)
+        y_values.append(y_value) 
+    ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+    ax.set_xlabel("%s" % property_varied)
+    ax.set_ylabel("Skewness")
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f =plotName + "/plot_skew_price_multi_%s" % (property_varied)
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 dpi_save = 600
 red_blue_c = True
@@ -785,7 +806,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_18_22_14__26_07_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_18_57_54_18_09_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -841,7 +862,7 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_vary_K_18_51_44__26_07_2023"
+        fileName = "results/single_vary_network_density_18_31_20_18_09_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
@@ -851,6 +872,8 @@ if __name__ == "__main__":
         #print("titles", titles)
         plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
         plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+        plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+        plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
         plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
         #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
 

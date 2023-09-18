@@ -54,16 +54,18 @@ class Market:
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
 
-        #self.network_density = parameters["network_density"]
+        self.network_density = parameters["network_density"]
         self.I = int(round(parameters["I"]))
-        #self.K = int(round((self.I - 1)*self.network_density)) #reverse engineer the links per person using the density  d = 2m/n(n-1) where n is nodes and m number of edges
-        self.K = int(round(parameters["K"]))  # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
+        self.K = int(round((self.I - 1)*self.network_density)) #reverse engineer the links per person using the density  d = 2m/n(n-1) where n is nodes and m number of edges
+      # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
 
         self.R = parameters["R"]
         self.a = parameters["a"]
         self.d = parameters["d"]
         self.theta_mean = parameters["theta_mean"]
         self.theta_sigma = parameters["theta_sigma"]
+        self.gamma_mean = parameters["gamma_mean"]
+        self.gamma_sigma = parameters["gamma_sigma"]
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]  #elasticty of the switch probability to the accurac
         self.prob_rewire = parameters["prob_rewire"]
@@ -74,7 +76,7 @@ class Market:
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
         self.theta_t = self.generate_ar1(0,self.ar_1_coefficient, self.theta_mean, self.theta_sigma, self.total_steps+1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
-        self.gamma_t = -self.theta_t #+ np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1)
+        self.gamma_t = self.theta_t + np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1)
 
 
         #create network
@@ -93,10 +95,11 @@ class Market:
         #print("self.num_dogmatic_theta", self.num_dogmatic_theta, self.I)
         self.num_dogmatic_gamma = int(np.floor(self.I*parameters["proportion_dogmatic_gamma"]))#number of dogmatic gamma
 
-        self.dogmatic_state_theta_mean_var_vector = [("theta",(self.d * self.R)/(self.R -1) + (self.R * self.theta_t[0])/(self.R - self.ar_1_coefficient), self.epsilon_sigma**2)]*self.num_dogmatic_theta + [("gamma",(self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[0])/(self.R - self.ar_1_coefficient),self.epsilon_sigma**2)]*self.num_dogmatic_gamma + [("normal",(self.d*self.R)/(self.R - 1) ,self.epsilon_sigma**2 + self.theta_sigma**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
+        #self.dogmatic_state_theta_mean_var_vector = [("theta",(self.d * self.R)/(self.R -1) + (self.R * self.theta_t[0])/(self.R - self.ar_1_coefficient), self.epsilon_sigma**2)]*self.num_dogmatic_theta + [("gamma",(self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[0])/(self.R - self.ar_1_coefficient),self.epsilon_sigma**2)]*self.num_dogmatic_gamma + [("normal",(self.d*self.R)/(self.R - 1) ,self.epsilon_sigma**2 + self.theta_sigma**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
+        self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[0], 0)]*self.num_dogmatic_theta + [("gamma", self.gamma_t[0],0)]*self.num_dogmatic_gamma + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
         self.agent_list = self.create_agent_list()
-        self.S_matrix = self.init_calc_S(np.asarray([v.payoff_expectation for v in self.agent_list]))
+        self.S_matrix = self.init_calc_S(np.asarray([v.theta_expectation for v in self.agent_list]))
         self.d_t1 = self.d #future dividends
         self.p_t = self.d / (self.R - 1) #uninformed price
         self.p_t1 = self.p_t #previous price
@@ -160,6 +163,8 @@ class Market:
             "save_timeseries_data": self.save_timeseries_data,
             "compression_factor": self.compression_factor,
             "R":self.R,
+            "d": self.d,
+            "theta_variance": self.theta_sigma**2,
             "ar_1_coefficient":self.ar_1_coefficient
         }
 
@@ -186,9 +191,14 @@ class Market:
 
         return neighbour_influence
 
-    def get_consumers_payoff_expectations(self):
-        payoff_expectations = np.asarray([i.payoff_expectation for i in self.agent_list])
-        payoff_variances = np.asarray([i.payoff_variance for i in self.agent_list])
+    def get_consumers_theta_expectations(self):
+        theta_expectations = np.asarray([i.theta_expectation for i in self.agent_list])
+        theta_variances = np.asarray([i.theta_variance for i in self.agent_list])
+        return theta_expectations, theta_variances
+    
+    def compute_payoff_expectations(self):
+        payoff_expectations = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectations)/(self.R - self.ar_1_coefficient)
+        payoff_variances = self.epsilon_sigma**2 + self.theta_variances**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
         return payoff_expectations, payoff_variances
 
     def compute_price(self):
@@ -210,9 +220,9 @@ class Market:
     def update_consumers(self):
         for i,agent in enumerate(self.agent_list):
             if agent.dogmatic_state =="theta":
-                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count, (self.d * self.R)/(self.R -1) + (self.R * self.theta_t[self.step_count])/(self.R - self.ar_1_coefficient))
+                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count, self.theta_t[self.step_count])
             elif agent.dogmatic_state =="gamma": #dogmatic gamma
-                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count, (self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[self.step_count])/(self.R - self.ar_1_coefficient))
+                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count, self.gamma_t[self.step_count])
             else:
                 agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.step_count)
             #                                 d_t,     p_t,     X_t,     S,               steps,         expectation_theta_mean = None, expectation_theta_var = None
@@ -244,7 +254,8 @@ class Market:
         """
 
         #Recieve expectations of mean and variances
-        self.payoff_expectations, self.payoff_variances = self.get_consumers_payoff_expectations()
+        self.theta_expectations, self.theta_variances = self.get_consumers_theta_expectations()
+        self.payoff_expectations, self.payoff_variances = self.compute_payoff_expectations()
 
         #Compute aggregate price
         self.p_t1 = self.p_t

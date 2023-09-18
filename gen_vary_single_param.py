@@ -70,6 +70,7 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
         params_list.append(
             params.copy()
         )  # have to make a copy so that it actually appends a new dict and not just the location of the params dict
+    print(params_list)
     return params_list
 
 
@@ -81,8 +82,8 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    property_varied = "K"
-    property_list = list(np.arange(2, 20, 1))
+    property_varied = "network_density"
+    property_list = [0.01, 0.05, 0.1]
     print(property_list)
 
     rootName = "single_vary_" + property_varied
