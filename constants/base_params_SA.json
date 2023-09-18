@@ -1,11 +1,11 @@
 
 {
-    "N_samples": 2,
+    "N_samples": 64,
     "save_timeseries_data": 1, 
     "total_steps": 500,
     "compression_factor": 1,
     "seed_list": [1,2,3,4,5],
-    "I": 200,
+    "I": 100,
     "R": 1.01,
     "a": 5.5,
     "d": 1,

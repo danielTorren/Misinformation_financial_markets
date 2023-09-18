@@ -268,10 +268,10 @@ def main(
 
     titles = [
         r'network density', 
-        r'$Prob rewire$', 
-        r'$d$', 
         r'$\Theta$', 
         r'$\sigma_\Theta$', 
+        r'$\Gamma$', 
+        r'$\sigma_\Gamma$', 
         r'$\sigma_\epsilon$', 
         r'$\% \mathrm{dogmatic}_\Theta$', 
         r'$\% \mathrm{dogmatic}_\Gamma$', 
@@ -302,7 +302,7 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    fileName = "results/sensitivity_analysis_03_43_19_28_07_2023",
+    fileName = "results/sensitivity_analysis_20_26_18_18_09_2023",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0
