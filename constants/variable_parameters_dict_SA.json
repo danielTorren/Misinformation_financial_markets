@@ -1,9 +1,9 @@
 {
     "network_density":{"property":"network_density","min":0.01,"max":0.2, "title": "network density", "round":0},
-    "prob_rewire":{"property":"prob_rewire","min":0,"max":1 , "title": "$Prob rewire$", "round":0},
-    "d": {"property": "d", "min":0.5, "max": 1.5, "round": 0, "title": "$d$"}, 
     "theta_mean": {"property": "theta_mean", "min": -1.0, "max": 1.0, "round": 0, "title": "$\\Theta$"},
     "theta_sigma": {"property": "theta_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\Theta$"},
+    "gamma_mean": {"property": "gamma_mean", "min": -1.0, "max": 1.0, "round": 0, "title": "$\\Gamma$"},
+    "gamma_sigma": {"property": "gamma_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\Gamma$"},
     "epsilon_sigma": {"property": "epsilon_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\epsilon$"},
     "proportion_dogmatic_theta": {"property": "proportion_dogmatic_theta", "min": 0.0, "max": 0.95, "round": 0, "title": "$\\% \\mathrm{dogmatic}_\\Theta$"},
     "proportion_dogmatic_gamma": {"property": "proportion_dogmatic_gamma", "min": 0.0, "max": 0.95, "round": 0, "title": "$\\% \\mathrm{dogmatic}_\\Gamma$"},
