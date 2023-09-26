@@ -3,10 +3,10 @@
     "total_steps": 500,
     "compression_factor": 1,
     "seed_list": [1,2,3,4,5,6,7,8,9,10],
-    "I": 200,
-    "network_density": 0.1,
+    "I": 100,
+    "network_density": 0.05,
     "prob_rewire": 0.1,
-    "set_seed": 17,
+    "set_seed": 1,
     "R": 1.01,
     "a": 5.5,
     "d": 1,
@@ -18,5 +18,5 @@
     "gamma_sigma" :2,
     "proportion_dogmatic_theta": 0.1,
     "proportion_dogmatic_gamma": 0.1,
-    "ar_1_coefficient": 0.70
+    "ar_1_coefficient": 0.50
 }

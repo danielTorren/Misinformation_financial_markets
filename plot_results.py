@@ -16,6 +16,8 @@ from matplotlib.cm import get_cmap
 import collections
 import os
 from scipy.stats import skew
+from scipy.stats import norm
+from scipy.stats import probplot
 from utility import (
     createFolder, 
     load_object, 
@@ -129,10 +131,65 @@ def plot_time_series_consumer_triple(fileName,Data,y_title,dpi_save,property_y,n
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
 
+
+def plot_histogram_returns(fileName, Data, y_title, dpi_save):
+    property_y = "history_p_t"
+    fig, ax = plt.subplots()
+    data = eval("Data.%s" % property_y)
+    prices = np.array(data)
+
+    # Calculate returns
+    returns = (prices[1:] - prices[:-1]) / prices[:-1]
+    
+    # Create a histogram of returns (transparent orange)
+    ax.hist(returns, bins=30, alpha=0.5, color='orange', edgecolor='black', density=True, label='Returns Histogram')
+
+    # Fit a normal distribution to the data
+    mu, std = norm.fit(returns)
+
+    # Plot the PDF of the fitted normal distribution (light blue)
+    x = np.linspace(min(returns), max(returns), 100)
+    p = norm.pdf(x, mu, std)
+    ax.plot(x, p, 'lightblue', linewidth=2, label='Fitted Normal Distribution')
+    
+    ax.set_title('Histogram of Returns')
+    ax.set_xlabel('Returns')
+    
+    fig.tight_layout()
+    
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "histogram_returns"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def plot_qq_plot(fileName, Data, y_title, dpi_save):
+    property_y = "history_p_t"
+    fig, ax = plt.subplots()
+    data = eval("Data.%s" % property_y)
+    prices = np.array(data)
+
+    # Calculate returns
+    returns = (prices[1:] - prices[:-1]) / prices[:-1]
+
+    # Generate QQ plot
+    probplot(returns, dist="norm", plot=ax)
+
+    ax.set_title('QQ Plot of Returns')
+    ax.set_xlabel('Theoretical Quantiles')
+    ax.set_ylabel('Sample Quantiles')
+    
+    fig.tight_layout()
+    
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "qq_plot_returns"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
 def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
 
     fig, ax = plt.subplots()
     data = eval("Data.%s" % property_y)
+    
 
     # bodge
     
@@ -140,7 +197,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     ax.set_ylabel("%s" % y_title)
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
-        ax.plot(Data.history_time, np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+        ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
         ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
 
         # ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
@@ -721,6 +778,9 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+
+
+
 def plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, property_y):
     fig, axes = plt.subplots(nrows=len(Data_list), ncols=1, sharey=True, sharex=True, figsize=(10,6))
     for i, ax in enumerate(axes.flat):
@@ -806,7 +866,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_18_57_54_18_09_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_17_11_57_19_09_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -830,6 +890,8 @@ if __name__ == "__main__":
 
         #network
         plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
+        plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
+        plot_qq_plot = plot_qq_plot(fileName, Data, "qq_plot", dpi_save)
         #plot_history_informed_proportion = plot_time_series_market(fileName,Data,"Informed prop.",dpi_save,"history_informed_proportion")  
         #plot_history_d_t = plot_time_series_market(fileName,Data,"Dividend ,$d_t$",dpi_save,"history_d_t")
         ##plot_history_zeta_t = plot_time_series_market(fileName,Data,"$S_{\omega}$",dpi_save,"zeta_t")
