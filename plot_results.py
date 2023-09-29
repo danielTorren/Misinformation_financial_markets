@@ -779,7 +779,72 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 
+def plot_price_different_seed(fileName,Data_list, transparency_level = 0.2):
+    #order in Data list is: time, p_t, theta_t, compression_factor
+    fig, ax = plt.subplots()
+    ax.plot(np.asarray(Data_list[0].history_time), np.array(Data_list[0].history_p_t), linestyle='solid', color="black",  linewidth=2)
+    ax.plot(np.asarray(Data_list[0].history_time), np.array((Data_list[0].d/ (Data_list[0].R - 1) + (Data_list[0].theta_t[::Data_list[0].compression_factor] * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient))), color="red", linewidth = 2)
+    for i in range(1,len(Data_list)):
+        ax.plot(np.array(Data_list[i].history_p_t), linestyle='solid', color="black",  linewidth=1, alpha = transparency_level)
+        ax.plot(np.array((Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))), color="red", alpha = transparency_level, linewidth = 1)
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("price")
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "history_p_t_multiple_seeds" + "_timeseries"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def plot_histogram_returns_different_seed(fileName, Data_list):
+    returns = np.array([])
+    for i in range(len(Data_list)):
+        prices = np.array(Data_list[i].history_p_t)
+        ret = (prices[1:] - prices[:-1]) / prices[:-1]
+        returns = np.append(returns, np.array(ret))
+    fig, ax = plt.subplots()
+    # Create a histogram of returns (transparent orange)
+    ax.hist(returns, bins=30, alpha=0.5, color='orange', edgecolor='black', density=True, label='Returns Histogram')
+
+    # Fit a normal distribution to the data
+    mu, std = norm.fit(returns)
+
+    # Plot the PDF of the fitted normal distribution (light blue)
+    x = np.linspace(min(returns), max(returns), 100)
+    p = norm.pdf(x, mu, std)
+    ax.plot(x, p, 'lightblue', linewidth=2, label='Fitted Normal Distribution')
+    
+    ax.set_title('Histogram of Returns')
+    ax.set_xlabel('Returns')
+    
+    fig.tight_layout()
+    
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "histogram_returns"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def plot_qq_plot_different_seed(fileName, Data_list):
+    returns = np.array([])
+    for i in range(len(Data_list)):
+        prices = np.array(Data_list[i].history_p_t)
+        ret = (prices[1:] - prices[:-1]) / prices[:-1]
+        returns = np.append(returns, np.array(ret))
+
+    fig, ax = plt.subplots()
+
+    # Generate QQ plot
+    probplot(returns, dist="norm", plot=ax)
+
+    ax.set_title('QQ Plot of Returns')
+    ax.set_xlabel('Theoretical Quantiles')
+    ax.set_ylabel('Sample Quantiles')
+    
+    fig.tight_layout()
+    
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "qq_plot_returns"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, property_y):
     fig, axes = plt.subplots(nrows=len(Data_list), ncols=1, sharey=True, sharex=True, figsize=(10,6))
@@ -851,8 +916,8 @@ def plot_skew_price_multi(fileName,Data_list,property_list, property_varied, pro
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 1
-single_param_vary = 0
+single_shot = 0
+single_param_vary = 1
 
 ###PLOT STUFF
 node_size = 200
@@ -924,7 +989,7 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_vary_network_density_18_31_20_18_09_2023"
+        fileName = "results/single_vary_set_seed_11_35_25_27_09_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
@@ -932,11 +997,14 @@ if __name__ == "__main__":
         property_title = "K"
         #titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
         #print("titles", titles)
-        plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
-        plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_varied, property_title)
-        plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
-        plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
-        plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
+        plot_price_different_seed(fileName,Data_list, transparency_level=0.3)
+        plot_histogram_returns_different_seed(fileName,Data_list)
+        plot_qq_plot_different_seed(fileName,Data_list)
+        #plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
+        #plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+        #plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+        #plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+        #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
         #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
 
         #plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)

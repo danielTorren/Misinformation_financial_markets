@@ -17,6 +17,7 @@ from utility import (
     produce_name_datetime,
 )
 from generate_data import (
+
     generate_data_parallel
 )
 
@@ -82,8 +83,8 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    property_varied = "network_density"
-    property_list = [0.01, 0.05, 0.1]
+    property_varied = "set_seed"
+    property_list = list(range(11, 15))
     print(property_list)
 
     rootName = "single_vary_" + property_varied
@@ -93,10 +94,14 @@ if __name__ == "__main__":
     pyperclip.copy(fileName)
 
     params_list = gen_param_list(params, property_list, property_varied)
+
     Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation
-
     createFolder(fileName)
-
+    # if property_varied == "set_seed":
+    #     #extract and save only the attributes we need, in case we are varying the stochastic seed
+    #     values_list = [(market.history_time, market.history_p_t, market.theta_t, market.compression_factor) for market in Data_list]
+    #     save_object(values_list, fileName + "/Data", "financial_market_list")
+    #else:
     save_object(Data_list, fileName + "/Data", "financial_market_list")
     save_object(property_varied, fileName + "/Data", "property_varied")
     save_object(property_list, fileName + "/Data", "property_list")

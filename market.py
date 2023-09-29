@@ -119,7 +119,7 @@ class Market:
         data = [mean]
         for i in range(1,N):
             noise = np.random.normal(mu,sigma)
-            data.append(acf * data[-1] + noise)
+            data.append(mean + acf * (data[-1] - mean) + noise)
         return np.array(data)
 
     def create_adjacency_matrix(self) -> tuple[npt.NDArray, npt.NDArray, nx.Graph]:

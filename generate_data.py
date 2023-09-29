@@ -25,6 +25,8 @@ def generate_data_single(params,print_simu):
         )
     return financial_market
 
+
+
 def generate_data_parallel(params_list,print_simu):
     """
     Generate data from a list of parameter dictionaries, parallelize the execution of each single shot simulation
@@ -49,3 +51,4 @@ def generate_data_parallel(params_list,print_simu):
     )
     
     return data_parallel
+
