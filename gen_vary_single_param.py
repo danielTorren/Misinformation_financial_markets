@@ -84,8 +84,8 @@ if __name__ == "__main__":
     params = json.load(f)
 
     property_varied = "set_seed"
-    property_list = list(range(11, 15))
-    print(property_list)
+    property_list = list(range(11, 31)) #[0.1, .2, .3]
+    #print(property_list)
 
     rootName = "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)
@@ -95,7 +95,9 @@ if __name__ == "__main__":
 
     params_list = gen_param_list(params, property_list, property_varied)
 
-    Data_list = generate_data_parallel(params_list,print_simu)  # run the simulation
+    Data_list = generate_data_parallel(params_list,print_simu) 
+    print(dir(Data_list[0]))
+    # run the simulation
     createFolder(fileName)
     # if property_varied == "set_seed":
     #     #extract and save only the attributes we need, in case we are varying the stochastic seed

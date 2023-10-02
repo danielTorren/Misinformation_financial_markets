@@ -12,7 +12,7 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict, weighting_vector ,dogmatic_state, baseline_mean, baseline_var, adj_vector):
+    def __init__(self, parameters: dict, weighting_vector ,dogmatic_state, baseline_mean, baseline_var, adj_vector, id):
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
@@ -22,7 +22,10 @@ class Consumer:
         self.prior_mean =  self.baseline_mean
         self.prior_variance = self.baseline_var
         self.theta_expectation = self.prior_mean
+        self.theta_expectation_t1 = 0
         self.theta_variance = self.prior_variance
+
+        self.id = id
 
         self.dogmatic_state = dogmatic_state
         self.weighting_vector = weighting_vector
@@ -33,13 +36,18 @@ class Consumer:
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
         self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.source_variance = 1
+        self.own_sample_variance = 1
+
+        self.cumulative_profit = 0
 
         if self.save_timeseries_data:
-
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
+            self.history_cumulative_profit = [0]
             self.history_prior_mean = [self.prior_mean]
             self.history_prior_variance = [self.prior_variance] 
             self.history_source_variance = [self.source_variance]
+        else:
+            self.history_cumulative_profit = [0]
 
     def compute_profit(self,d_t, p_t, p_t1, X_t1):
         profit = (d_t + p_t - self.R * p_t1)*X_t1
@@ -48,13 +56,23 @@ class Consumer:
 
     def compute_source_variance(self, d_t, p_t, S_k, steps):
         prediction = (self.d * self.R)/(self.R -1) + (self.R * S_k)/(self.R - self.ar_1_coefficient)
+        
         current_error = (d_t + p_t - prediction)**2
+        
         if steps < 2:
             source_variance = current_error
         else:
             source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
         return source_variance
-        return current_error
+    
+    def compute_own_sample_variance(self, d_t, p_t, steps):
+        prediction = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation_t1)/(self.R - self.ar_1_coefficient)  
+        current_error = (d_t + p_t - prediction)**2
+        if steps < 2:
+            variance = current_error
+        else:
+            variance = current_error/(steps - 1) + self.own_sample_variance *((steps - 2)/(steps - 1))
+        return variance
 
     def compute_posterior_mean_variance(self,S_array):
         prior_variance = self.prior_variance
@@ -72,11 +90,15 @@ class Consumer:
         return posterior_mean,posterior_variance 
 
     def append_data(self):
-        self.history_profit.append(self.profit)
-        self.history_prior_mean.append(self.prior_mean) 
-        self.history_prior_variance.append(self.prior_variance) 
+        if self.save_timeseries_data:
+            self.history_profit.append(self.profit)
+            self.history_cumulative_profit.append(self.cumulative_profit)
+            self.history_prior_mean.append(self.prior_mean) 
+            self.history_prior_variance.append(self.prior_variance) 
+        else:
+            self.history_cumulative_profit.append(self.cumulative_profit)
 
-    def next_step(self,d_t,p_t, p_t1,X_t,X_t1, S,steps, informed_expectation = None):
+    def next_step(self,d_t,p_t, p_t1,X_t,X_t1, S, S_t1, steps, informed_expectation = None):
         
         if informed_expectation is None:
             
@@ -93,15 +115,17 @@ class Consumer:
         self.p_t = p_t
         self.p_t1 = p_t1
         self.S_array = S
+        self.S_array_t1 = S_t1
         self.profit = self.compute_profit(self.d_t,self.p_t, self.p_t1, X_t1)
+        self.cumulative_profit += self.profit
 
         #update weighting
-        self.source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array, steps)
-    
+        self.source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array_t1, steps)
+        self.own_sample_variance = self.compute_own_sample_variance(self.d_t, self.p_t, steps)
         #compute posterior expectations
+        self.theta_expectation_t1 = self.theta_expectation
         self.theta_expectation, self.theta_variance = self.compute_posterior_mean_variance(self.S_array)
 
-        if  (steps % self.compression_factor == 0) and (self.save_timeseries_data):  
+        if  (steps % self.compression_factor == 0):  
             self.append_data()
-            
-            
+        

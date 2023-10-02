@@ -4,6 +4,7 @@ Author: Tommaso Di Francesco and Daniel Torren Peraire  Daniel.Torren@uab.cat dt
 
 Created: 10/10/2022
 """
+
 # imports
 import time
 import matplotlib.pyplot as plt
@@ -24,22 +25,37 @@ from utility import (
     save_object,
 )
 
-SMALL_SIZE = 14
-MEDIUM_SIZE = 18
-BIGGER_SIZE = 22
+# SMALL_SIZE = 14
+# MEDIUM_SIZE = 18
+# BIGGER_SIZE = 22
 
-plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+# plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+# plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+# plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+# plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+# plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 # plt.rcParams.update({
 #     "text.usetex": True,
 #     "font.family": "Helvetica"
 # })
+
+fontsize= 14
+ticksize = 14
+figsize = (12, 12)
+params = {'font.family':'serif',
+    "figure.figsize":figsize, 
+    'figure.dpi': 80,
+    'figure.edgecolor': 'k',
+    'font.size': fontsize, 
+    'axes.labelsize': fontsize,
+    'axes.titlesize': fontsize,
+    'xtick.labelsize': ticksize,
+    'ytick.labelsize': ticksize
+}
+plt.rcParams.update(params)
 
 
 def plot_time_series_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue_c):
@@ -197,8 +213,9 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     ax.set_ylabel("%s" % y_title)
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
+        print("date Len is:", len(data), "time len is: ", len(Data.history_time))
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
-        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
+        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
 
         # ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
         # color = 'tab:green'
@@ -268,10 +285,10 @@ def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,prop
 
 def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
-    if network_structure == "small_world":
+    if network_structure == "small-world":
         layout_type = "circular"
-    elif network_structure == "barabasi_albert_graph" or "scale_free_directed":
-        layout_type ="spring"
+    elif network_structure == "random" or "scale-free":
+        layout_type ="kamada_kawai"
 
     if layout_type == "circular":
         pos_culture_network = nx.circular_layout(network)
@@ -781,19 +798,56 @@ def plot_multi_time_series(fileName,Data_list,property_list, property_varied, pr
 
 def plot_price_different_seed(fileName,Data_list, transparency_level = 0.2):
     #order in Data list is: time, p_t, theta_t, compression_factor
-    fig, ax = plt.subplots()
-    ax.plot(np.asarray(Data_list[0].history_time), np.array(Data_list[0].history_p_t), linestyle='solid', color="black",  linewidth=2)
-    ax.plot(np.asarray(Data_list[0].history_time), np.array((Data_list[0].d/ (Data_list[0].R - 1) + (Data_list[0].theta_t[::Data_list[0].compression_factor] * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient))), color="red", linewidth = 2)
+    fig, ax = plt.subplots(figsize = (12, 6))
+    ax.plot(np.asarray(Data_list[0].history_time), np.array(Data_list[0].history_p_t), linestyle='solid', color="#264653",  linewidth=2, marker = "o", label = 'Simulation Price')
+    ax.plot(np.asarray(Data_list[0].history_time), np.array((Data_list[0].d/ (Data_list[0].R - 1) + (Data_list[0].theta_t[::Data_list[0].compression_factor][2:] * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient))), color="#E76F51", marker = "s", linewidth = 2, label = 'RA Informed Price')
     for i in range(1,len(Data_list)):
-        ax.plot(np.array(Data_list[i].history_p_t), linestyle='solid', color="black",  linewidth=1, alpha = transparency_level)
-        ax.plot(np.array((Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))), color="red", alpha = transparency_level, linewidth = 1)
+        ax.plot(np.array(Data_list[i].history_p_t), linestyle='solid', color="#264653", linewidth=1, alpha = transparency_level)
+        ax.plot(np.array((Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))), color="#E76F51", alpha = transparency_level, linewidth = 1)
     ax.set_xlabel("Steps")
-    ax.set_ylabel("price")
+    ax.set_ylabel("Price")
+    fig.legend(loc='upper right')
     fig.tight_layout()
     plotName = fileName + "/Plots"
     f = plotName + "/" + "history_p_t_multiple_seeds" + "_timeseries"
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, color1 = '#2A9D8F', color2 = '#F4A261'):
+    #order in Data list is: time, p_t, theta_t, compression_factor
+    fig, ax = plt.subplots(figsize = (12, 6))
+    time = np.asarray(range(1, Data_list[0].total_steps))
+    price = [mkt.history_p_t for mkt in Data_list]
+    theta = [mkt.theta_t for mkt in Data_list]
+    avg_price = [np.sum(values)/len(Data_list) for values in zip(*price)]
+    avg_theta = [np.sum(values)/len(Data_list) for values in zip(*theta)]
+    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:]) * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
+    std_deviation_price = [np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*price), avg_price)]
+    std_deviation_theta = [np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)]
+    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:]) * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
+    # Calculate upper and lower bounds for shading
+    upper_bound_price = [avg + std_dev for avg, std_dev in zip(avg_price, std_deviation_price)]
+    lower_bound_price = [avg - std_dev for avg, std_dev in zip(avg_price, std_deviation_price)]
+    upper_bound_RA_price = [avg + std_dev for avg, std_dev in zip(avg_RA_price, std_deviation_RA_price)]
+    lower_bound_RA_price = [avg - std_dev for avg, std_dev in zip(avg_RA_price, std_deviation_RA_price)]
+
+    # Create the plot
+    ax.plot(time, avg_price, label='Model Price', color=color1)
+    ax.fill_between(time, lower_bound_price, upper_bound_price, color=color1, alpha=transparency_level, label='± 1 Std Dev')
+    ax.plot(time, avg_RA_price, label='RA Informed Price', color=color2)
+    ax.fill_between(time, lower_bound_RA_price, upper_bound_RA_price, color=color2, alpha=transparency_level, label='± 1 Std Dev')
+    
+    
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("Price")
+    fig.legend(loc='upper right')
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "avg_p_t_multiple_seeds" + "_timeseries"
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+
 
 def plot_histogram_returns_different_seed(fileName, Data_list):
     returns = np.array([])
@@ -803,7 +857,7 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
         returns = np.append(returns, np.array(ret))
     fig, ax = plt.subplots()
     # Create a histogram of returns (transparent orange)
-    ax.hist(returns, bins=30, alpha=0.5, color='orange', edgecolor='black', density=True, label='Returns Histogram')
+    ax.hist(returns, bins=30, alpha=0.8, color='#F4A261', edgecolor='black', density=True, label='Returns Histogram')
 
     # Fit a normal distribution to the data
     mu, std = norm.fit(returns)
@@ -811,9 +865,7 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
     # Plot the PDF of the fitted normal distribution (light blue)
     x = np.linspace(min(returns), max(returns), 100)
     p = norm.pdf(x, mu, std)
-    ax.plot(x, p, 'lightblue', linewidth=2, label='Fitted Normal Distribution')
-    
-    ax.set_title('Histogram of Returns')
+    ax.plot(x, p, '#2A9D8F', linewidth=2, label='Fitted Normal Distribution')
     ax.set_xlabel('Returns')
     
     fig.tight_layout()
@@ -834,8 +886,11 @@ def plot_qq_plot_different_seed(fileName, Data_list):
 
     # Generate QQ plot
     probplot(returns, dist="norm", plot=ax)
-
-    ax.set_title('QQ Plot of Returns')
+    # Customize the plot colors
+    ax.lines[0].set_markerfacecolor('#E76F51')  # Change marker color
+    ax.lines[0].set_markeredgecolor('#E76F51')  # Change marker edge color
+    ax.lines[1].set_color('#264653')  # Change line color
+    ax.set_title('')
     ax.set_xlabel('Theoretical Quantiles')
     ax.set_ylabel('Sample Quantiles')
     
@@ -852,7 +907,7 @@ def plot_time_series_market_multi(fileName,Data_list,property_list, property_var
         data = eval("Data_list[%s].%s" % (str(i),property_y))
         if property_y == "history_p_t":
             ax.plot(np.asarray(Data_list[i].history_time), np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
-            ax.plot(np.asarray(Data_list[i].history_time), np.array((Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))), linestyle='dashed', color="red")
+            ax.plot(np.asarray(Data_list[i].history_time), np.array((Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))), linestyle='dashed', color="red")
         else:
             ax.plot(np.asarray(Data_list[i].history_time), np.array(data), linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
         ax.set_xlabel("Steps")
@@ -931,7 +986,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_17_11_57_19_09_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/single_shot_18_19_07_02_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -973,7 +1028,7 @@ if __name__ == "__main__":
 
         #cumsum
         ##plot_history_c = plot_cumulative_consumers(fileName,Data,"c bool",dpi_save,"history_c_bool",red_blue_c)
-        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_profit",red_blue_c)
+        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_cumulative_profit",red_blue_c)
         
         ##plot_history_lambda_t = plot_cumulative_consumers(fileName,Data,"Cumulative network signal, $\lambda_{t,i}$",dpi_save,"history_lambda_t",red_blue_c)
         #plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_expectation_theta_mean",red_blue_c)
@@ -989,25 +1044,27 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_vary_set_seed_11_35_25_27_09_2023"
+        fileName = "results/single_vary_set_seed_22_19_37_02_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
 
         property_title = "K"
-        #titles = ["%s = %s" % (property_title,i*Data_list[0].steps) for i in property_list]
-        #print("titles", titles)
-        plot_price_different_seed(fileName,Data_list, transparency_level=0.3)
-        plot_histogram_returns_different_seed(fileName,Data_list)
-        plot_qq_plot_different_seed(fileName,Data_list)
-        #plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
-        #plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_varied, property_title)
-        #plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
-        #plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
-        #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
-        #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
+        if property_varied == "set_seed":
+        
+            #plot_price_different_seed(fileName,Data_list, transparency_level=0.3)
+            plot_avg_price_different_seed(fileName,Data_list, transparency_level=0.3)
+            plot_histogram_returns_different_seed(fileName,Data_list)
+            plot_qq_plot_different_seed(fileName,Data_list)
+        else:
+            plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
+            plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+            plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+            plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+            #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")
+            #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_expectation_theta_mean")
 
-        #plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
-        #plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
+            #plot_history_weighting_multi_broadcast = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\omega}$",dpi_save,"history_weighting_vector", 1, property_varied, property_list, titles)
+            #plot_history_weighting_multi_network = plot_time_series_consumer_triple_multi(fileName,Data_list,"Signal weighting, $\phi_{\lambda}$",dpi_save,"history_weighting_vector", 2, property_varied, property_list, titles)
         
     plt.show()
