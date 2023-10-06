@@ -37,6 +37,8 @@ class Consumer:
         self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.source_variance = 1
         self.own_sample_variance = 1
+        self.avg_source_variance = 1
+        self.avg_sample_variance = 1
 
         self.cumulative_profit = 0
 
@@ -46,6 +48,7 @@ class Consumer:
             self.history_prior_mean = [self.prior_mean]
             self.history_prior_variance = [self.prior_variance] 
             self.history_source_variance = [self.source_variance]
+            self.history_X_t = [0]
         else:
             self.history_cumulative_profit = [0]
 
@@ -63,7 +66,7 @@ class Consumer:
             source_variance = current_error
         else:
             source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
-        return source_variance
+        return current_error, source_variance
     
     def compute_own_sample_variance(self, d_t, p_t, steps):
         prediction = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation_t1)/(self.R - self.ar_1_coefficient)  
@@ -72,29 +75,33 @@ class Consumer:
             variance = current_error
         else:
             variance = current_error/(steps - 1) + self.own_sample_variance *((steps - 2)/(steps - 1))
-        return variance
+        return current_error, variance
 
     def compute_posterior_mean_variance(self,S_array):
         prior_variance = self.prior_variance
         prior_mean = self.prior_mean
         #add priors for cycling, tour de france
-        full_signal_variances= np.append(self.source_variance[~np.isnan(self.source_variance)], prior_variance)
+        # here we need to force self.theta_variance, so that we do not get an errro in the case of dogmatic agents
+        converted_variance = self.theta_prior_variance * self.source_variance[~np.isnan(self.source_variance)]/self.own_sample_variance
+        full_signal_variances= np.append(converted_variance, prior_variance)#np.append(self.source_variance[~np.isnan(self.source_variance)], prior_variance)
         full_signal_means = np.append(S_array[~np.isnan(S_array)], prior_mean) 
         #print("length of mean vector is: ", len(full_signal_means), "length of var vector is: ", len(full_signal_variances))
         #for both mean and variance
         denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
         #mean
         numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
-        posterior_mean = (numerator_mean/denominator)
+        posterior_mean = (numerator_mean/denominator)        
         posterior_variance = (np.prod(full_signal_variances)/denominator)
+        
         return posterior_mean,posterior_variance 
 
-    def append_data(self):
+    def append_data(self, X):
         if self.save_timeseries_data:
             self.history_profit.append(self.profit)
             self.history_cumulative_profit.append(self.cumulative_profit)
             self.history_prior_mean.append(self.prior_mean) 
             self.history_prior_variance.append(self.prior_variance) 
+            self.history_X_t.append(X)
         else:
             self.history_cumulative_profit.append(self.cumulative_profit)
 
@@ -120,12 +127,12 @@ class Consumer:
         self.cumulative_profit += self.profit
 
         #update weighting
-        self.source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array_t1, steps)
-        self.own_sample_variance = self.compute_own_sample_variance(self.d_t, self.p_t, steps)
+        self.source_variance, self.avg_source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array_t1, steps)
+        self.own_sample_variance, self.avg_sample_variance = self.compute_own_sample_variance(self.d_t, self.p_t, steps)
         #compute posterior expectations
         self.theta_expectation_t1 = self.theta_expectation
         self.theta_expectation, self.theta_variance = self.compute_posterior_mean_variance(self.S_array)
 
         if  (steps % self.compression_factor == 0):  
-            self.append_data()
+            self.append_data(X_t)
         

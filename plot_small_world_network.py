@@ -59,7 +59,7 @@ plt.rcParams.update(params)
 
 def calc_node_size(Data, min_size, max_size):
     #Get source variance
-    list_errors = np.asarray([x.own_sample_variance for x in Data.agent_list])
+    list_errors = np.asarray([x.avg_sample_variance for x in Data.agent_list])
     #print("list_errors", list_errors)
     invert_errors = 1/list_errors
     #print("invert errros", invert_errors)
@@ -98,7 +98,7 @@ def plot_histogram_own_variance(
     ]
 
     # Calculate node sizes
-    node_sizes = np.asarray([x.own_sample_variance for x in Data.agent_list]) #calc_node_size(Data, min_size, max_size)
+    node_sizes = np.asarray([x.avg_sample_variance for x in Data.agent_list]) #calc_node_size(Data, min_size, max_size)
 
     # Create a sorted index based on node_sizes in descending order
     sorted_index = np.argsort(node_sizes)[::-1]
@@ -176,7 +176,7 @@ def plot_histogram_own_variance_SBM(
     ]
 
     # Calculate node sizes
-    node_sizes = np.asarray([x.own_sample_variance for x in Data.agent_list]) #calc_node_size(Data, min_size, max_size)
+    node_sizes = np.asarray([x.avg_sample_variance for x in Data.agent_list]) #calc_node_size(Data, min_size, max_size)
 
     # Create a sorted index based on node_sizes in descending order
     sorted_index = np.argsort(node_sizes)[::-1]
@@ -206,6 +206,83 @@ def plot_histogram_own_variance_SBM(
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def scatter_profit_variance_multiple_seeds(
+    fileName: str,
+    Data,
+    network_structure,
+    property_value: str,
+    colour_informed, 
+    colour_uninformed_block_1,
+    colour_uninformed_block_2,
+    colour_misinformed,
+    dpi_save,
+):
+    # Map dogmatic states to custom colors
+    if network_structure == "SBM":
+        node_colours = [
+            colour_informed if x.dogmatic_state == "theta" else
+            colour_uninformed_block_1 if ((x.dogmatic_state == "normal") and (x.id <= Data[0].I/2)) else
+            colour_uninformed_block_2 if ((x.dogmatic_state == "normal") and (x.id > Data[0].I/2))  else
+            colour_misinformed 
+            for x in Data[0].agent_list
+        ]
+    else:
+        node_colours = [
+            colour_informed if x.dogmatic_state == "theta" else
+            colour_uninformed if x.dogmatic_state == "normal" else
+            colour_misinformed            
+            for x in Data[0].agent_list
+        ]
+        label = [
+            x.dogmatic_state         
+            for x in Data[0].agent_list
+        ]
+        print(label)
+        
+
+    agent_profits = {}
+    agent_errors = {}
+    # Step 2: Collect and sum agent profits across markets
+    num_agents = Data[0].I # Assumes the number of agents is the same in all markets
+    for agent_id in range(num_agents):
+        total_profit = sum(market.agent_list[agent_id].cumulative_profit for market in Data)
+        average_profit = total_profit / len(Data)
+        agent_profits[agent_id] = average_profit
+        total_error = sum(market.agent_list[agent_id].avg_sample_variance for market in Data)
+        average_error = total_error / len(Data)
+        agent_errors[agent_id] = average_error
+
+    # Create the barplot with varying color intensities within each category
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(
+        list(agent_errors.values()),
+        list(agent_profits.values()),
+        color=node_colours,
+        edgecolor="black",
+        s=300,
+        alpha = 0.5   # Set the edge color to black
+    )
+    if network_structure == "SBM":
+        values = [colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed]
+        c_list = ["Informed", "Uninformed_Block_1", "Uninformed_Block_2", "Misinformed"]#["Generalists","Specialists"]
+    else:
+        values = [colour_informed, colour_uninformed, colour_misinformed]
+        c_list = ["Informed", "Uninformed", "Misinformed"]#["Generalists","Specialists"]
+    
+    for v in range(len(values)):
+        plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
+    ax.legend(loc='lower right')
+
+    # Customize the plot as needed
+    ax.set_xlabel('Average Forecast Error')
+    ax.set_ylabel('Cumulative Profit')
+
+    # Save or show the plot
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + property_value + "_plot_scatter_profit_variance" + "_" + network_structure
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+    print("here")
 
 
 def scatter_profit_variance(
@@ -237,7 +314,7 @@ def scatter_profit_variance(
         ]
 
     # Calculate variance
-    variances = np.asarray([x.own_sample_variance for x in Data.agent_list]) #calc_node_size(Data, min_size, max_size)
+    variances = np.asarray([x.avg_sample_variance for x in Data.agent_list]) #calc_node_size(Data, min_size, max_size)
 
     #Calculate profits
 
@@ -262,10 +339,10 @@ def scatter_profit_variance(
     
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
-    ax.legend(loc='upper left')
+    ax.legend(loc='lower left')
 
     # Customize the plot as needed
-    ax.set_xlabel('Average Payoff Error')
+    ax.set_xlabel('Average Forecast Error')
     ax.set_ylabel('Cumulative Profit')
 
     # Save or show the plot
@@ -286,8 +363,8 @@ def plot_network(
     colour_uninformed,
     colour_misinformed,
     dpi_save,
-    min_size = 100, 
-    max_size = 1000
+    min_size = 400, 
+    max_size = 400
 ): 
     #data_matrix = np.asarray([eval("Data.agent_list[%s].%s" % (v,property_value)) for v in range(Data.I)]).T
     fig, ax = plt.subplots()
@@ -324,6 +401,7 @@ def plot_network(
         pos=pos,
         node_size=node_sizes,
         edgecolors="black",
+        alpha = 0.9
     )
     values = [colour_informed, colour_uninformed, colour_misinformed]
     c_list = ["Informed", "Uninformed", "Misinformed"]#["Generalists","Specialists"]
@@ -345,8 +423,8 @@ def plot_network_SBM(
     colour_uninformed_block_2,
     colour_misinformed,
     dpi_save,
-    min_size = 100, 
-    max_size = 1000
+    min_size = 400, 
+    max_size = 400
 ): 
     #data_matrix = np.asarray([eval("Data.agent_list[%s].%s" % (v,property_value)) for v in range(Data.I)]).T
     fig, ax = plt.subplots()
@@ -403,12 +481,7 @@ def plot_network_SBM(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 if __name__ == "__main__":
-    fileName = "results/single_shot_18_19_07_02_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
-    
-    Data = load_object(fileName + "/Data", "financial_market")
-    base_params = load_object(fileName + "/Data", "base_params")
-
-    network_structure = "small-world"
+    network_structure = "scale-free"
     property_value ="error" 
     colour_informed = "#264653" 
     colour_uninformed = "#E9C46A"
@@ -419,10 +492,21 @@ if __name__ == "__main__":
     min_size = 100
     max_size = 500
 
+single_run = 0
+
+if single_run:
+    fileName = "results/scale-freesingle_shot_17_10_11_05_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+    Data = load_object(fileName + "/Data", "financial_market")
+    base_params = load_object(fileName + "/Data", "base_params")
 
     plot_network(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed, colour_misinformed, dpi_save)
     #plot_network_SBM(fileName,Data, network_structure, property_value, colour_informed,colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
-    plot_histogram_own_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed, colour_misinformed, dpi_save)
+    #plot_histogram_own_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed, colour_misinformed, dpi_save)
     #plot_histogram_own_variance_SBM(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
-    scatter_profit_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
+    #scatter_profit_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
+    plt.show()
+else:
+    fileName = "results/scale-freesingle_vary_set_seed_17_11_38_05_10_2023"
+    Data = load_object(fileName + "/Data", "financial_market_list")
+    scatter_profit_variance_multiple_seeds(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()

@@ -17,6 +17,7 @@ from matplotlib.cm import get_cmap
 import collections
 import os
 from scipy.stats import skew
+from scipy.stats import kurtosis
 from scipy.stats import norm
 from scipy.stats import probplot
 from utility import (
@@ -156,9 +157,12 @@ def plot_histogram_returns(fileName, Data, y_title, dpi_save):
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
+    rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))
+    rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
     
     # Create a histogram of returns (transparent orange)
     ax.hist(returns, bins=30, alpha=0.5, color='orange', edgecolor='black', density=True, label='Returns Histogram')
+    ax.hist(rational_returns, bins=30, alpha=0.5, color='green', edgecolor='black', density=True, label='Returns Histogram')
 
     # Fit a normal distribution to the data
     mu, std = norm.fit(returns)
@@ -186,10 +190,11 @@ def plot_qq_plot(fileName, Data, y_title, dpi_save):
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
-
+    rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))
+    rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
     # Generate QQ plot
-    probplot(returns, dist="norm", plot=ax)
-
+    #probplot(returns, dist="norm", plot=ax)
+    probplot(rational_returns, dist = "norm", plot = ax)
     ax.set_title('QQ Plot of Returns')
     ax.set_xlabel('Theoretical Quantiles')
     ax.set_ylabel('Sample Quantiles')
@@ -264,17 +269,14 @@ def plot_time_series_market_pulsing(fileName,Data,y_title,dpi_save):
 def plot_time_series_market_matrix_transpose(fileName,Data,y_title,dpi_save,property_y):
 
     fig, ax = plt.subplots()
-    data = np.asarray(eval("Data.%s" % property_y)).T
-
-    #print("Data.agent_list[i].c_bool[0]", Data.agent_list[0].history_c_bool[0], ~(Data.agent_list[0].history_c_bool[0]))
-    data_c = [data[i] for i in range(Data.I) if (Data.agent_list[i].c_bool)]
-    data_no_c = [data[i] for i in range(Data.I) if not (Data.agent_list[i].c_bool)]
-    # bodge
-    for v in range(len(data_c)):
-        ax.plot(Data.history_time, data_c[v], color="blue")
-    for v in range(len(data_no_c)):
-        ax.plot(Data.history_time, data_no_c[v], color="red")
-
+    for agent in Data.agent_list:
+        if agent.dogmatic_state == "theta":
+            color = "#264653"
+        elif agent.dogmatic_state =="gamma":
+            color = "#E9C46A"
+        else:
+            color = "#E76F51"
+        ax.plot(Data.history_time, np.asarray(eval("agent.%s" % property_y)), color=color)
     ax.set_xlabel("Steps")
     ax.set_ylabel("%s" % y_title)
 
@@ -818,13 +820,21 @@ def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, 
     fig, ax = plt.subplots(figsize = (12, 6))
     time = np.asarray(range(1, Data_list[0].total_steps))
     price = [mkt.history_p_t for mkt in Data_list]
+    returns = [(np.asarray(price_series[1:]) - np.asarray(price_series[:-1])) / np.asarray(price_series[:-1]) for price_series in price]
     theta = [mkt.theta_t for mkt in Data_list]
-    avg_price = [np.sum(values)/len(Data_list) for values in zip(*price)]
-    avg_theta = [np.sum(values)/len(Data_list) for values in zip(*theta)]
+    avg_price = np.asarray([np.sum(values)/len(Data_list) for values in zip(*price)])
+    avg_theta = np.asarray([np.sum(values)/len(Data_list) for values in zip(*theta)])
     avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:]) * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
-    std_deviation_price = [np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*price), avg_price)]
-    std_deviation_theta = [np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)]
+    std_deviation_price = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*price), avg_price)])
+    corr_price = np.mean([np.corrcoef(price_series[1:], price_series[:-1])[0,1] for price_series in price])
+    kurtosis_returns = np.mean([kurtosis(return_series) for return_series in returns])
+    std_deviation_theta = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)])
     std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:]) * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
+    
+    print("avg_price is: ", np.mean(avg_price), "RA_price is: ", np.mean(avg_RA_price))
+    print("avg_std is: ", np.mean(std_deviation_price**2), "RA_ is: ", np.mean(std_deviation_RA_price**2))
+    print("avg_autocorr is: ", corr_price, "RA is: ", Data_list[0].ar_1_coefficient)
+    print("kurtosis is: ", kurtosis_returns)
     # Calculate upper and lower bounds for shading
     upper_bound_price = [avg + std_dev for avg, std_dev in zip(avg_price, std_deviation_price)]
     lower_bound_price = [avg - std_dev for avg, std_dev in zip(avg_price, std_deviation_price)]
@@ -855,6 +865,7 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
         prices = np.array(Data_list[i].history_p_t)
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
+    print("avg_return is:", np.mean(returns))
     fig, ax = plt.subplots()
     # Create a histogram of returns (transparent orange)
     ax.hist(returns, bins=30, alpha=0.8, color='#F4A261', edgecolor='black', density=True, label='Returns Histogram')
@@ -941,10 +952,14 @@ def plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_
 def plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title):
     fig, ax = plt.subplots()
     y_values = []
+    rational_vars = []
     for i in range(len(Data_list)):
         y_value = np.var(Data_list[i].history_p_t)
+        rational_var = np.var(Data_list[i].theta_t*Data_list[i].R/(Data_list[i].R - Data_list[i].ar_1_coefficient))
         y_values.append(y_value) 
+        rational_vars.append(rational_var)
     ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+    ax.plot(np.asarray(property_list), rational_vars, linestyle='solid', color="red",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
     ax.set_xlabel("%s" % property_varied)
     ax.set_ylabel("Variance")
     fig.tight_layout()
@@ -952,6 +967,26 @@ def plot_variance_price_multi(fileName,Data_list,property_list, property_varied,
     f =plotName + "/plot_variance_price_multi_%s" % (property_varied)
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+def plot_avg_price_multi(fileName,Data_list,property_list, property_varied, property_title):
+    fig, ax = plt.subplots()
+    y_values = []
+    rational_vars = []
+    for i in range(len(Data_list)):
+        y_value = np.mean(Data_list[i].history_p_t)
+        rational_var = np.mean(Data_list[i].d/(Data_list[i].R -1) + Data_list[i].theta_t/(Data_list[i].R - Data_list[i].ar_1_coefficient))
+        y_values.append(y_value) 
+        rational_vars.append(rational_var)
+    ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+    ax.plot(np.asarray(property_list), rational_vars, linestyle='solid', color="red",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
+    ax.set_xlabel("%s" % property_varied)
+    ax.set_ylabel("Price")
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f =plotName + "/plot_variance_price_multi_%s" % (property_varied)
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+  
 
 def plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title):
     fig, ax = plt.subplots()
@@ -971,8 +1006,8 @@ def plot_skew_price_multi(fileName,Data_list,property_list, property_varied, pro
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 0
-single_param_vary = 1
+single_shot = 1
+single_param_vary = 0
 
 ###PLOT STUFF
 node_size = 200
@@ -986,13 +1021,16 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/single_shot_18_19_07_02_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_10_27_46_05_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
         print("mean price is: ", np.mean(Data.history_p_t), "mean variance is: ", np.var(Data.history_p_t), "autocorr is: ", np.corrcoef(Data.history_p_t[:-1],Data.history_p_t[1:])[0,1])
-        print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))),"mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
+        print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))),"mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
+        rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))
+        rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
+        print("kurtosis is:", kurtosis(rational_returns))
         #print(Data.history_time)
 
         #consumers
@@ -1023,7 +1061,7 @@ if __name__ == "__main__":
         #plot_node_influencers = plot_node_influence(fileName,Data,dpi_save)
 
         #network trasnspose
-        #plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_it")
+        #plot_history_X_it = plot_time_series_market_matrix_transpose(fileName,Data,"$X_{it}$",dpi_save,"history_X_t")
         
 
         #cumsum
@@ -1044,7 +1082,7 @@ if __name__ == "__main__":
         #anim_weighting_m = anim_weighting_matrix_combined(fileName,Data,cmap, interval, fps, round_dec, weighting_matrix_time_series)
 
     elif single_param_vary:
-        fileName = "results/single_vary_set_seed_22_19_37_02_10_2023"
+        fileName = "results/scale-freesingle_vary_set_seed_17_11_38_05_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
@@ -1057,8 +1095,9 @@ if __name__ == "__main__":
             plot_histogram_returns_different_seed(fileName,Data_list)
             plot_qq_plot_different_seed(fileName,Data_list)
         else:
-            plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
+            #plot_time_series_market_multi(fileName,Data_list,property_list, property_varied, property_title, "history_p_t")
             plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_varied, property_title)
+            plot_avg_price_multi(fileName,Data_list,property_list, property_varied, property_title)
             plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
             plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
             #plot_multi_time_series(fileName,Data_list,property_list, property_varied, property_title, "history_profit")

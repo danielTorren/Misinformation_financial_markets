@@ -11,6 +11,7 @@ import numpy as np
 import networkx as nx
 import numpy.typing as npt
 from consumer import Consumer
+import random
 
 # modules
 class Market:
@@ -99,7 +100,23 @@ class Market:
         #self.dogmatic_state_theta_mean_var_vector = [("theta",(self.d * self.R)/(self.R -1) + (self.R * self.theta_t[0])/(self.R - self.ar_1_coefficient), self.epsilon_sigma**2)]*self.num_dogmatic_theta + [("gamma",(self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[0])/(self.R - self.ar_1_coefficient),self.epsilon_sigma**2)]*self.num_dogmatic_gamma + [("normal",(self.d*self.R)/(self.R - 1) ,self.epsilon_sigma**2 + self.theta_sigma**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         #self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[3], 0)]*self.num_dogmatic_theta + [("gamma", self.gamma_t[3],0)]*self.num_dogmatic_gamma + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[3], 0)]*self.num_dogmatic_theta + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma) + [("gamma", self.gamma_t[3],0)]*self.num_dogmatic_gamma 
-        #np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
+        
+        if self.network_type == "small-world":
+            # this is to make sure that even if we change the seed, we always keep the network in position.
+            # In this way we can compere different agents across different seeds
+            #np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
+            rng_specific = np.random.default_rng(17)
+            rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
+            print(self.dogmatic_state_theta_mean_var_vector)
+            
+        elif self.network_type == "scale-free":
+            # Calculate node degrees
+            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
+            # Sort nodes by degree in descending order
+            # sorted_nodes = sorted(degrees, key=lambda x: degrees[x], reverse=False)
+            # self.dogmatic_state_theta_mean_var_vector = [self.dogmatic_state_theta_mean_var_vector[node] for node in sorted_nodes]
+            # print([agent[0] for agent in self.dogmatic_state_theta_mean_var_vector])
+            # print(degrees)
         self.agent_list = self.create_agent_list()
 
 
@@ -301,8 +318,6 @@ class Market:
        
         if (self.step_count % self.compression_factor == 0):
             self.append_data()
-        if self.step_count == self.total_steps:
-            print(self.history_time)
             
 
         

@@ -21,8 +21,9 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
 
-    rootName = "single_shot"
+    rootName = params["network_type"] +"single_shot"
     fileName = produce_name_datetime(rootName)
+
     print("FILENAME:", fileName)
     #copy the filename variable to the clipboard
     pyperclip.copy(fileName)
