@@ -13,6 +13,7 @@ import pandas as pd
 import networkx as nx
 import matplotlib.animation as animation
 import matplotlib.cm as cm
+import matplotlib.patches as mpatches
 from matplotlib.colors import Normalize
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.cm import get_cmap
@@ -28,22 +29,9 @@ from utility import (
 )
 from plot_results import prod_pos
 
-# SMALL_SIZE = 14
-# MEDIUM_SIZE = 18
-# BIGGER_SIZE = 22
-
-# plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-# plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-# plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-# plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-# plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-# plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-# plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-
-
-fontsize= 14
-ticksize = 14
-figsize = (12, 12)
+fontsize= 18
+ticksize = 16
+figsize = (9, 9)
 params = {'font.family':'serif',
     "figure.figsize":figsize, 
     'figure.dpi': 80,
@@ -52,10 +40,11 @@ params = {'font.family':'serif',
     'axes.labelsize': fontsize,
     'axes.titlesize': fontsize,
     'xtick.labelsize': ticksize,
-    'ytick.labelsize': ticksize
+    'ytick.labelsize': ticksize,
+    'legend.fontsize': fontsize,
+    'legend.markerscale': 2.0
 }
 plt.rcParams.update(params) 
-
 
 def calc_node_size(Data, min_size, max_size):
     #Get source variance
@@ -207,10 +196,10 @@ def plot_histogram_own_variance_SBM(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def scatter_profit_variance_multiple_seeds(
-    fileName: str,
+    fileName,
     Data,
     network_structure,
-    property_value: str,
+    property_value,
     colour_informed, 
     colour_uninformed_block_1,
     colour_uninformed_block_2,
@@ -237,12 +226,11 @@ def scatter_profit_variance_multiple_seeds(
             x.dogmatic_state         
             for x in Data[0].agent_list
         ]
-        print(label)
+        
         
 
     agent_profits = {}
     agent_errors = {}
-    # Step 2: Collect and sum agent profits across markets
     num_agents = Data[0].I # Assumes the number of agents is the same in all markets
     for agent_id in range(num_agents):
         total_profit = sum(market.agent_list[agent_id].cumulative_profit for market in Data)
@@ -254,7 +242,7 @@ def scatter_profit_variance_multiple_seeds(
 
     # Create the barplot with varying color intensities within each category
     fig, ax = plt.subplots()
-    scatter = ax.scatter(
+    ax.scatter(
         list(agent_errors.values()),
         list(agent_profits.values()),
         color=node_colours,
@@ -271,18 +259,19 @@ def scatter_profit_variance_multiple_seeds(
     
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
-    ax.legend(loc='lower right')
+    fig.legend(loc='lower right')
 
     # Customize the plot as needed
+    ax.set_title('')
     ax.set_xlabel('Average Forecast Error')
     ax.set_ylabel('Cumulative Profit')
-
+    fig.tight_layout()
     # Save or show the plot
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_value + "_plot_scatter_profit_variance" + "_" + network_structure
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
-    print("here")
+
 
 
 def scatter_profit_variance(
@@ -344,7 +333,7 @@ def scatter_profit_variance(
     # Customize the plot as needed
     ax.set_xlabel('Average Forecast Error')
     ax.set_ylabel('Cumulative Profit')
-
+    fig.tight_layout()
     # Save or show the plot
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_value + "_plot_scatter_profit_variance" + "_" + network_structure
@@ -474,14 +463,14 @@ def plot_network_SBM(
     c_list = ["Informed", "Uninformed_Block_1", "Uninformed_Block_2", "Misinformed"]#["Generalists","Specialists"]
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
-    ax.legend(loc='upper right')
+    ax.legend(loc='lower right')
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_value + "_plot_network_shape_SBM"
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 if __name__ == "__main__":
-    network_structure = "scale-free"
+    network_structure = "small-world"
     property_value ="error" 
     colour_informed = "#264653" 
     colour_uninformed = "#E9C46A"
@@ -492,10 +481,10 @@ if __name__ == "__main__":
     min_size = 100
     max_size = 500
 
-single_run = 0
+single_run = 1
 
 if single_run:
-    fileName = "results/scale-freesingle_shot_17_10_11_05_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+    fileName = "results/small-worldsingle_shot_15_17_26_05_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
     Data = load_object(fileName + "/Data", "financial_market")
     base_params = load_object(fileName + "/Data", "base_params")
 
@@ -506,7 +495,7 @@ if single_run:
     #scatter_profit_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()
 else:
-    fileName = "results/scale-freesingle_vary_set_seed_17_11_38_05_10_2023"
+    fileName = "results/small-worldsingle_vary_set_seed_15_20_17_05_10_2023"
     Data = load_object(fileName + "/Data", "financial_market_list")
     scatter_profit_variance_multiple_seeds(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()

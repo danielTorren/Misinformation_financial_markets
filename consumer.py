@@ -45,8 +45,8 @@ class Consumer:
         if self.save_timeseries_data:
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_cumulative_profit = [0]
-            self.history_prior_mean = [self.prior_mean]
-            self.history_prior_variance = [self.prior_variance] 
+            self.history_theta_expectation = [self.theta_expectation]
+            self.history_theta_variance = [self.theta_variance] 
             self.history_source_variance = [self.source_variance]
             self.history_X_t = [0]
         else:
@@ -99,8 +99,8 @@ class Consumer:
         if self.save_timeseries_data:
             self.history_profit.append(self.profit)
             self.history_cumulative_profit.append(self.cumulative_profit)
-            self.history_prior_mean.append(self.prior_mean) 
-            self.history_prior_variance.append(self.prior_variance) 
+            self.history_theta_expectation.append(self.theta_expectation) 
+            self.history_theta_variance.append(self.theta_variance) 
             self.history_X_t.append(X)
         else:
             self.history_cumulative_profit.append(self.cumulative_profit)
