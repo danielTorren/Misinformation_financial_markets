@@ -205,7 +205,8 @@ class Market:
 
         agent_list = [
             Consumer(
-                consumer_params,
+                consumer_params, 
+                #self.weighting_matrix[i],
                 self.dogmatic_state_theta_mean_var_vector[i][0], 
                 self.dogmatic_state_theta_mean_var_vector[i][1], 
                 self.dogmatic_state_theta_mean_var_vector[i][2]
@@ -263,8 +264,8 @@ class Market:
                 agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.S_matrix_t1[i], self.step_count)
             #                                 d_t,     p_t,     X_t,     S,               steps,         expectation_theta_mean = None, expectation_theta_var = None
 
-    def get_weighting_matrix(self):
-        return np.asarray([v.weighting_vector for v in self.agent_list])
+    #def get_weighting_matrix(self):
+    #    return np.asarray([v.weighting_vector for v in self.agent_list])
 
     def append_data(self):
         if self.save_timeseries_data:
@@ -310,7 +311,7 @@ class Market:
         #update network signal
         self.S_matrix_t1 = self.S_matrix #matrix of signals at time t-1
         self.S_matrix = self.calc_S()
-        self.weighting_matrix = self.get_weighting_matrix()
+        #self.weighting_matrix = self.get_weighting_matrix()
 
         #update consumers
         self.update_consumers()

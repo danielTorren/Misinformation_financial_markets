@@ -12,7 +12,7 @@ import numpy.typing as npt
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict ,dogmatic_state, baseline_mean, baseline_var):
+    def __init__(self, parameters: dict,dogmatic_state, baseline_mean, baseline_var):
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
@@ -32,7 +32,6 @@ class Consumer:
         self.d = parameters["d"]
         self.theta_prior_variance = parameters["theta_variance"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
-        #self.adj_vector = np.where(adj_vector == 0, np.nan, adj_vector)
         self.source_variance = 1
         self.own_sample_variance = 1
         self.avg_source_variance = 1
@@ -106,7 +105,9 @@ class Consumer:
     def next_step(self,d_t,p_t, p_t1,X_t,X_t1, S, S_t1, steps, informed_expectation = None):
         
         if informed_expectation is None:
+            
             self.prior_variance = self.theta_prior_variance
+            
         else:
             #First we reset the expectations and variance
             self.prior_mean = informed_expectation# corresponds to the dogmatic case
