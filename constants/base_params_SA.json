@@ -1,8 +1,8 @@
 
 {
-    "N_samples": 64,
+    "N_samples": 16,
     "save_timeseries_data": 1, 
-    "total_steps": 500,
+    "total_steps": 100,
     "compression_factor": 1,
     "seed_list": [1,2,3,4,5],
     "I": 100,
