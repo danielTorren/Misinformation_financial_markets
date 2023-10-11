@@ -107,7 +107,7 @@ class Market:
             #np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
             rng_specific = np.random.default_rng(17)
             rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
-            print(self.dogmatic_state_theta_mean_var_vector)
+            #print(self.dogmatic_state_theta_mean_var_vector)
             
         elif self.network_type == "scale-free":
             # Calculate node degrees
