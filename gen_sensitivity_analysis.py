@@ -28,7 +28,7 @@ def generate_sensitivity_output(params: dict):
     Generate data from a set of parameter contained in a dictionary. Average results over multiple stochastic seeds contained in params["seed_list"]
 
     """
-
+    #print(params)
     print_simu = 0
 
     price_mean_list = []

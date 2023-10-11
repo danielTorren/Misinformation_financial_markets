@@ -107,7 +107,6 @@ class Market:
             #np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
             rng_specific = np.random.default_rng(17)
             rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
-            print(self.dogmatic_state_theta_mean_var_vector)
             
         elif self.network_type == "scale-free":
             # Calculate node degrees
@@ -218,6 +217,8 @@ class Market:
 
     def init_calc_S(self, payoff_expectations):
         reshape_payoff_expectations = payoff_expectations#[:, np.newaxis]
+        #print((np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)).shape)
+        #print(reshape_payoff_expectations.shape)
         neighbour_influence =  np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_payoff_expectations 
         #print(neighbour_influence)
         return neighbour_influence
