@@ -107,7 +107,7 @@ class Market:
             #np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
             rng_specific = np.random.default_rng(17)
             rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
-            #print(self.dogmatic_state_theta_mean_var_vector)
+            print(self.dogmatic_state_theta_mean_var_vector)
             
         elif self.network_type == "scale-free":
             # Calculate node degrees
@@ -205,9 +205,10 @@ class Market:
 
         agent_list = [
             Consumer(
-                consumer_params, self.weighting_matrix[i],
-                self.dogmatic_state_theta_mean_var_vector[i][0], self.dogmatic_state_theta_mean_var_vector[i][1], 
-                self.dogmatic_state_theta_mean_var_vector[i][2], self.adjacency_matrix[i], i
+                consumer_params,
+                self.dogmatic_state_theta_mean_var_vector[i][0], 
+                self.dogmatic_state_theta_mean_var_vector[i][1], 
+                self.dogmatic_state_theta_mean_var_vector[i][2]
             )
             for i in range(self.I)
         ]
