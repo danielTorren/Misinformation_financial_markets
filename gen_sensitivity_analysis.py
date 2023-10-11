@@ -71,8 +71,8 @@ def parallel_run_sa(
 
     """
 
-    #res = Parallel(n_jobs=multiprocessing.cpu_count(), verbose=10)(delayed(generate_sensitivity_output)(i) for i in params_dict)
-    res = [generate_sensitivity_output(i) for i in params_dict]
+    res = Parallel(n_jobs=multiprocessing.cpu_count(), verbose=10)(delayed(generate_sensitivity_output)(i) for i in params_dict)
+    #res = [generate_sensitivity_output(i) for i in params_dict]
 
     results_price_mean, results_price_var, results_price_autocorr, results_price_skew = zip(
         *res
