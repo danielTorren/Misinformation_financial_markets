@@ -43,7 +43,7 @@ def generate_sensitivity_output(params: dict):
         price_mean = np.mean(data.history_p_t)
         price_var = np.var(data.history_p_t)
         price_autocorr = np.corrcoef(data.history_p_t,data.history_p_t1)
-        price_skew = kurtosis(data.history_p_t)
+        price_skew = kurtosis(data.history_p_t[1:]/data.history_p_t[:-1] - 1)
 
         price_mean_list.append(price_mean)
         price_var_list.append(price_var)
