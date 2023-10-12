@@ -9,6 +9,7 @@ Created: 10/10/2022
 import numpy as np
 import networkx as nx
 import numpy.typing as npt
+import warnings
 
 class Consumer:
     "Class of consumer"
@@ -75,7 +76,7 @@ class Consumer:
         return current_error, variance
 
     def compute_posterior_mean_variance(self,S_array):
-        try:
+        with warnings.catch_warnings(record=True) as w:
             prior_variance = self.prior_variance
             prior_mean = self.prior_mean
             #add priors for cycling, tour de france
@@ -90,8 +91,9 @@ class Consumer:
             numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
             posterior_mean = (numerator_mean/denominator)        
             posterior_variance = (np.prod(full_signal_variances)/denominator)
-        except Exception as e:
-            print(f"An ecception occurred: {e}. Keeping prior beliefs")   
+        if w:
+        # Handle the warning, print it, or take action as needed
+            print(f"Warning: {w[0].message}, Keeping prior beliefs")   
             posterior_mean = self.prior_mean
             posterior_variance = self.prior_variance
         return posterior_mean,posterior_variance 
