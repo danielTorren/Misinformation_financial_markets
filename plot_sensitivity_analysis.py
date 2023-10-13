@@ -11,6 +11,20 @@ from utility import (
     load_object
 )
 
+fontsize= 18
+ticksize = 16
+figsize = (16, 9)
+params = {'font.family':'serif',
+    "figure.figsize":figsize, 
+    'figure.dpi': 80,
+    'figure.edgecolor': 'k',
+    'font.size': fontsize, 
+    'axes.labelsize': fontsize,
+    'axes.titlesize': fontsize,
+    'xtick.labelsize': ticksize,
+    'ytick.labelsize': ticksize
+}
+plt.rcParams.update(params)
 
 def multi_scatter_seperate_total_sensitivity_analysis_plot(
     fileName, data_dict, dict_list, names, dpi_save, N_samples, order
@@ -19,9 +33,9 @@ def multi_scatter_seperate_total_sensitivity_analysis_plot(
     Create scatter chart of results.
     """
 
-    fig, axes = plt.subplots(ncols=len(dict_list), nrows=1, constrained_layout=True , sharey=True,figsize=(12, 6))#,#sharex=True# figsize=(14, 7) # len(list(data_dict.keys())))
+    fig, axes = plt.subplots(ncols=len(dict_list), nrows=1, constrained_layout=True , sharey=True)#,#sharex=True# figsize=(14, 7) # len(list(data_dict.keys())))
     
-    plt.rc('ytick', labelsize=4) 
+    #plt.rc('ytick', labelsize=4) 
 
     for i, ax in enumerate(axes.flat):
         if order == "First":
@@ -44,7 +58,8 @@ def multi_scatter_seperate_total_sensitivity_analysis_plot(
                 color=data_dict[dict_list[i]]["colour"],
                 label=data_dict[dict_list[i]]["title"],
             )
-        ax.legend()
+        ax.set_title(data_dict[dict_list[i]]["title"])
+        #ax.legend(loc='lower right')
         ax.set_xlim(left=0)
 
     fig.supxlabel(r"%s order Sobol index" % (order))
@@ -260,22 +275,21 @@ def main(
     ) -> None: 
     
     plot_dict = {
-        "price_mean": {"title": r"price mean", "colour": "red", "linestyle": "--"},
-        "price_var": {"title": r"price var", "colour": "blue", "linestyle": "-"},
-        "price_autocorr": {"title": r"price autocorrelation", "colour": "green", "linestyle": "*"},
-        "price_skew": {"title": r"price_skew","colour": "orange","linestyle": "-.",},
+        "price_mean": {"title": r"Price deviation", "colour": "red", "linestyle": "--"},
+        "price_var": {"title": r"Excess Variance", "colour": "blue", "linestyle": "-"},
+        "price_autocorr": {"title": r"Excess Autocorrelation", "colour": "green", "linestyle": "*"},
+        "price_skew": {"title": r"Kurtosis","colour": "orange","linestyle": "-.",},
     }
 
     titles = [
-        r'network density', 
-        r'$\Theta$', 
-        r'$\sigma_\Theta$', 
-        r'$\Gamma$', 
-        r'$\sigma_\Gamma$', 
-        r'$\sigma_\epsilon$', 
-        r'$\% \mathrm{dogmatic}_\Theta$', 
-        r'$\% \mathrm{dogmatic}_\Gamma$', 
-        r'$\mathrm{AR}(1)$'
+        r'Network density', 
+        r'$\sigma_{\eta}$', 
+        r'$\mu_{\gamma}$', 
+        r'$\sigma_{\gamma}$', 
+        r'$\sigma_{\varepsilon}$', 
+        r'$\lambda$', 
+        r'$\xi$', 
+        r'$\beta$'
     ]
 
 
@@ -302,7 +316,7 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    fileName = "results/sensitivity_analysis_17_50_43_12_10_2023",
+    fileName = "results/sensitivity_analysis_19_05_36_13_10_2023",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0
