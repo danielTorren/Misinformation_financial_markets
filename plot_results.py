@@ -350,11 +350,32 @@ def plot_skew_price_multi(fileName,Data_list,property_list, property_varied, pro
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
+def scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, target_output, color):
+    fig, ax = plt.subplots()
+    
+    y = [simulation.get(target_output) for simulation in Data_list]
+    x = [item for item in property_list for _ in range(seed_list_len)]
+    print(y[1])
+    ax.scatter(x, y, 
+        c = color,
+        edgecolor="black",
+        s=300,
+        alpha = 0.5)
+    ax.set_xlabel(property_varied)
+    ax.set_ylabel(target_output)
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f =plotName + "/scatter_explore_single_param_%s" % (property_varied) + target_output
+    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 1
+single_shot = 0
 single_param_vary = 0
+explore_single_param = 1
 
 ###PLOT STUFF
 node_size = 200
@@ -402,3 +423,16 @@ if __name__ == "__main__":
             plot_variance_price_multi(fileName,Data_list,property_list, property_varied, property_title)
             plot_skew_price_multi(fileName,Data_list,property_list, property_varied, property_title)
         plt.show()
+    
+    elif explore_single_param:
+        fileName = "results/small-worldexplore_singletheta_sigma_13_04_25_14_10_2023"
+        Data_list = load_object(fileName + "/Data", "financial_market_list")
+        property_varied =  load_object(fileName + "/Data", "property_varied")
+        property_list = load_object(fileName + "/Data", "property_list")
+        seed_list_len = load_object(fileName + "/Data", "seed_list_len")
+        #scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "dev_price", "red")
+        #scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "excess_var", "blue")
+        scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "excess_autocorr", "green")
+        #scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "kurtosis", "orange")
+        plt.show()
+       

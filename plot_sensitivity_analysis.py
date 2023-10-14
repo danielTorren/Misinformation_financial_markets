@@ -45,6 +45,8 @@ def multi_scatter_seperate_total_sensitivity_analysis_plot(
                 xerr=data_dict[dict_list[i]]["yerr"]["S1"].tolist(),
                 fmt="o",
                 ecolor="k",
+                markersize=8, 
+                capsize=5,
                 color=data_dict[dict_list[i]]["colour"],
                 label=data_dict[dict_list[i]]["title"],
             )
@@ -55,6 +57,8 @@ def multi_scatter_seperate_total_sensitivity_analysis_plot(
                 xerr=data_dict[dict_list[i]]["yerr"]["ST"].tolist(),
                 fmt="o",
                 ecolor="k",
+                markersize=8, 
+                capsize=5,
                 color=data_dict[dict_list[i]]["colour"],
                 label=data_dict[dict_list[i]]["title"],
             )
@@ -76,11 +80,11 @@ def multi_scatter_seperate_total_sensitivity_analysis_plot(
     f_png = (
         plotName
         + "/"
-        + "%s_%s_%s_multi_scatter_seperate_sensitivity_analysis_plot.png"
+        + "%s_%s_%s_multi_scatter_seperate_sensitivity_analysis_plot.pdf"
         % (len(names), N_samples, order)
     )
     fig.savefig(f, dpi=dpi_save, format="eps")
-    fig.savefig(f_png, dpi=dpi_save, format="png")
+    fig.savefig(f_png, dpi=dpi_save, format="pdf")
 
 
 def get_plot_data(
@@ -316,7 +320,7 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    fileName = "results/sensitivity_analysis_19_05_36_13_10_2023",
+    fileName = "results/sensitivity_analysis_03_53_51_14_10_2023",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0
