@@ -481,7 +481,7 @@ if __name__ == "__main__":
     min_size = 100
     max_size = 500
 
-single_run = 1
+single_run = 0
 
 if single_run:
     fileName = "results/small-worldsingle_shot_15_17_26_05_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
@@ -495,7 +495,7 @@ if single_run:
     #scatter_profit_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()
 else:
-    fileName = "results/small-worldsingle_vary_set_seed_15_20_17_05_10_2023"
+    fileName = "results/small-worldsingle_vary_set_seed_14_17_49_18_10_2023"
     Data = load_object(fileName + "/Data", "financial_market_list")
     scatter_profit_variance_multiple_seeds(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()

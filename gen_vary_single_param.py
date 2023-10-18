@@ -83,7 +83,7 @@ if __name__ == "__main__":
     f = open("constants/base_params.json")
     params = json.load(f)
     property_varied = "set_seed"
-    property_list = list(range(11, 41)) #[0.1, .2, .3]
+    property_list = list(range(11, 31)) #[0.1, .2, .3]
     #print(property_list)
 
     rootName = params["network_type"] + "single_vary_" + property_varied

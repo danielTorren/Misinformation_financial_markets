@@ -234,10 +234,15 @@ class Market:
         theta_variances = np.asarray([i.theta_variance for i in self.agent_list])
         return theta_expectations, theta_variances
     
+    # def compute_payoff_expectations(self):
+    #     payoff_expectations = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectations)/(self.R - self.ar_1_coefficient)
+    #     payoff_variances = self.epsilon_sigma**2 + self.theta_variances**2 #* (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
+    #     return payoff_expectations, payoff_variances
+
     def compute_payoff_expectations(self):
-        payoff_expectations = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectations)/(self.R - self.ar_1_coefficient)
-        payoff_variances = self.epsilon_sigma**2 + self.theta_variances**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
-        return payoff_expectations, payoff_variances
+            payoff_expectations = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectations)/(self.R - self.ar_1_coefficient)
+            payoff_variances = self.epsilon_sigma**2 + (self.theta_sigma**2)/(self.R - self.ar_1_coefficient)**2 + self.theta_variances * (1 + ( self.ar_1_coefficient**2)/(self.R - self.ar_1_coefficient)**2) #* (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
+            return payoff_expectations, payoff_variances
 
     def compute_price(self):
         term_1 = sum((self.payoff_expectations)/(self.payoff_variances))

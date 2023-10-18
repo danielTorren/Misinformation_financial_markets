@@ -118,7 +118,7 @@ def plot_qq_plot(fileName, Data, y_title, dpi_save):
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
-    rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] * Data.ar_1_coefficient)/ (Data.R - Data.ar_1_coefficient))
+    rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))
     rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
     # Generate QQ plot
     #probplot(returns, dist="norm", plot=ax)
@@ -184,12 +184,12 @@ def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, 
     theta = [mkt.theta_t for mkt in Data_list]
     avg_price = np.asarray([np.sum(values)/len(Data_list) for values in zip(*price)])
     avg_theta = np.asarray([np.sum(values)/len(Data_list) for values in zip(*theta)])
-    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:]) * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
+    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
     std_deviation_price = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*price), avg_price)])
     corr_price = np.mean([np.corrcoef(price_series[1:], price_series[:-1])[0,1] for price_series in price])
     kurtosis_returns = np.mean([kurtosis(return_series) for return_series in returns])
     std_deviation_theta = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)])
-    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:]) * Data_list[0].ar_1_coefficient)/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
+    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
     
     print("avg_price is: ", np.mean(avg_price), "RA_price is: ", np.mean(avg_RA_price))
     print("avg_std is: ", np.mean(std_deviation_price**2), "RA_ is: ", np.mean(std_deviation_RA_price**2))
@@ -222,7 +222,7 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
     rational_returns = np.array([])
     for i in range(len(Data_list)):
         prices = np.array(Data_list[i].history_p_t)
-        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:])/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
         rational_return = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
@@ -254,7 +254,7 @@ def plot_qq_plot_different_seed(fileName, Data_list):
     rational_returns = np.array([])
     for i in range(len(Data_list)):
         prices = np.array(Data_list[i].history_p_t)
-        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:] * Data_list[i].ar_1_coefficient)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:] )/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
         rational_return = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
@@ -302,7 +302,7 @@ def plot_variance_price_multi(fileName,Data_list,property_list, property_varied,
     rational_vars = []
     for i in range(len(Data_list)):
         y_value = np.var(Data_list[i].history_p_t)
-        rational_var = np.var(Data_list[i].theta_t*Data_list[i].R/(Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_var = np.var(Data_list[i].theta_t/(Data_list[i].R - Data_list[i].ar_1_coefficient))
         y_values.append(y_value) 
         rational_vars.append(rational_var)
     ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
@@ -373,9 +373,9 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 0
+single_shot = 1
 single_param_vary = 0
-explore_single_param = 1
+explore_single_param = 0
 
 ###PLOT STUFF
 node_size = 200
@@ -389,7 +389,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_18_10_11_13_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_14_26_04_18_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -408,7 +408,7 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/small-worldsingle_vary_set_seed_15_20_17_05_10_2023"
+        fileName = "results/small-worldsingle_vary_set_seed_14_17_49_18_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
@@ -425,14 +425,14 @@ if __name__ == "__main__":
         plt.show()
     
     elif explore_single_param:
-        fileName = "results/small-worldexplore_singletheta_sigma_13_04_25_14_10_2023"
+        fileName = "results/small-worldexplore_singlegamma_sigma_11_36_11_18_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
         seed_list_len = load_object(fileName + "/Data", "seed_list_len")
-        #scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "dev_price", "red")
-        #scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "excess_var", "blue")
+        scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "dev_price", "red")
+        scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "excess_var", "blue")
         scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "excess_autocorr", "green")
-        #scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "kurtosis", "orange")
+        scatter_explore_single_param(fileName,Data_list,property_list, property_varied, seed_list_len, "kurtosis", "orange")
         plt.show()
        
