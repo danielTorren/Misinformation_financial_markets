@@ -82,8 +82,9 @@ def generate_vals_variable_parameters_and_norms(variable_parameters_dict):
             raiseExceptions("Invalid divisions, try linear or log")
     return variable_parameters_dict
 
-def unpack_and_mean(Data_list,f_variable_parameters,f_base_params, axis_mean):
-    Data_matrix = Data_list.reshape((f_variable_parameters["row"]["reps"],f_variable_parameters["col"]["reps"], f_base_params["seed_reps"]))
+def unpack_and_mean(Data_list, variable_parameters, base_params, axis_mean):
+    Data_array = np.asarray(Data_list)
+    Data_matrix =  Data_array.reshape((variable_parameters["row"]["reps"], variable_parameters["col"]["reps"], base_params["seed_reps"]))
     Data_matrix_mean = Data_matrix.mean(axis = axis_mean)
     return Data_matrix_mean
 
@@ -123,15 +124,15 @@ def main(
     excess_autocorr_list = [d["excess_autocorr"] for d in Data_list]
     kurtosis_list = [d["kurtosis"] for d in Data_list]
 
-    dev_price_mean = unpack_and_mean(dev_price_list)
-    excess_var_mean = unpack_and_mean(excess_var_list)
-    excess_autocorr_mean = unpack_and_mean(excess_autocorr_list)
-    kurtosis_mean = unpack_and_mean(kurtosis_list)
+    dev_price_mean = unpack_and_mean(dev_price_list, variable_parameters_dict,base_params, 2)
+    excess_var_mean = unpack_and_mean(excess_var_list, variable_parameters_dict, base_params, 2)
+    excess_autocorr_mean = unpack_and_mean(excess_autocorr_list, variable_parameters_dict, base_params, 2)
+    kurtosis_mean = unpack_and_mean(kurtosis_list, variable_parameters_dict, base_params, 2)
 
     # run the simulation
     createFolder(fileName)
     save_object(Data_list, fileName + "/Data", "financial_market_list")
-    save_object( dev_price_mean, fileName + "/Data", " dev_price_mean")
+    save_object(dev_price_mean, fileName + "/Data", "dev_price_mean")
     save_object(excess_var_mean, fileName + "/Data", "excess_var_mean")
     save_object(excess_autocorr_mean, fileName + "/Data", "excess_autocorr_mean")
     save_object(kurtosis_mean, fileName + "/Data", "kurtosis_mean")
