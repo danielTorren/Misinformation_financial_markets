@@ -326,8 +326,5 @@ class Market:
        
         if (self.step_count % self.compression_factor == 0):
             self.append_data()
-        if (self.step_count % 10 == 0):
-            print("step count: ", self.step_count)
-            
 
         
