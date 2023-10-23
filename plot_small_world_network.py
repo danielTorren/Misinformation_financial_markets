@@ -470,7 +470,7 @@ def plot_network_SBM(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 if __name__ == "__main__":
-    network_structure = "small-world"
+    network_structure = "scale_free"
     property_value ="error" 
     colour_informed = "#264653" 
     colour_uninformed = "#E9C46A"
@@ -481,10 +481,10 @@ if __name__ == "__main__":
     min_size = 100
     max_size = 500
 
-single_run = 0
+single_run = 1
 
 if single_run:
-    fileName = "results/small-worldsingle_shot_15_17_26_05_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+    fileName = "results/scale_freesingle_shot_18_53_48_18_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
     Data = load_object(fileName + "/Data", "financial_market")
     base_params = load_object(fileName + "/Data", "base_params")
 

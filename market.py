@@ -108,7 +108,7 @@ class Market:
             rng_specific = np.random.default_rng(17)
             rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
             
-        elif self.network_type == "scale-free":
+        elif self.network_type == "scale_free":
             # Calculate node degrees
             self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
             # Sort nodes by degree in descending order
@@ -160,7 +160,7 @@ class Market:
         ws: nx.Graph
             a networkx watts strogatz small world graph
         """
-        if self.network_type == "scale-free":
+        if self.network_type == "scale_free":
             G = nx.scale_free_graph(self.I)
         elif self.network_type == "random":
             G = nx.erdos_renyi_graph(self.I, 0.2)

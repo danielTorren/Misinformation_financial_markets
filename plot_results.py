@@ -149,6 +149,11 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
         print("date Len is:", len(data), "time len is: ", len(Data.history_time))
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
         ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
+    elif property_y == "history_X_it":
+        T,I = np.asarray(data).shape
+        # Create a plot for each variable
+        for i in range(I):
+            ax.plot(Data.history_time, np.asarray(data)[:, i])   
     fig.tight_layout()
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
@@ -159,7 +164,7 @@ def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
     if network_structure == "small-world":
         layout_type = "circular"
-    elif network_structure == "random" or "scale-free":
+    elif network_structure == "random" or "scale_free":
         layout_type ="kamada_kawai"
 
     if layout_type == "circular":
@@ -373,9 +378,9 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 1
+single_shot = 0
 single_param_vary = 0
-explore_single_param = 0
+explore_single_param = 1
 
 ###PLOT STUFF
 node_size = 200
@@ -389,7 +394,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_14_26_04_18_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/scale_freesingle_shot_18_53_48_18_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -400,7 +405,8 @@ if __name__ == "__main__":
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         print("kurtosis is:", kurtosis(rational_returns))
         plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
+        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_it")
+        #plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
         plot_qq_plot = plot_qq_plot(fileName, Data, "qq_plot", dpi_save)
         plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_cumulative_profit",red_blue_c)
         plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_theta_expectation",red_blue_c)
@@ -408,7 +414,7 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/small-worldsingle_vary_set_seed_14_17_49_18_10_2023"
+        fileName = "results/scale_freesingle_vary_theta_sigma_18_50_54_18_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
