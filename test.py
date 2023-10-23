@@ -1,52 +1,51 @@
-import yaml
-import io
 import numpy as np
+from sklearn.linear_model import LinearRegression
+
+def compute_posterior_mean_variance(m_0, v_0 , mean_vector, sigma_vector):
+    
+    prior_variance = v_0
+    prior_mean = m_0
+    #add priors for cycling, tour de france
+    # here we need to force self.theta_variance, so that we do not get an errro in the case of dogmatic agents
+    converted_variance = v_0 * sigma_vector
+    full_signal_variances= np.append(converted_variance, prior_variance)#np.append(self.source_variance[~np.isnan(self.source_variance)], prior_variance)
+    full_signal_means = np.append(mean_vector, prior_mean) 
+    #print("length of mean vector is: ", len(full_signal_means), "length of var vector is: ", len(full_signal_variances))
+    #for both mean and variance
+    denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
+    #mean
+    numerator_mean =  sum(np.product(np.append(np.delete(full_signal_variances, v),full_signal_means[v])) for v in range(len(full_signal_variances)))
+    posterior_mean = (numerator_mean/denominator)        
+    posterior_variance = (np.prod(full_signal_variances)/denominator)
+    return posterior_mean,posterior_variance 
+
+def generate_ar1(mean, acf, mu, sigma, N):
+        data = [mean]
+        for i in range(1,N):
+            noise = np.random.normal(mu,sigma)
+            data.append(mean + acf * (data[-1] - mean) + noise)
+        return np.array(data)
+
+ar_1_coefficient = 0.6
+theta_mean = 0
+theta_sigma = .50
+epsilon_sigma = 1
+total_steps = 10**5
+d = 1.1
+
+print("here")
 
 
+epsilon_t = np.random.normal(0, epsilon_sigma, total_steps+1).reshape(-1, 1)
+theta_t = generate_ar1(0,ar_1_coefficient, theta_mean, theta_sigma, total_steps+1).reshape(-1, 1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
 
-# Define data
-data = {
-    "save_data": 1, 
-    "network_structure": "barabasi_albert_graph",
-    "degroot_aggregation": 1,
-    "c_fountain": 0,
-    "update_c": 0,
-    "steps": 1000,
-    "I": 100,
-    "K": 10,
-    "prob_rewire": 0.1,
-    "set_seed": 0,
-    "R": 1.01,
-    "a": 5.5,
-    "d": 1.1,
-    "mu_0": 0,
-    "theta_sigma" : 0.31622776601,
-    "epsilon_sigma": 0.31622776601,
-    "gamma_sigma": 0.31622776601,
-    "var_0": 0.1,
-    "phi_tau": 0.33,
-    "phi_omega": 0.33,
-    "phi_rho": 0.34,
-    "W_0": 100,
-    "c_info": 0.1,
-    "beta": 1,
-    "zeta_threshold": 0.63245553202,
-    "delta":1e-5,
-    "T_h_prop": 0.05,
-    "c_prop": 0.3,
-    "k_new_node": 6,
-    "non_c_W_0_prop": 0.8
-}
+d_t = theta_t + epsilon_t + d
+#estimate linear regression of d_t on theta_t   
+reg = LinearRegression().fit(theta_t, d_t)
+print(reg.score(theta_t, d_t))
 
-
-
-
-# Write YAML file
-with io.open('data.yaml', 'w', encoding='utf8') as outfile:
-    yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
-
-# Read YAML file
-with open("data.yaml", 'r') as stream:
-    data_loaded = yaml.safe_load(stream)
-
-print(data == data_loaded)
+#now we regress d_t on its lagged value
+d_t_lagged = d_t[:-1]
+d_t = d_t[1:]
+reg = LinearRegression().fit(d_t_lagged, d_t)
+print(reg.score(d_t_lagged, d_t))

@@ -52,7 +52,10 @@ def plot_cumulative_consumers(fileName,Data,y_title,dpi_save,property_y,red_blue
                 color = "red"
             else:
                 color = "black"
-            data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
+            if property_y == "history_theta_variance":
+                data_ind = np.cumsum(np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y))))
+            else:
+                data_ind = np.asarray(eval("Data.agent_list[%s].%s" % (str(v), property_y)))
             ax.plot(np.asarray(Data.history_time), ((data_ind)), color = color)
     else:
         for v in range(len(Data.agent_list)):
@@ -153,7 +156,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
         T,I = np.asarray(data).shape
         # Create a plot for each variable
         for i in range(I):
-            ax.plot(Data.history_time, np.asarray(data)[:, i])   
+            ax.plot(Data.history_time, np.cumsum(np.abs(np.asarray(data)[:, i])))   
     fig.tight_layout()
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
@@ -378,9 +381,9 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 0
+single_shot = 1
 single_param_vary = 0
-explore_single_param = 1
+explore_single_param = 0
 
 ###PLOT STUFF
 node_size = 200
@@ -394,7 +397,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/scale_freesingle_shot_18_53_48_18_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_22_28_48_23_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")

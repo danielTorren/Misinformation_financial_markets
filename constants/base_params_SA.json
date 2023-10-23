@@ -12,6 +12,6 @@
     "prob_rewire": 0.1,
     "network_type": "small-world",
     "theta_mean": 0,
-    "network_density": 0.5
+    "network_density": 0.05
 
 }

@@ -82,8 +82,8 @@ def main(
     #load in exogenous parameters
     f = open("constants/base_params.json")
     params = json.load(f)
-    property_varied = "theta_sigma"
-    property_list = [0.1, 0.5, 1.0]#list(range(11, 31)) #[0.1, .2, .3]
+    property_varied = "set_seed"
+    property_list = list(range(11, 21)) #[0.1, .2, .3]
     #print(property_list)
 
     rootName = params["network_type"] + "single_vary_" + property_varied
