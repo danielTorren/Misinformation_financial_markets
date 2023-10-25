@@ -25,6 +25,8 @@ class Consumer:
         self.theta_expectation = self.prior_mean
         self.theta_expectation_t1 = 0
         self.theta_variance = self.prior_variance
+        self.payoff_expectation = parameters["d"] / (parameters["R"] -1)
+        self.payoff_variance = parameters["epsilon_variance"]
 
         self.dogmatic_state = dogmatic_state
         #self.weighting_vector = weighting_vector
@@ -32,6 +34,8 @@ class Consumer:
         self.R = parameters["R"]
         self.d = parameters["d"]
         self.theta_prior_variance = parameters["theta_variance"]
+        self.epsilon_variance = parameters["epsilon_variance"]
+        self.gamma_variance = parameters["gamma_variance"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
         self.source_variance = 1
         self.own_sample_variance = 1
@@ -43,8 +47,8 @@ class Consumer:
         if self.save_timeseries_data:
             self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
             self.history_cumulative_profit = [0]
-            self.history_theta_expectation = [self.theta_expectation]
-            self.history_theta_variance = [self.theta_variance] 
+            self.history_theta_expectation = [self.payoff_expectation]
+            self.history_theta_variance = [self.payoff_variance] 
             self.history_source_variance = [self.source_variance]
             self.history_X_t = [0]
         else:
@@ -98,12 +102,22 @@ class Consumer:
             posterior_variance = self.prior_variance
         return posterior_mean,posterior_variance 
 
+    def compute_payoff_beliefs(self):
+        payoff_expectation = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation)/(self.R - self.ar_1_coefficient)
+        if self.dogmatic_state == "theta":
+            payoff_variance = self.epsilon_variance + self.theta_prior_variance/(self.R - self.ar_1_coefficient)**2
+        elif self.dogmatic_state == "gamma":
+            payoff_variance = self.epsilon_variance + (self.theta_prior_variance + self.gamma_variance)/(self.R - self.ar_1_coefficient)**2
+        else:
+            payoff_variance = self.epsilon_variance + self.theta_variance
+        return payoff_expectation, payoff_variance
+
     def append_data(self, X):
         if self.save_timeseries_data:
             self.history_profit.append(self.profit)
             self.history_cumulative_profit.append(self.cumulative_profit)
-            self.history_theta_expectation.append(self.theta_expectation) 
-            self.history_theta_variance.append(self.theta_variance) 
+            self.history_theta_expectation.append(self.payoff_expectation) 
+            self.history_theta_variance.append(self.payoff_variance) 
             self.history_X_t.append(X)
         else:
             self.history_cumulative_profit.append(self.cumulative_profit)
@@ -135,6 +149,8 @@ class Consumer:
         #compute posterior expectations
         self.theta_expectation_t1 = self.theta_expectation
         self.theta_expectation, self.theta_variance = self.compute_posterior_mean_variance(self.S_array)
+        #compute posterior payoff
+        self.payoff_expectation, self.payoff_variance = self.compute_payoff_beliefs()
 
         if  (steps % self.compression_factor == 0):  
             self.append_data(X_t)

@@ -199,7 +199,9 @@ class Market:
             "R":self.R,
             "d": self.d,
             "theta_variance": self.theta_sigma**2,
-            "ar_1_coefficient":self.ar_1_coefficient
+            "ar_1_coefficient":self.ar_1_coefficient,
+            "epsilon_variance": self.epsilon_sigma**2,
+            "gamma_variance": self.gamma_sigma**2
         }
 
         agent_list = [
@@ -234,15 +236,11 @@ class Market:
         theta_variances = np.asarray([i.theta_variance for i in self.agent_list])
         return theta_expectations, theta_variances
     
-    # def compute_payoff_expectations(self):
-    #     payoff_expectations = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectations)/(self.R - self.ar_1_coefficient)
-    #     payoff_variances = self.epsilon_sigma**2 + self.theta_variances**2 #* (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
-    #     return payoff_expectations, payoff_variances
+    def get_consumers_payoff_expectations(self):
+        payoff_expectations = np.asarray([i.payoff_expectation for i in self.agent_list])
+        payoff_variances = np.asarray([i.payoff_variance for i in self.agent_list])
+        return payoff_expectations, payoff_variances
 
-    def compute_payoff_expectations(self):
-            payoff_expectations = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectations)/(self.R - self.ar_1_coefficient)
-            payoff_variances = self.epsilon_sigma**2 + (self.theta_sigma**2)/(self.R - self.ar_1_coefficient)**2 + self.theta_variances * (1 + ( self.ar_1_coefficient**2)/(self.R - self.ar_1_coefficient)**2) #* (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2
-            return payoff_expectations, payoff_variances
 
     def compute_price(self):
         term_1 = sum((self.payoff_expectations)/(self.payoff_variances))
@@ -301,7 +299,7 @@ class Market:
 
         #Recieve expectations of mean and variances
         self.theta_expectations, self.theta_variances = self.get_consumers_theta_expectations()
-        self.payoff_expectations, self.payoff_variances = self.compute_payoff_expectations()
+        self.payoff_expectations, self.payoff_variances = self.get_consumers_payoff_expectations()
 
         #Compute aggregate price
         self.p_t1 = self.p_t

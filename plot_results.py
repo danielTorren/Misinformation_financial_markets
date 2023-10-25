@@ -397,12 +397,12 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_22_28_48_23_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_14_39_22_25_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
-        print("mean price is: ", np.mean(Data.history_p_t), "mean variance is: ", np.var(Data.history_p_t), "autocorr is: ", np.corrcoef(Data.history_p_t[:-1],Data.history_p_t[1:])[0,1])
+        print("mean price is: ", np.mean(Data.history_p_t[10:]), "mean variance is: ", np.var(Data.history_p_t[10:]), "autocorr is: ", np.corrcoef(Data.history_p_t[10:-1],Data.history_p_t[11:])[0,1])
         print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))),"mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
         rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
