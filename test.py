@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
 
 def compute_posterior_mean_variance(m_0, v_0 , mean_vector, sigma_vector):
     
@@ -26,26 +25,33 @@ def generate_ar1(mean, acf, mu, sigma, N):
             data.append(mean + acf * (data[-1] - mean) + noise)
         return np.array(data)
 
-ar_1_coefficient = 0.6
-theta_mean = 0
-theta_sigma = .50
-epsilon_sigma = 1
-total_steps = 10**5
-d = 1.1
+# ar_1_coefficient = 0.6
+# theta_mean = 0
+# theta_sigma = .50
+# epsilon_sigma = 1
+# total_steps = 10**5
+# d = 1.1
 
-print("here")
+# print("here")
 
 
-epsilon_t = np.random.normal(0, epsilon_sigma, total_steps+1).reshape(-1, 1)
-theta_t = generate_ar1(0,ar_1_coefficient, theta_mean, theta_sigma, total_steps+1).reshape(-1, 1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
+# epsilon_t = np.random.normal(0, epsilon_sigma, total_steps+1).reshape(-1, 1)
+# theta_t = generate_ar1(0,ar_1_coefficient, theta_mean, theta_sigma, total_steps+1).reshape(-1, 1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
 
-d_t = theta_t + epsilon_t + d
-#estimate linear regression of d_t on theta_t   
-reg = LinearRegression().fit(theta_t, d_t)
-print(reg.score(theta_t, d_t))
+# d_t = theta_t + epsilon_t + d
+# #estimate linear regression of d_t on theta_t   
+# reg = LinearRegression().fit(theta_t, d_t)
+# print(reg.score(theta_t, d_t))
 
-#now we regress d_t on its lagged value
-d_t_lagged = d_t[:-1]
-d_t = d_t[1:]
-reg = LinearRegression().fit(d_t_lagged, d_t)
-print(reg.score(d_t_lagged, d_t))
+# #now we regress d_t on its lagged value
+# d_t_lagged = d_t[:-1]
+# d_t = d_t[1:]
+# reg = LinearRegression().fit(d_t_lagged, d_t)
+# print(reg.score(d_t_lagged, d_t))
+
+
+x = np.array([1,2,3,4,5,6,7,8,9,10])
+y = np.array(["dan",2,"dan",4,"dan",6,7,8,9,10])
+
+z = np.where(y == "dan", "tom", x)
+print(z)

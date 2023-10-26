@@ -71,14 +71,14 @@ class Market:
         self.ar_1_coefficient = parameters["ar_1_coefficient"]  #elasticty of the switch probability to the accurac
         self.prob_rewire = parameters["prob_rewire"]
 
-        self.step_count = 2
+        self.step_count = 1 #we start at t=1 so that the previous time step is t = 0
         self.total_steps = parameters["total_steps"]
 
-        self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+1)
+        self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+2)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
-        self.theta_t = self.generate_ar1(0,self.ar_1_coefficient, self.theta_mean, self.theta_sigma, self.total_steps+1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
-        self.gamma_t = self.theta_t + np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+1)
-
+        self.theta_t = self.generate_ar1(0,self.ar_1_coefficient, self.theta_mean, self.theta_sigma, self.total_steps+2) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
+        self.gamma_t = self.theta_t + np.random.normal(self.gamma_mean, self.gamma_sigma, self.total_steps+2)
+        self.dividend_vector = self.d + self.theta_t + self.epsilon_t
         
         self.num_dogmatic_theta = int(np.floor(self.I*parameters["proportion_dogmatic_theta"])) #number of dogmatic theta
         #print("self.num_dogmatic_theta", self.num_dogmatic_theta, self.I)
@@ -99,8 +99,9 @@ class Market:
 
         #self.dogmatic_state_theta_mean_var_vector = [("theta",(self.d * self.R)/(self.R -1) + (self.R * self.theta_t[0])/(self.R - self.ar_1_coefficient), self.epsilon_sigma**2)]*self.num_dogmatic_theta + [("gamma",(self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[0])/(self.R - self.ar_1_coefficient),self.epsilon_sigma**2)]*self.num_dogmatic_gamma + [("normal",(self.d*self.R)/(self.R - 1) ,self.epsilon_sigma**2 + self.theta_sigma**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         #self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[3], 0)]*self.num_dogmatic_theta + [("gamma", self.gamma_t[3],0)]*self.num_dogmatic_gamma + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
-        self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[3], 0)]*self.num_dogmatic_theta + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma) + [("gamma", self.gamma_t[3],0)]*self.num_dogmatic_gamma 
-        
+        self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[self.step_count+1], 0)]*self.num_dogmatic_theta + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma) + [("gamma", self.gamma_t[self.step_count+1],0)]*self.num_dogmatic_gamma 
+        self.type = [agent[0] for agent in self.dogmatic_state_theta_mean_var_vector]
+
         if self.network_type == "small-world":
             # this is to make sure that even if we change the seed, we always keep the network in position.
             # In this way we can compere different agents across different seeds
@@ -119,17 +120,22 @@ class Market:
         self.agent_list = self.create_agent_list()
 
 
-        self.S_matrix_t1 = self.init_calc_S(np.asarray([0 for v in self.agent_list]))
-        self.S_matrix = self.init_calc_S(np.asarray([0 for v in self.agent_list]))
+        self.S_previous_matrix = self.init_calc_S(np.asarray([0 for v in self.agent_list])) #to avoid caluclations we assume everone is uninformed in the 0 step
+        self.S_current_matrix = self.init_calc_S(np.asarray([agent[1] for agent in self.dogmatic_state_theta_mean_var_vector]))
+        self.S_future_matrix = self.init_calc_S(np.asarray([agent[1] for agent in self.dogmatic_state_theta_mean_var_vector]))
         self.d_t1 = self.d #future dividends
-        self.p_t = self.d / (self.R - 1) #uninformed price
-        self.p_t1 = self.p_t #previous price
+        self.p_t = self.d / (self.R - 1) #uninformed price, THIS IS JUST FOR THE FIRST TIME STEP THIS IS P0 instead of P1
+        #self.previous_pt = self.d / (self.R - 1) #previous price
         self.X_it = [0]*self.I
-        self.X_it1 = [0]*self.I #previous demand
+        #self.previous_X_it = [0]*self.I #previous demand
 
+        self.create_history()
+
+    def create_history(self):
+        """
         if self.save_timeseries_data:
             self.history_p_t = [self.p_t]
-            self.history_p_t1 = [self.p_t1]
+            self.history_p_t1 = [self.previous_pt]
             self.history_d_t1 = [self.d]
             self.history_time = [self.step_count]
             self.history_X_it = [[0]*self.I]
@@ -137,6 +143,17 @@ class Market:
             self.history_weighting_matrix = [self.weighting_matrix]
         else:
             self.history_p_t = [self.p_t]
+        """
+        if self.save_timeseries_data:
+            self.history_p_t = []
+            self.history_p_t1 = []
+            self.history_d_t1 = []
+            self.history_time = []
+            self.history_X_it = []
+            self.history_X_it1 = []
+            self.history_weighting_matrix = []
+        else:
+            self.history_p_t = []
 
     def generate_ar1(self, mean, acf, mu, sigma, N):
         data = [mean]
@@ -213,27 +230,25 @@ class Market:
                 self.dogmatic_state_theta_mean_var_vector[i][2]
             )
             for i in range(self.I)
+            # we need to initialize consumers to form expectations on theta_2 and gamma_2
         ]
 
         return agent_list
 
-    def init_calc_S(self, payoff_expectations):
-        reshape_payoff_expectations = payoff_expectations#[:, np.newaxis]
-        #print((np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)).shape)
-        #print(reshape_payoff_expectations.shape)
+    def init_calc_S(self, reshape_payoff_expectations):
         neighbour_influence =  np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_payoff_expectations 
         #print(neighbour_influence)
         return neighbour_influence
 
     def calc_S(self):
-        reshape_payoff_expectations = self.theta_expectations#[:, np.newaxis]
-        neighbour_influence = np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_payoff_expectations
-
-        return neighbour_influence
+        adj_matrix_nan = np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)
+        theta_vector = np.where(self.type == "theta", self.theta_t[self.step_count +2], self.theta_expectations)
+        theta_and_gamma_vector = np.where(self.type == "gamma", self.gamma_t[self.step_count +2], theta_vector)
+        return adj_matrix_nan*theta_and_gamma_vector
 
     def get_consumers_theta_expectations(self):
-        theta_expectations = np.asarray([i.theta_expectation for i in self.agent_list])
-        theta_variances = np.asarray([i.theta_variance for i in self.agent_list])
+        theta_expectations = np.asarray([i.theta_expectation_tplus1 for i in self.agent_list])
+        theta_variances = np.asarray([i.theta_variance_tplus1 for i in self.agent_list])
         return theta_expectations, theta_variances
     
     def get_consumers_payoff_expectations(self):
@@ -253,19 +268,16 @@ class Market:
         demand_denominator = self.a*self.payoff_variances
         demand_vector = demand_numerator/demand_denominator
         return demand_vector
-
-    def compute_dividends(self):
-        d_t = self.d + self.theta_t[self.step_count] + self.epsilon_t[self.step_count]
-        return d_t       
+ 
     
     def update_consumers(self):
         for i,agent in enumerate(self.agent_list):
             if agent.dogmatic_state =="theta":
-                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i], self.S_matrix_t1[i], self.step_count, self.theta_t[self.step_count])
+                agent.next_step(self.d_t, self.previous_pt, self.S_future_matrix[i], self.S_previous_matrix[i], self.step_count, self.theta_t[self.step_count+1])
             elif agent.dogmatic_state =="gamma": #dogmatic gamma
-                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i], self.S_matrix_t1[i], self.step_count, self.gamma_t[self.step_count])
+                agent.next_step(self.d_t, self.previous_pt, self.S_future_matrix[i], self.S_previous_matrix[i], self.step_count, self.gamma_t[self.step_count+1])
             else:
-                agent.next_step(self.d_t,self.p_t, self.p_t1, self.X_it[i], self.X_it1[i], self.S_matrix[i],self.S_matrix_t1[i], self.step_count)
+                agent.next_step(self.d_t, self.previous_pt, self.S_future_matrix[i],self.S_previous_matrix[i], self.step_count)
             #                                 d_t,     p_t,     X_t,     S,               steps,         expectation_theta_mean = None, expectation_theta_var = None
 
     #def get_weighting_matrix(self):
@@ -274,11 +286,11 @@ class Market:
     def append_data(self):
         if self.save_timeseries_data:
             self.history_p_t.append(self.p_t)
-            self.history_p_t1.append(self.p_t1)
+            self.history_p_t1.append(self.previous_pt)
             self.history_d_t1.append(self.d_t)
             self.history_time.append(self.step_count)
             self.history_X_it.append(self.X_it)
-            self.history_X_it1.append(self.X_it1)
+            self.history_X_it1.append(self.previous_X_it)
             #self.history_informed_proportion.append(self.informed_proportion)
             self.history_weighting_matrix.append(self.weighting_matrix)
         else:
@@ -296,33 +308,39 @@ class Market:
         -------
         None
         """
+        #Update these for the new time step
+        self.previous_pt = self.p_t#previous price
+        self.previous_X_it = self.X_it#previousmatrix of demands 
+         #previous matrix of signals
+        #simulate dividend
+        self.d_t = self.dividend_vector[self.step_count-1]
+        #update consumers
+        self.update_consumers()
 
         #Recieve expectations of mean and variances
         self.theta_expectations, self.theta_variances = self.get_consumers_theta_expectations()
         self.payoff_expectations, self.payoff_variances = self.get_consumers_payoff_expectations()
 
         #Compute aggregate price
-        self.p_t1 = self.p_t
-        self.p_t = self.compute_price()
+        self.p_t = self.compute_price()#ON the first time is p_t =1
 
         #compute indivdiual demands
-        self.X_it1 = self.X_it
         self.X_it = self.compute_demand()
 
-        #simulate dividend
-        self.d_t = self.compute_dividends()
+        #compute profit
+        self.profit = np.asarray(self.previous_X_it) * (self.p_t + self.dividend_vector[self.step_count] - self.R*np.array(self.previous_pt))
 
         #update network signal
-        self.S_matrix_t1 = self.S_matrix #matrix of signals at time t-1
-        self.S_matrix = self.calc_S()
+        self.S_previous_matrix = self.S_current_matrix 
+        self.S_current_matrix = self.S_future_matrix
+        self.S_future_matrix = self.calc_S()
         #self.weighting_matrix = self.get_weighting_matrix()
-
-        #update consumers
-        self.update_consumers()
-
-        self.step_count +=1  
        
         if (self.step_count % self.compression_factor == 0):
             self.append_data()
+
+        self.step_count +=1 
+        if self.step_count % 50 == 0:
+            print("step count: ", self.step_count)
 
         

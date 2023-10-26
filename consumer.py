@@ -23,7 +23,8 @@ class Consumer:
         self.prior_mean =  self.baseline_mean
         self.prior_variance = self.baseline_var
         self.theta_expectation = self.prior_mean
-        self.theta_expectation_t1 = 0
+        self.theta_expectation_t = self.prior_mean
+        self.theta_expectation_tplus1 = self.prior_mean
         self.theta_variance = self.prior_variance
         self.payoff_expectation = parameters["d"] / (parameters["R"] -1)
         self.payoff_variance = parameters["epsilon_variance"]
@@ -42,27 +43,19 @@ class Consumer:
         self.avg_source_variance = 1
         self.avg_sample_variance = 1
 
-        self.cumulative_profit = 0
-
         if self.save_timeseries_data:
-            self.history_profit = [0]#if in doubt 0!, just so everyhting is the same length!
-            self.history_cumulative_profit = [0]
-            self.history_theta_expectation = [self.payoff_expectation]
-            self.history_theta_variance = [self.payoff_variance] 
-            self.history_source_variance = [self.source_variance]
-            self.history_X_t = [0]
+            self.history_theta_expectation = []
+            self.history_theta_variance = [] 
+            self.history_source_variance = []
+            
         else:
-            self.history_cumulative_profit = [0]
-
-    def compute_profit(self,d_t, p_t, p_t1, X_t1):
-        profit = (d_t + p_t - self.R * p_t1)*X_t1
-        return profit        
+            pass
 
 
-    def compute_source_variance(self, d_t, p_t, S_k, steps):
-        prediction = (self.d * self.R)/(self.R -1) + (self.R * S_k)/(self.R - self.ar_1_coefficient)
+    def compute_source_variance(self, steps):
+        prediction = (self.d * self.R)/(self.R -1) + (self.R * self.S_tminus1)/(self.R - self.ar_1_coefficient)
         
-        current_error = (d_t + p_t - prediction)**2
+        current_error = (self.d_tminus1 + self.p_tminus1 - prediction)**2
         
         if steps < 2:
             source_variance = current_error
@@ -70,16 +63,16 @@ class Consumer:
             source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
         return current_error, source_variance
     
-    def compute_own_sample_variance(self, d_t, p_t, steps):
-        prediction = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation_t1)/(self.R - self.ar_1_coefficient)  
-        current_error = (d_t + p_t - prediction)**2
+    def compute_own_sample_variance(self, steps):
+        prediction = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation_tminus1)/(self.R - self.ar_1_coefficient)  
+        current_error = (self.d_tminus1 + self.p_tminus1 - prediction)**2
         if steps < 2:
             variance = current_error
         else:
             variance = current_error/(steps - 1) + self.own_sample_variance *((steps - 2)/(steps - 1))
         return current_error, variance
 
-    def compute_posterior_mean_variance(self,S_array):
+    def compute_posterior_mean_variance(self):
         with warnings.catch_warnings(record=True) as w:
             prior_variance = self.prior_variance
             prior_mean = self.prior_mean
@@ -87,7 +80,7 @@ class Consumer:
             # here we need to force self.theta_variance, so that we do not get an errro in the case of dogmatic agents
             converted_variance = self.theta_prior_variance * self.source_variance[~np.isnan(self.source_variance)]/self.own_sample_variance
             full_signal_variances= np.append(converted_variance, prior_variance)#np.append(self.source_variance[~np.isnan(self.source_variance)], prior_variance)
-            full_signal_means = np.append(S_array[~np.isnan(S_array)], prior_mean) 
+            full_signal_means = np.append(self.S_tplus1[~np.isnan(self.S_tplus1)], prior_mean) 
             #print("length of mean vector is: ", len(full_signal_means), "length of var vector is: ", len(full_signal_variances))
             #for both mean and variance
             denominator = sum(np.product(np.delete(full_signal_variances, v)) for v in range(len(full_signal_variances)))
@@ -103,26 +96,23 @@ class Consumer:
         return posterior_mean,posterior_variance 
 
     def compute_payoff_beliefs(self):
-        payoff_expectation = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation)/(self.R - self.ar_1_coefficient)
+        payoff_expectation = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation_tplus1)/(self.R - self.ar_1_coefficient)
         if self.dogmatic_state == "theta":
             payoff_variance = self.epsilon_variance + self.theta_prior_variance/(self.R - self.ar_1_coefficient)**2
         elif self.dogmatic_state == "gamma":
             payoff_variance = self.epsilon_variance + (self.theta_prior_variance + self.gamma_variance)/(self.R - self.ar_1_coefficient)**2
         else:
-            payoff_variance = self.epsilon_variance + self.theta_variance
+            payoff_variance = self.epsilon_variance + self.theta_variance_tplus1
         return payoff_expectation, payoff_variance
 
     def append_data(self, X):
         if self.save_timeseries_data:
-            self.history_profit.append(self.profit)
-            self.history_cumulative_profit.append(self.cumulative_profit)
             self.history_theta_expectation.append(self.payoff_expectation) 
             self.history_theta_variance.append(self.payoff_variance) 
-            self.history_X_t.append(X)
         else:
-            self.history_cumulative_profit.append(self.cumulative_profit)
+            pass
 
-    def next_step(self,d_t,p_t, p_t1,X_t,X_t1, S, S_t1, steps, informed_expectation = None):
+    def next_step(self,d_tminus1,p_tminus1, S_tplus1, S_tminus1, steps, informed_expectation = None):
         
         if informed_expectation is None:
             
@@ -135,23 +125,17 @@ class Consumer:
 
         #recieve dividend and demand
         #compute profit
-        self.d_t = d_t
-        self.p_t = p_t
-        self.p_t1 = p_t1
-        self.S_array = S
-        self.S_array_t1 = S_t1
-        self.profit = self.compute_profit(self.d_t,self.p_t, self.p_t1, X_t1)
-        self.cumulative_profit += self.profit
-
+        self.d_tminus1 = d_tminus1
+        self.p_tminus1 = p_tminus1
+        self.S_tplus1 = S_tplus1
+        self.S_tminus1 = S_tminus1
+        self.theta_expectation_tminus1 = self.theta_expectation_t
+        self.theta_expectation_t = self.theta_expectation_tplus1
         #update weighting
-        self.source_variance, self.avg_source_variance = self.compute_source_variance(self.d_t, self.p_t, self.S_array_t1, steps)
-        self.own_sample_variance, self.avg_sample_variance = self.compute_own_sample_variance(self.d_t, self.p_t, steps)
+        self.source_variance, self.avg_source_variance = self.compute_source_variance(steps)
+        self.own_sample_variance, self.avg_sample_variance = self.compute_own_sample_variance(steps)
         #compute posterior expectations
-        self.theta_expectation_t1 = self.theta_expectation
-        self.theta_expectation, self.theta_variance = self.compute_posterior_mean_variance(self.S_array)
+        self.theta_expectation_tplus1, self.theta_variance_tplus1 = self.compute_posterior_mean_variance()
         #compute posterior payoff
         self.payoff_expectation, self.payoff_variance = self.compute_payoff_beliefs()
-
-        if  (steps % self.compression_factor == 0):  
-            self.append_data(X_t)
         

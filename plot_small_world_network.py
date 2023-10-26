@@ -484,7 +484,7 @@ if __name__ == "__main__":
 single_run = 1
 
 if single_run:
-    fileName = "results/scale_freesingle_shot_18_53_48_18_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+    fileName = "results/scale_freesingle_shot_15_01_15_25_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
     Data = load_object(fileName + "/Data", "financial_market")
     base_params = load_object(fileName + "/Data", "base_params")
 

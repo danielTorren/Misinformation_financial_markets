@@ -151,7 +151,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     if property_y == "history_p_t":
         print("date Len is:", len(data), "time len is: ", len(Data.history_time))
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
-        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
+        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:-1])/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
     elif property_y == "history_X_it":
         T,I = np.asarray(data).shape
         # Create a plot for each variable
@@ -192,12 +192,12 @@ def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, 
     theta = [mkt.theta_t for mkt in Data_list]
     avg_price = np.asarray([np.sum(values)/len(Data_list) for values in zip(*price)])
     avg_theta = np.asarray([np.sum(values)/len(Data_list) for values in zip(*theta)])
-    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
+    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:-1]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
     std_deviation_price = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*price), avg_price)])
     corr_price = np.mean([np.corrcoef(price_series[1:], price_series[:-1])[0,1] for price_series in price])
     kurtosis_returns = np.mean([kurtosis(return_series) for return_series in returns])
     std_deviation_theta = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)])
-    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
+    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:-1]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
     
     print("avg_price is: ", np.mean(avg_price), "RA_price is: ", np.mean(avg_RA_price))
     print("avg_std is: ", np.mean(std_deviation_price**2), "RA_ is: ", np.mean(std_deviation_RA_price**2))
@@ -381,8 +381,8 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 1
-single_param_vary = 0
+single_shot = 0
+single_param_vary = 1
 explore_single_param = 0
 
 ###PLOT STUFF
@@ -397,27 +397,27 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_14_39_22_25_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_17_17_14_26_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
-        print("mean price is: ", np.mean(Data.history_p_t[10:]), "mean variance is: ", np.var(Data.history_p_t[10:]), "autocorr is: ", np.corrcoef(Data.history_p_t[10:-1],Data.history_p_t[11:])[0,1])
+        print("mean price is: ", np.mean(Data.history_p_t), "mean variance is: ", np.var(Data.history_p_t), "autocorr is: ", np.corrcoef(Data.history_p_t[:-1],Data.history_p_t[1:])[0,1])
         print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))),"mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
         rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
-        print("kurtosis is:", kurtosis(rational_returns))
+        #print("kurtosis is:", kurtosis(rational_returns))
         plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_it")
+        #plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_it")
         #plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
         plot_qq_plot = plot_qq_plot(fileName, Data, "qq_plot", dpi_save)
-        plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_cumulative_profit",red_blue_c)
-        plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_theta_expectation",red_blue_c)
-        plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_theta_variance",red_blue_c)
+        #plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_cumulative_profit",red_blue_c)
+        #plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_theta_expectation",red_blue_c)
+        #plot_history_expectation_theta_variance = plot_cumulative_consumers(fileName,Data,"Cumulative expectation variance, $E(\sigma_{\theta}^2)$",dpi_save,"history_theta_variance",red_blue_c)
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/scale_freesingle_vary_theta_sigma_18_50_54_18_10_2023"
+        fileName = "results/small-worldsingle_vary_set_seed_17_22_10_26_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
