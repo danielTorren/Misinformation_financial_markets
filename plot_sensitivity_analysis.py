@@ -286,7 +286,7 @@ def main(
     }
 
     titles = [
-        r'Network density', 
+         
         r'$\sigma_{\eta}$', 
         r'$\mu_{\gamma}$', 
         r'$\sigma_{\gamma}$', 
@@ -320,7 +320,7 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    fileName = "results/sensitivity_analysis_03_53_51_14_10_2023",
+    fileName = "results/sensitivity_analysis_21_50_46_26_10_2023",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0
