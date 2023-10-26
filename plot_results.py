@@ -417,7 +417,7 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/small-worldsingle_vary_set_seed_17_22_10_26_10_2023"
+        fileName = "results/small-worldsingle_vary_set_seed_17_37_51_26_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
