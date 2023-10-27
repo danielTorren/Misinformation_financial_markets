@@ -38,6 +38,7 @@ class Consumer:
         self.epsilon_variance = parameters["epsilon_variance"]
         self.gamma_variance = parameters["gamma_variance"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]
+        self.w = parameters["w"]
         self.source_variance = 1
         self.own_sample_variance = 1
         self.avg_source_variance = 1
@@ -54,23 +55,23 @@ class Consumer:
 
     def compute_source_variance(self, steps):
         prediction = (self.d * self.R)/(self.R -1) + (self.R * self.S_tminus1)/(self.R - self.ar_1_coefficient)
-        
         current_error = (self.d_tminus1 + self.p_tminus1 - prediction)**2
-        
+        exp_moving_avg = self.w * current_error + (1 - self.w) * self.source_variance
         if steps < 2:
             source_variance = current_error
         else:
             source_variance = current_error/(steps - 1) + self.source_variance *((steps - 2)/(steps - 1))
-        return current_error, source_variance
+        return exp_moving_avg, source_variance
     
     def compute_own_sample_variance(self, steps):
         prediction = (self.d * self.R)/(self.R -1) + (self.R * self.theta_expectation_tminus1)/(self.R - self.ar_1_coefficient)  
         current_error = (self.d_tminus1 + self.p_tminus1 - prediction)**2
+        exp_moving_avg = self.w * current_error + (1 - self.w) * self.own_sample_variance
         if steps < 2:
             variance = current_error
         else:
             variance = current_error/(steps - 1) + self.own_sample_variance *((steps - 2)/(steps - 1))
-        return current_error, variance
+        return exp_moving_avg, variance
 
     def compute_posterior_mean_variance(self):
         with warnings.catch_warnings(record=True) as w:

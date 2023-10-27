@@ -70,7 +70,7 @@ class Market:
         self.epsilon_sigma = parameters["epsilon_sigma"]
         self.ar_1_coefficient = parameters["ar_1_coefficient"]  #elasticty of the switch probability to the accurac
         self.prob_rewire = parameters["prob_rewire"]
-
+        self.w = parameters["w"]
         self.step_count = 1 #we start at t=1 so that the previous time step is t = 0
         self.total_steps = parameters["total_steps"]
 
@@ -218,7 +218,8 @@ class Market:
             "theta_variance": self.theta_sigma**2,
             "ar_1_coefficient":self.ar_1_coefficient,
             "epsilon_variance": self.epsilon_sigma**2,
-            "gamma_variance": self.gamma_sigma**2
+            "gamma_variance": self.gamma_sigma**2,
+            "w": self.w
         }
 
         agent_list = [
@@ -340,7 +341,7 @@ class Market:
             self.append_data()
 
         self.step_count +=1 
-        # if self.step_count % 50 == 0:
-        #     print("step count: ", self.step_count)
+        if self.step_count % 50 == 0:
+            print("step count: ", self.step_count)
 
         
