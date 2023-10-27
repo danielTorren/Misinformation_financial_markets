@@ -1,4 +1,4 @@
 {
     "row":{"property":"theta_sigma","min":0.1, "max": 2, "title": "theta_sigma","divisions": "linear", "reps": 8}, 
-    "col":{"property":"gamma_sigma","min":0.1, "max": 2, "title": "gamma_sigma","divisions": "linear", "reps": 8} 
+    "col":{"property":"ar_1_coefficient","min":0.1, "max": 0.9, "title": "gamma_sigma","divisions": "linear", "reps": 8} 
 }

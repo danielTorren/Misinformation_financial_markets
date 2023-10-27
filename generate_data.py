@@ -44,7 +44,7 @@ def generate_data_single_explore(params,print_simu):
             "SIMULATION time taken: %s minutes" % ((time.time() - start_time) / 60),
             "or %s s" % ((time.time() - start_time)),
         )
-    rational_price =(financial_market.d/ (financial_market.R - 1) + (financial_market.theta_t[2:])/ (financial_market.R - financial_market.ar_1_coefficient))
+    rational_price =(financial_market.d/ (financial_market.R - 1) + (financial_market.theta_t[2:-1])/ (financial_market.R - financial_market.ar_1_coefficient))
     price_mean = np.mean(financial_market.history_p_t - rational_price)
     price_var = np.var(financial_market.history_p_t) - np.var(rational_price)
     price_autocorr = np.corrcoef(financial_market.history_p_t,financial_market.history_p_t1)[0,1] - financial_market.ar_1_coefficient

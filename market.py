@@ -341,7 +341,7 @@ class Market:
             self.append_data()
 
         self.step_count +=1 
-        if self.step_count % 50 == 0:
-            print("step count: ", self.step_count)
+        # if self.step_count % 50 == 0:
+        #     print("step count: ", self.step_count)
 
         
