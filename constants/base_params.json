@@ -1,9 +1,9 @@
 {
     "save_timeseries_data": 1, 
-    "total_steps": 150,
+    "total_steps": 500,
     "compression_factor": 1,
     "seed_list": [1,2,3,4,5,6,7,8,9,10],
-    "I": 500,
+    "I": 150,
     "network_density": 0.05,
     "prob_rewire": 0.1,
     "set_seed": 11,
@@ -17,7 +17,7 @@
     "gamma_sigma" :1.0,
     "proportion_dogmatic_theta": 0.1,
     "proportion_dogmatic_gamma": 0.1,
-    "ar_1_coefficient": 0.50,
+    "ar_1_coefficient": 0.30,
     "network_type": "small-world",
     "w": 0.9
 }

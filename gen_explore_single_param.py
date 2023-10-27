@@ -84,9 +84,9 @@ if __name__ == "__main__":
     #load in exogenous parameters
     f = open("constants/base_params.json")
     params = json.load(f)
-    property_varied = "theta_sigma"
-    property_list = list(np.arange(0.01,1.5,0.1)) #list(range(11, 41))
-    seed_list = list(range(11,31))
+    property_varied = "gamma_sigma"
+    property_list = list(np.arange(0.1,2.0,0.2)) #list(range(11, 41))
+    seed_list = list(range(11,15))
     print("total simulations: ", len(property_list)*len(seed_list))
 
     rootName = params["network_type"] + "explore_single" + property_varied

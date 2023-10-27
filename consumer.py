@@ -140,3 +140,4 @@ class Consumer:
         #compute posterior payoff
         self.payoff_expectation, self.payoff_variance = self.compute_payoff_beliefs()
         
+        
