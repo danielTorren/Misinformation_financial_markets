@@ -19,6 +19,6 @@
     "proportion_dogmatic_theta": 0.1,
     "proportion_dogmatic_gamma": 0.1,
     "ar_1_coefficient": 0.50,
-    "network_type": "SBM",
+    "network_type": "scale_free",
     "w": 0.9
 }
