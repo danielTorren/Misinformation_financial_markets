@@ -321,7 +321,7 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    fileName = "results/sensitivity_analysis_07_40_19_28_10_2023",
+    fileName = "results/sensitivity_analysis_15_12_10_28_10_2023",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0

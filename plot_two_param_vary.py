@@ -56,5 +56,5 @@ def main(
 
 if __name__ == '__main__':
     main(
-        fileName = "results/two_param_sweep_average_SBM_10_59_10_28_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
+        fileName = "results/two_param_sweep_average_scale_free_11_17_35_28_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
     )
