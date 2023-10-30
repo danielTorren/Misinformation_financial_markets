@@ -73,6 +73,7 @@ class Market:
         self.w = parameters["w"]
         self.step_count = 1 #we start at t=1 so that the previous time step is t = 0
         self.total_steps = parameters["total_steps"]
+        self.cumulative_profit = np.zeros(self.I)
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+2)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
@@ -228,7 +229,8 @@ class Market:
                 #self.weighting_matrix[i],
                 self.dogmatic_state_theta_mean_var_vector[i][0], 
                 self.dogmatic_state_theta_mean_var_vector[i][1], 
-                self.dogmatic_state_theta_mean_var_vector[i][2]
+                self.dogmatic_state_theta_mean_var_vector[i][2],
+                i
             )
             for i in range(self.I)
             # we need to initialize consumers to form expectations on theta_2 and gamma_2
@@ -257,6 +259,9 @@ class Market:
         payoff_variances = np.asarray([i.payoff_variance for i in self.agent_list])
         return payoff_expectations, payoff_variances
 
+    def get_consumers_forecast_error(self):
+        forecast_errors = np.asarray([i.avg_sample_variance for i in self.agent_list])
+        return forecast_errors
 
     def compute_price(self):
         term_1 = sum((self.payoff_expectations)/(self.payoff_variances))
@@ -330,13 +335,18 @@ class Market:
 
         #compute profit
         self.profit = np.asarray(self.previous_X_it) * (self.p_t + self.dividend_vector[self.step_count] - self.R*np.array(self.previous_pt))
-
+        self.cumulative_profit += self.profit
         #update network signal
         self.S_previous_matrix = self.S_current_matrix 
         self.S_current_matrix = self.S_future_matrix
         self.S_future_matrix = self.calc_S()
         #self.weighting_matrix = self.get_weighting_matrix()
-       
+
+        #Only in the last step we copy the own forecast error, for plotting
+        if self.step_count == self.total_steps -1 :
+            self.forecast_errors = self.get_consumers_forecast_error()
+            #print("forecast errors", self.forecast_errors)
+
         if (self.step_count % self.compression_factor == 0):
             self.append_data()
 

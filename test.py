@@ -51,7 +51,7 @@ def generate_ar1(mean, acf, mu, sigma, N):
 
 
 x = np.array([1,2,3,4,5,6,7,8,9,10])
-y = np.array(["dan",2,"dan",4,"dan",6,7,8,9,10])
+y = np.zeros(len(x))
 
-z = np.where(y == "dan", "tom", x)
-print(z)
+print([(index, element) for index, element in enumerate(x)])
+

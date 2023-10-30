@@ -1,4 +1,4 @@
 {
-    "row":{"property":"theta_sigma","min":0.1, "max": 0.5, "title": "$\\sigma_{\\eta}$","divisions": "linear", "reps": 8}, 
-    "col":{"property":"ar_1_coefficient","min":0.1, "max": 0.9, "title": "$\beta$","divisions": "linear", "reps": 8} 
+    "row":{"property":"gamma_sigma","min":0.5, "max": 2.0, "title": "$\\sigma_{\\eta}$","divisions": "linear", "reps": 4}, 
+    "col":{"property":"epsilon_sigma","min":0.5, "max": 2.0, "title": "$\beta$","divisions": "linear", "reps": 4} 
 }

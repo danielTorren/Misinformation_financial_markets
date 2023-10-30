@@ -9,10 +9,25 @@ from utility import (
 )
 import numpy as np
 
+fontsize= 18
+ticksize = 16
+figsize = (12, 9)
+params = {'font.family':'serif',
+    "figure.figsize":figsize, 
+    'figure.dpi': 80,
+    'figure.edgecolor': 'k',
+    'font.size': fontsize, 
+    'axes.labelsize': fontsize,
+    'axes.titlesize': fontsize,
+    'xtick.labelsize': ticksize,
+    'ytick.labelsize': ticksize
+}
+plt.rcParams.update(params)
+
 def double_phase_diagram(
     fileName, Z, Y_title, Y_param, variable_parameters_dict, cmap, dpi_save, levels):
     
-    fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
+    fig, ax = plt.subplots(constrained_layout=True)
 
     col_dict = variable_parameters_dict["col"]
     row_dict = variable_parameters_dict["row"]
@@ -27,7 +42,7 @@ def double_phase_diagram(
         cp,
         ax=ax,
     )
-    cbar.set_label(Y_title)
+    #cbar.set_label(Y_title)
 
     plotName = fileName + "/Plots"
     f = plotName + "/live_average_multirun_double_phase_diagram_%s" % (Y_param)
@@ -56,5 +71,5 @@ def main(
 
 if __name__ == '__main__':
     main(
-        fileName = "results/two_param_sweep_average_scale_free_11_17_35_28_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
+        fileName = "results/two_param_sweep_average_small-world_23_03_55_27_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
     )

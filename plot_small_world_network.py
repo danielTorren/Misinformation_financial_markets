@@ -232,19 +232,24 @@ def scatter_profit_variance_multiple_seeds(
     agent_profits = {}
     agent_errors = {}
     num_agents = Data[0].I # Assumes the number of agents is the same in all markets
-    for agent_id in range(num_agents):
-        total_profit = sum(market.agent_list[agent_id].cumulative_profit for market in Data)
-        average_profit = total_profit / len(Data)
-        agent_profits[agent_id] = average_profit
-        total_error = sum(market.agent_list[agent_id].avg_sample_variance for market in Data)
-        average_error = total_error / len(Data)
-        agent_errors[agent_id] = average_error
+    # for agent_id in range(num_agents):
+    #     total_profit = sum(market.agent_list[agent_id].cumulative_profit for market in Data)
+    #     average_profit = total_profit / len(Data)
+    #     agent_profits[agent_id] = average_profit
+    #     total_error = sum(market.agent_list[agent_id].avg_sample_variance for market in Data)
+    #     average_error = total_error / len(Data)
+    #     agent_errors[agent_id] = average_error
+
+    total_profit = sum(market.cumulative_profit for market in Data)
+    average_profit = total_profit / len(Data)
+    total_error = sum(market.forecast_errors for market in Data)
+    average_error = total_error / len(Data)
 
     # Create the barplot with varying color intensities within each category
     fig, ax = plt.subplots()
     ax.scatter(
-        list(agent_errors.values()),
-        list(agent_profits.values()),
+        list(average_error),
+        list(average_profit),
         color=node_colours,
         edgecolor="black",
         s=300,
@@ -470,7 +475,7 @@ def plot_network_SBM(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 if __name__ == "__main__":
-    network_structure = "scale_free"
+    network_structure = "SBM"
     property_value ="error" 
     colour_informed = "#264653" 
     colour_uninformed = "#E9C46A"
@@ -481,10 +486,10 @@ if __name__ == "__main__":
     min_size = 100
     max_size = 500
 
-single_run = 1
+single_run = 0
 
 if single_run:
-    fileName = "results/scale_freesingle_shot_16_15_28_28_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+    fileName = "results/small-worldsingle_shot_16_20_36_29_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
     Data = load_object(fileName + "/Data", "financial_market")
     base_params = load_object(fileName + "/Data", "base_params")
 
@@ -495,7 +500,7 @@ if single_run:
     #scatter_profit_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()
 else:
-    fileName = "results/small-worldsingle_vary_set_seed_14_17_49_18_10_2023"
+    fileName = "results/SBMsingle_vary_set_seed_17_31_45_29_10_2023"
     Data = load_object(fileName + "/Data", "financial_market_list")
     scatter_profit_variance_multiple_seeds(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()

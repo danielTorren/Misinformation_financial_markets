@@ -381,8 +381,8 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 1
-single_param_vary = 0
+single_shot = 0
+single_param_vary = 1
 explore_single_param = 0
 
 ###PLOT STUFF
@@ -397,7 +397,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/scale_freesingle_shot_16_15_28_28_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/SBMsingle_shot_16_51_38_29_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -417,7 +417,7 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/small-worldsingle_vary_ar_1_coefficient_22_55_43_27_10_2023"
+        fileName = "results/SBMsingle_vary_set_seed_16_54_46_29_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")

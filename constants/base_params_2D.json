@@ -2,7 +2,7 @@
     "save_timeseries_data": 1, 
     "total_steps": 500,
     "compression_factor": 1,
-    "seed_list": [1,2,3,4,5,6,7,8,9,10],
+    "seed_list": [1,2,3,4,5],
     "I": 150,
     "network_density": 0.05,
     "prob_rewire": 0.1,
@@ -11,7 +11,7 @@
     "a": 5.5,
     "d": 1.1,
     "theta_mean" : 0.0,
-    "theta_sigma" :0.80,
+    "theta_sigma" :0.30,
     "epsilon_sigma": 1,
     "beta": 1.0,
     "gamma_mean" : 0.0,
@@ -19,6 +19,6 @@
     "proportion_dogmatic_theta": 0.1,
     "proportion_dogmatic_gamma": 0.1,
     "ar_1_coefficient": 0.50,
-    "network_type": "scale_free",
+    "network_type": "small-world",
     "w": 0.9
 }

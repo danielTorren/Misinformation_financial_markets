@@ -13,7 +13,7 @@ import warnings
 
 class Consumer:
     "Class of consumer"
-    def __init__(self, parameters: dict,dogmatic_state, baseline_mean, baseline_var):
+    def __init__(self, parameters: dict,dogmatic_state, baseline_mean, baseline_var, id):
         "Construct initial data of Consumer class"
         self.save_timeseries_data = parameters["save_timeseries_data"]
         self.compression_factor = parameters["compression_factor"]
@@ -43,6 +43,7 @@ class Consumer:
         self.own_sample_variance = 1
         self.avg_source_variance = 1
         self.avg_sample_variance = 1
+        self.id = id
 
         if self.save_timeseries_data:
             self.history_theta_expectation = []
