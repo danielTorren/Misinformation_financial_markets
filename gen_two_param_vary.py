@@ -89,7 +89,7 @@ def unpack_and_mean(Data_list, variable_parameters, base_params, axis_mean):
     return Data_matrix_mean
 
 def main(
-        BASE_PARAMS_LOAD = "constants/base_params.json",
+        BASE_PARAMS_LOAD = "constants/base_params_2D.json",
         VARIABLE_PARAMS_LOAD = "constants/variable_parameters_dict_2D.json", 
         print_simu = 1,
         ):

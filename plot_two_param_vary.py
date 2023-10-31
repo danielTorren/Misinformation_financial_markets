@@ -71,5 +71,5 @@ def main(
 
 if __name__ == '__main__':
     main(
-        fileName = "results/two_param_sweep_average_small-world_10_01_04_30_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
+        fileName = "results/two_param_sweep_average_small-world_10_09_40_30_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
     )

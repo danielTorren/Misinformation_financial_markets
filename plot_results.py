@@ -235,11 +235,17 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
         rational_returns = np.append(rational_returns, np.array(rational_return))
+
+    fig1, ax1 = plt.subplots()
+    ax1.plot(returns)
+    ax1.plot(rational_returns, alpha = 0.5)
+
     fig, ax = plt.subplots()
     # Create a histogram of returns (transparent orange)
     ax.hist(returns, bins=30, alpha=0.8, color='#2A9D8F', edgecolor='black', density=True, label='Model Returns')
     ax.hist(rational_returns, bins=30, alpha=0.5, color='#F4A261', edgecolor='black', density=True, label='RA Informed Returns')
-   
+
+    
     
     # # Fit a normal distribution to the data
     # mu, std = norm.fit(returns)
@@ -256,6 +262,8 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
     f = plotName + "/" + "histogram_returns"
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
+
+    
 
 def plot_qq_plot_different_seed(fileName, Data_list):
     returns = np.array([])
@@ -397,7 +405,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/SBMsingle_shot_16_51_38_29_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/scale_freesingle_shot_10_29_40_31_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -417,7 +425,7 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/SBMsingle_vary_set_seed_16_54_46_29_10_2023"
+        fileName = "results/scale_freesingle_vary_gamma_sigma_10_33_42_31_10_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")

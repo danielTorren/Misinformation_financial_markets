@@ -13,12 +13,11 @@
     "theta_mean" : 0.0,
     "theta_sigma" :0.30,
     "epsilon_sigma": 2,
-    "beta": 1.0,
     "gamma_mean" : 0.0,
     "gamma_sigma" :2,
     "proportion_dogmatic_theta": 0.1,
     "proportion_dogmatic_gamma": 0.1,
     "ar_1_coefficient": 0.50,
-    "network_type": "small-world",
+    "network_type": "SBM",
     "w": 0.9
 }
