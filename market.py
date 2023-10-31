@@ -112,7 +112,7 @@ class Market:
             
         elif self.network_type == "scale_free":
             # Calculate node degrees
-            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
+            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector #[::-1]
             # Sort nodes by degree in descending order
             # sorted_nodes = sorted(degrees, key=lambda x: degrees[x], reverse=False)
             # self.dogmatic_state_theta_mean_var_vector = [self.dogmatic_state_theta_mean_var_vector[node] for node in sorted_nodes]
