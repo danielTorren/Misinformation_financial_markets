@@ -475,7 +475,7 @@ def plot_network_SBM(
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 if __name__ == "__main__":
-    network_structure = "SBM"
+    network_structure = "scale_free"
     property_value ="error" 
     colour_informed = "#264653" 
     colour_uninformed = "#E9C46A"
@@ -500,7 +500,7 @@ if single_run:
     #scatter_profit_variance(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()
 else:
-    fileName = "results/SBMsingle_vary_set_seed_17_31_45_29_10_2023"
+    fileName = "results/scale_freesingle_vary_set_seed_09_37_07_01_11_2023"
     Data = load_object(fileName + "/Data", "financial_market_list")
     scatter_profit_variance_multiple_seeds(fileName,Data, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, dpi_save)
     plt.show()

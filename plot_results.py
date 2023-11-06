@@ -405,13 +405,13 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/scale_freesingle_shot_10_29_40_31_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/scale_freesingle_shot_17_04_01_31_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
         print("base_params", base_params)
         print("mean price is: ", np.mean(Data.history_p_t), "mean variance is: ", np.var(Data.history_p_t), "autocorr is: ", np.corrcoef(Data.history_p_t[:-1],Data.history_p_t[1:])[0,1])
-        print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))),"mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
+        print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))), "theta_variance is: ", np.var(Data.theta_t[::Data.compression_factor][2:]), "mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
         rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         #print("kurtosis is:", kurtosis(rational_returns))
@@ -425,10 +425,12 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/scale_freesingle_vary_gamma_sigma_10_33_42_31_10_2023"
+        fileName = "results/scale_freesingle_vary_set_seed_09_37_07_01_11_2023"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
+        base_params = load_object(fileName + "/Data", "base_params")
+        print(base_params)
         property_title = "K"
         if property_varied == "set_seed":
             plot_avg_price_different_seed(fileName,Data_list, transparency_level=0.3)

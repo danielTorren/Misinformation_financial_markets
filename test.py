@@ -25,18 +25,19 @@ def generate_ar1(mean, acf, mu, sigma, N):
             data.append(mean + acf * (data[-1] - mean) + noise)
         return np.array(data)
 
-# ar_1_coefficient = 0.6
-# theta_mean = 0
-# theta_sigma = .50
-# epsilon_sigma = 1
-# total_steps = 10**5
-# d = 1.1
-
-# print("here")
+ar_1_coefficient = 0.6
+theta_mean = 0
+theta_sigma = .80
+epsilon_sigma = 1
+total_steps = 10**5
+d = 1.1
 
 
 # epsilon_t = np.random.normal(0, epsilon_sigma, total_steps+1).reshape(-1, 1)
-# theta_t = generate_ar1(0,ar_1_coefficient, theta_mean, theta_sigma, total_steps+1).reshape(-1, 1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
+theta_t = generate_ar1(0,ar_1_coefficient, theta_mean, theta_sigma, total_steps+1).reshape(-1, 1) #np.cumsum(np.random.normal(self.theta_mean, self.theta_sigma, self.total_steps+1)) #+1 is for the zeroth step update of the signal
+
+print("variance_theta: ", np.var(theta_t))
+print("variance_price: ", np.var(d/(0.01) + theta_t /(1.01 - ar_1_coefficient)))
 
 # d_t = theta_t + epsilon_t + d
 # #estimate linear regression of d_t on theta_t   
@@ -49,9 +50,4 @@ def generate_ar1(mean, acf, mu, sigma, N):
 # reg = LinearRegression().fit(d_t_lagged, d_t)
 # print(reg.score(d_t_lagged, d_t))
 
-
-x = np.array([1,2,3,4,5,6,7,8,9,10])
-y = np.zeros(len(x))
-
-print([(index, element) for index, element in enumerate(x)])
 
