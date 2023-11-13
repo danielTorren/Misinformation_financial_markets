@@ -153,10 +153,22 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
         ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:-1])/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
     elif property_y == "history_X_it":
+        color = ["blue" if state[0] == 'theta' else "red" if state[0] == 'gamma' else "black" for state in Data.dogmatic_state_theta_mean_var_vector]
         T,I = np.asarray(data).shape
         # Create a plot for each variable
         for i in range(I):
-            ax.plot(Data.history_time, np.cumsum(np.abs(np.asarray(data)[:, i])))   
+            ax.plot(Data.history_time, np.cumsum(np.abs(np.asarray(data)[:, i])), color = color[i])
+
+    elif property_y == "history_payoff_expectations" or property_y == "history_payoff_variances":
+        color = ["blue" if state[0] == 'theta' else "red" if state[0] == 'gamma' else "black" for state in Data.dogmatic_state_theta_mean_var_vector]
+        transparency = [0.5 if state[0] == 'theta' else 0.1 if state[0] == 'gamma' else 0.9 for state in Data.dogmatic_state_theta_mean_var_vector]
+        print(len(color))
+        T,I = np.asarray(data).shape
+        # Create a plot for each variable
+        for i in range(I):
+            ax.plot(Data.history_time, np.asarray(data)[:, i], color = color[i], alpha = transparency[i])
+
+    
     fig.tight_layout()
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
@@ -389,8 +401,8 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 0
-single_param_vary = 1
+single_shot = 1
+single_param_vary = 0
 explore_single_param = 0
 
 ###PLOT STUFF
@@ -405,7 +417,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/scale_freesingle_shot_17_04_01_31_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_17_33_30_10_11_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -416,8 +428,11 @@ if __name__ == "__main__":
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         #print("kurtosis is:", kurtosis(rational_returns))
         plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        #plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_it")
-        #plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
+        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_it")
+        plot_history_payoff_expectations = plot_time_series_market(fileName, Data, "history_payoff_expectations", dpi_save, "history_payoff_expectations")
+        plot_history_payoff_variances = plot_time_series_market(fileName, Data, "history_payoff_variances", dpi_save, "history_payoff_variances")
+       
+       #plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
         plot_qq_plot = plot_qq_plot(fileName, Data, "qq_plot", dpi_save)
         #plot_history_profit = plot_cumulative_consumers(fileName,Data,"Cumulative profit",dpi_save,"history_cumulative_profit",red_blue_c)
         #plot_history_expectation_theta_mean = plot_cumulative_consumers(fileName,Data,"Cumulative expectation mean, $E(\mu_{\theta})$",dpi_save,"history_theta_expectation",red_blue_c)

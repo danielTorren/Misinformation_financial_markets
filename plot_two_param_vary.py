@@ -32,8 +32,8 @@ def double_phase_diagram(
     col_dict = variable_parameters_dict["col"]
     row_dict = variable_parameters_dict["row"]
 
-    ax.set_xlabel("$\\beta$")#ax.set_xlabel(col_dict["title"])
-    ax.set_ylabel("$\sigma_{\eta}$")#ax.set_ylabel(row_dict["title"])
+    ax.set_xlabel(col_dict["title"])
+    ax.set_ylabel(row_dict["title"])
 
     X, Y = np.meshgrid(col_dict["vals"], row_dict["vals"])
 
@@ -71,5 +71,5 @@ def main(
 
 if __name__ == '__main__':
     main(
-        fileName = "results/two_param_sweep_average_scale_free_11_35_05_31_10_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
+        fileName = "results/two_param_sweep_average_small-world_09_53_19_13_11_2023"#CHANGE THIS TO WHATEVER THE FILENAME IS
     )

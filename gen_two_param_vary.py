@@ -23,7 +23,8 @@ from generate_data import (
     generate_data_parallel_single_explore
 )
 
-# modules
+# module
+
 def produce_param_list_n_double(
     params_dict: dict, variable_parameters_dict: dict[dict]
 ) -> list[dict]:

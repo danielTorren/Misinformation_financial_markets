@@ -112,7 +112,7 @@ class Market:
             
         elif self.network_type == "scale_free":
             # Calculate node degrees
-            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector #[::-1]
+            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
             # Sort nodes by degree in descending order
             # sorted_nodes = sorted(degrees, key=lambda x: degrees[x], reverse=False)
             # self.dogmatic_state_theta_mean_var_vector = [self.dogmatic_state_theta_mean_var_vector[node] for node in sorted_nodes]
@@ -153,6 +153,8 @@ class Market:
             self.history_X_it = []
             self.history_X_it1 = []
             self.history_weighting_matrix = []
+            self.history_payoff_expectations = []
+            self.history_payoff_variances = []
         else:
             self.history_p_t = []
 
@@ -297,6 +299,8 @@ class Market:
             self.history_time.append(self.step_count)
             self.history_X_it.append(self.X_it)
             self.history_X_it1.append(self.previous_X_it)
+            self.history_payoff_expectations.append(self.payoff_expectations)
+            self.history_payoff_variances.append(self.payoff_variances)
             #self.history_informed_proportion.append(self.informed_proportion)
             self.history_weighting_matrix.append(self.weighting_matrix)
         else:

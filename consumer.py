@@ -79,7 +79,7 @@ class Consumer:
             prior_variance = self.prior_variance
             prior_mean = self.prior_mean
             #add priors for cycling, tour de france
-            # here we need to force self.theta_variance, so that we do not get an errro in the case of dogmatic agents
+            # here we need to force self.theta_variance, so that we do not get an error in the case of dogmatic agents
             converted_variance = self.theta_prior_variance * self.source_variance[~np.isnan(self.source_variance)]/self.own_sample_variance
             full_signal_variances= np.append(converted_variance, prior_variance)#np.append(self.source_variance[~np.isnan(self.source_variance)], prior_variance)
             full_signal_means = np.append(self.S_tplus1[~np.isnan(self.S_tplus1)], prior_mean) 
