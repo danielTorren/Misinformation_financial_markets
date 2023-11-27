@@ -104,7 +104,7 @@ class Consumer:
         elif self.dogmatic_state == "gamma":
             payoff_variance = self.epsilon_variance + (self.theta_prior_variance + self.gamma_variance)/(self.R - self.ar_1_coefficient)**2
         else:
-            payoff_variance = self.epsilon_variance + self.theta_variance_tplus1
+            payoff_variance = self.epsilon_variance + self.theta_variance_tplus1 * (1 + (1/(self.R - self.ar_1_coefficient))**2)
         return payoff_expectation, payoff_variance
 
     def append_data(self, X):

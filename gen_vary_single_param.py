@@ -74,16 +74,16 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
     print(params_list)
     return params_list
 
-def main(
+def main(property_varied, 
+         property_list,
         RUN = 1,
-        print_simu = 1
+        print_simu = 1,
         ):
     
     #load in exogenous parameters
     f = open("constants/base_params.json")
     params = json.load(f)
-    property_varied = "set_seed"
-    property_list = list(range(11,41))#[0.1, .2, .3, .4, .5]
+
     #print(property_list)
 
     rootName = params["network_type"] + "single_vary_" + property_varied
@@ -111,4 +111,6 @@ def main(
     return fileName
 
 if __name__ == "__main__":
-    fileName = main()
+    property_varied = "set_seed"
+    property_list = list(range(11,41))#[0.1, .2, .3, .4, .5]
+    fileName = main(property_varied, property_list)
