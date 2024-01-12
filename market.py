@@ -56,6 +56,7 @@ class Market:
         self.compression_factor = parameters["compression_factor"]
         self.network_type = parameters["network_type"]
         self.network_density = parameters["network_density"]
+        self.bool_flip_misinformed = parameters["bool_flip_misinformed"]
         self.I = int(round(parameters["I"]))
         self.K = int(round((self.I - 1)*self.network_density)) #reverse engineer the links per person using the density  d = 2m/n(n-1) where n is nodes and m number of edges
       # round due to the sampling method producing floats in the Sobol Sensitivity Analysis (SA)
@@ -74,6 +75,9 @@ class Market:
         self.step_count = 1 #we start at t=1 so that the previous time step is t = 0
         self.total_steps = parameters["total_steps"]
         self.cumulative_profit = np.zeros(self.I)
+
+        if self.network_type == "BA":
+            self.BA_links = parameters["BA_links"]
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+2)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
@@ -97,7 +101,6 @@ class Market:
 
         self.weighting_matrix = self.adjacency_matrix
 
-
         #self.dogmatic_state_theta_mean_var_vector = [("theta",(self.d * self.R)/(self.R -1) + (self.R * self.theta_t[0])/(self.R - self.ar_1_coefficient), self.epsilon_sigma**2)]*self.num_dogmatic_theta + [("gamma",(self.d * self.R)/(self.R -1) + (self.R * self.gamma_t[0])/(self.R - self.ar_1_coefficient),self.epsilon_sigma**2)]*self.num_dogmatic_gamma + [("normal",(self.d*self.R)/(self.R - 1) ,self.epsilon_sigma**2 + self.theta_sigma**2 * (1 + self.ar_1_coefficient/(self.R - self.ar_1_coefficient))**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         #self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[3], 0)]*self.num_dogmatic_theta + [("gamma", self.gamma_t[3],0)]*self.num_dogmatic_gamma + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma)
         self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[self.step_count+1], 0)]*self.num_dogmatic_theta + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma) + [("gamma", self.gamma_t[self.step_count+1],0)]*self.num_dogmatic_gamma 
@@ -110,9 +113,10 @@ class Market:
             rng_specific = np.random.default_rng(17)
             rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
             
-        elif self.network_type == "scale_free":
+        elif self.network_type in ("BA","scale_free") and self.bool_flip_misinformed:
             # Calculate node degrees
-            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector #[::-1]
+            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
+
             # Sort nodes by degree in descending order
             # sorted_nodes = sorted(degrees, key=lambda x: degrees[x], reverse=False)
             # self.dogmatic_state_theta_mean_var_vector = [self.dogmatic_state_theta_mean_var_vector[node] for node in sorted_nodes]
@@ -133,18 +137,7 @@ class Market:
         self.create_history()
 
     def create_history(self):
-        """
-        if self.save_timeseries_data:
-            self.history_p_t = [self.p_t]
-            self.history_p_t1 = [self.previous_pt]
-            self.history_d_t1 = [self.d]
-            self.history_time = [self.step_count]
-            self.history_X_it = [[0]*self.I]
-            self.history_X_it1 = [[0]*self.I]
-            self.history_weighting_matrix = [self.weighting_matrix]
-        else:
-            self.history_p_t = [self.p_t]
-        """
+
         if self.save_timeseries_data:
             self.history_p_t = []
             self.history_p_t1 = []
@@ -180,6 +173,8 @@ class Market:
         """
         if self.network_type == "scale_free":
             G = nx.scale_free_graph(self.I)
+        elif self.network_type == "BA":
+            G = nx.barabasi_albert_graph(self.I, self.BA_links)
         elif self.network_type == "random":
             G = nx.erdos_renyi_graph(self.I, 0.2)
         elif self.network_type == "small-world":
@@ -193,7 +188,7 @@ class Market:
         adjacency_matrix = nx.to_numpy_array(G)
         #remove self loops, for the scale free network 
         np.fill_diagonal(adjacency_matrix, 0)
-        #print("Network density:", nx.density(G))
+        print("Network density:", nx.density(G))
         return (
             adjacency_matrix,
             G,
