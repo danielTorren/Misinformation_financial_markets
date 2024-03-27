@@ -88,7 +88,7 @@ def main(property_varied,
 
     rootName = params["network_type"] + "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)
-    print("FILENAME:", fileName) 
+    
     #copy the filename variable to the clipboard
     pyperclip.copy(fileName)
 
@@ -107,10 +107,11 @@ def main(property_varied,
     save_object(property_varied, fileName + "/Data", "property_varied")
     save_object(property_list, fileName + "/Data", "property_list")
     save_object(params, fileName + "/Data", "base_params")
+    print("FILENAME:", fileName) 
 
     return fileName
 
 if __name__ == "__main__":
-    property_varied = "set_seed"
-    property_list = list(range(11,41))#[0.1, .2, .3, .4, .5]
+    property_varied = "ar_1_coefficient"
+    property_list = [0.1, .2, .3, .4, .5, .6, .7, .8, .9]
     fileName = main(property_varied, property_list)

@@ -272,7 +272,7 @@ def analyze_results(
     return Si_price_mean , Si_mu , Si_var , Si_price_skew
 
 def main(
-    fileName = " results/sensitivity_analysis_16_29_30__27_07_2023",
+    fileName = "results/sensitivity_analysis_16_15_01_27_03_2024",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0
@@ -321,7 +321,7 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    fileName = "results/sensitivity_analysis_19_58_26_28_10_2023",
+    fileName = "results/sensitivity_analysis_16_15_01_27_03_2024",
     plot_outputs = ["price_mean","price_var","price_autocorr","price_skew"],
     dpi_save = 1200,
     latex_bool = 0

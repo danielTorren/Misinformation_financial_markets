@@ -12,6 +12,7 @@
     "prob_rewire": 0.1,
     "network_type": "scale_free",
     "theta_mean": 0,
-    "network_density": 0.05
+    "network_density": 0.05,
+    "misinformed_central":0
 
 }

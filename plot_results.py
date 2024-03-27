@@ -88,7 +88,7 @@ def plot_histogram_returns(fileName, Data, y_title, dpi_save):
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
-    rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))
+    rational_prices =(Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient))
     rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
     
     # Create a histogram of returns (transparent orange)
@@ -121,7 +121,7 @@ def plot_qq_plot(fileName, Data, y_title, dpi_save):
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
-    rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))
+    rational_prices =(Data.d/ (Data.R - 1) + (Data.history_theta_t )/ (Data.R - Data.ar_1_coefficient))
     rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
     # Generate QQ plot
     #probplot(returns, dist="norm", plot=ax)
@@ -151,17 +151,17 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     if property_y == "history_p_t":
         print("date Len is:", len(data), "time len is: ", len(Data.history_time))
         ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
-        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:-1])/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
-    elif property_y == "history_X_it":
-        color = ["blue" if state[0] == 'theta' else "red" if state[0] == 'gamma' else "black" for state in Data.dogmatic_state_theta_mean_var_vector]
+        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
+    elif property_y == "history_X_t":
+        color = ["blue" if state == 1 else "red" if state == -1 else "black" for state in Data.category_vector]
         T,I = np.asarray(data).shape
         # Create a plot for each variable
         for i in range(I):
             ax.plot(Data.history_time, np.cumsum(np.abs(np.asarray(data)[:, i])), color = color[i])
 
     elif property_y == "history_payoff_expectations" or property_y == "history_payoff_variances":
-        color = ["blue" if state[0] == 'theta' else "red" if state[0] == 'gamma' else "black" for state in Data.dogmatic_state_theta_mean_var_vector]
-        transparency = [0.5 if state[0] == 'theta' else 0.1 if state[0] == 'gamma' else 0.9 for state in Data.dogmatic_state_theta_mean_var_vector]
+        color = ["blue" if state == 1 else "red" if state == -1 else "black" for state in Data.category_vector]
+        transparency = [0.5 if state == 1 else 0.1 if state == -1 else 0.9 for state in Data.category_vector]
         print(len(color))
         T,I = np.asarray(data).shape
         # Create a plot for each variable
@@ -313,7 +313,7 @@ def plot_autocorrelation_price_multi(fileName,Data_list,property_list, property_
     fig, ax = plt.subplots()
     y_values = []
     for i in range(len(Data_list)):
-        y_value = np.corrcoef(Data_list[i].history_p_t,Data_list[i].history_p_t1)[0,1]
+        y_value = np.corrcoef(Data_list[i].history_p_t[:-1],Data_list[i].history_p_t[1:])[0,1]
         y_values.append(y_value) 
     ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
     ax.set_xlabel("%s" % property_varied)
@@ -330,7 +330,7 @@ def plot_variance_price_multi(fileName,Data_list,property_list, property_varied,
     rational_vars = []
     for i in range(len(Data_list)):
         y_value = np.var(Data_list[i].history_p_t)
-        rational_var = np.var(Data_list[i].theta_t/(Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_var = np.var(np.asarray(Data_list[i].history_theta_t)/(Data_list[i].R - Data_list[i].ar_1_coefficient))
         y_values.append(y_value) 
         rational_vars.append(rational_var)
     ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
@@ -349,7 +349,7 @@ def plot_avg_price_multi(fileName,Data_list,property_list, property_varied, prop
     rational_vars = []
     for i in range(len(Data_list)):
         y_value = np.mean(Data_list[i].history_p_t)
-        rational_var = np.mean(Data_list[i].d/(Data_list[i].R -1) + Data_list[i].theta_t/(Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_var = np.mean(Data_list[i].d/(Data_list[i].R -1) + np.asarray(Data_list[i].history_theta_t)/(Data_list[i].R - Data_list[i].ar_1_coefficient))
         y_values.append(y_value) 
         rational_vars.append(rational_var)
     ax.plot(np.asarray(property_list), y_values, linestyle='solid', color="blue",  linewidth=1, marker = "o", markerfacecolor = 'black', markersize = '5')
@@ -401,8 +401,8 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 1
-single_param_vary = 0
+single_shot = 0
+single_param_vary = 1
 explore_single_param = 0
 
 ###PLOT STUFF
@@ -417,18 +417,19 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_17_15_29_23_11_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_15_27_15_27_03_2024"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
+        Data.history_theta_t = np.asarray(Data.history_theta_t)
         print("base_params", base_params)
         print("mean price is: ", np.mean(Data.history_p_t), "mean variance is: ", np.var(Data.history_p_t), "autocorr is: ", np.corrcoef(Data.history_p_t[:-1],Data.history_p_t[1:])[0,1])
-        print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:] )/ (Data.R - Data.ar_1_coefficient))), "theta_variance is: ", np.var(Data.theta_t[::Data.compression_factor][2:]), "mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))), "mean_rational corr is: ", np.corrcoef(Data.theta_t[:-1],Data.theta_t[1:])[0,1])
-        rational_prices =(Data.d/ (Data.R - 1) + (Data.theta_t[::Data.compression_factor][2:])/ (Data.R - Data.ar_1_coefficient))
+        print("mean_rational price is: ", np.mean((Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient))), "theta_variance is: ", np.var(Data.history_theta_t), "mean_rational variance is: ", np.var((Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient))), "theta_var is:",np.var(Data.history_theta_t), "mean_rational corr is: ", np.corrcoef(Data.history_theta_t[:-1],Data.history_theta_t[1:])[0,1])
+        rational_prices =(Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient))
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         #print("kurtosis is:", kurtosis(rational_returns))
         plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_it")
+        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_t")
         plot_history_payoff_expectations = plot_time_series_market(fileName, Data, "history_payoff_expectations", dpi_save, "history_payoff_expectations")
         plot_history_payoff_variances = plot_time_series_market(fileName, Data, "history_payoff_variances", dpi_save, "history_payoff_variances")
        
@@ -440,7 +441,7 @@ if __name__ == "__main__":
         plt.show()
        
     elif single_param_vary:
-        fileName = "results/scale_freesingle_vary_set_seed_09_37_07_01_11_2023"
+        fileName = "results/small-worldsingle_vary_ar_1_coefficient_15_36_19_27_03_2024"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")
@@ -459,7 +460,7 @@ if __name__ == "__main__":
         plt.show()
     
     elif explore_single_param:
-        fileName = "results/small-worldexplore_singlegamma_sigma_22_29_22_27_10_2023"
+        fileName = "results/small-worldsingle_vary_ar_1_coefficient_15_34_53_27_03_2024"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")

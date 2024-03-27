@@ -74,6 +74,7 @@ class Market:
         self.step_count = 1 #we start at t=1 so that the previous time step is t = 0
         self.total_steps = parameters["total_steps"]
         self.cumulative_profit = np.zeros(self.I)
+        self.central_misinformed = parameters["central_misinformed"]
 
         self.epsilon_t = np.random.normal(0, self.epsilon_sigma, self.total_steps+2)
         #We change both theta and gamma to be random walks, that is ar(1) processes with coefficient = 1. shocks never dissipate
@@ -86,10 +87,7 @@ class Market:
         self.num_dogmatic_gamma = int(np.floor(self.I*parameters["proportion_dogmatic_gamma"]))#number of dogmatic gamma
 
         #create network
-        (
-            self.adjacency_matrix,
-            self.network,
-        ) = self.create_adjacency_matrix()
+        self.adjacency_matrix, self.network = self.create_adjacency_matrix()
         
         #self.expectations_theta_mean_vector = np.asarray([self.mu_0]*self.I)
         #self.S_matrix = #self.calc_s() # get the influence of neighbors
@@ -103,7 +101,7 @@ class Market:
         self.dogmatic_state_theta_mean_var_vector = [("theta",self.theta_t[self.step_count+1], 0)]*self.num_dogmatic_theta + [("normal", 0, self.theta_sigma**2)]*(self.I - self.num_dogmatic_theta - self.num_dogmatic_gamma) + [("gamma", self.gamma_t[self.step_count+1],0)]*self.num_dogmatic_gamma 
         self.type = [agent[0] for agent in self.dogmatic_state_theta_mean_var_vector]
 
-        if self.network_type == "small-world":
+        if self.network_type == "small_world":
             # this is to make sure that even if we change the seed, we always keep the network in position.
             # In this way we can compere different agents across different seeds
             #np.random.shuffle(self.dogmatic_state_theta_mean_var_vector)
@@ -111,16 +109,11 @@ class Market:
             rng_specific.shuffle(self.dogmatic_state_theta_mean_var_vector)
             
         elif self.network_type == "scale_free":
-            # Calculate node degrees
-            self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
-            # Sort nodes by degree in descending order
-            # sorted_nodes = sorted(degrees, key=lambda x: degrees[x], reverse=False)
-            # self.dogmatic_state_theta_mean_var_vector = [self.dogmatic_state_theta_mean_var_vector[node] for node in sorted_nodes]
-            # print([agent[0] for agent in self.dogmatic_state_theta_mean_var_vector])
-            # print(degrees)
+            # flip the vector to put misinformed in the center if they are central
+            if self.central_misinformed:
+                self.dogmatic_state_theta_mean_var_vector = self.dogmatic_state_theta_mean_var_vector[::-1]
+
         self.agent_list = self.create_agent_list()
-
-
         self.S_previous_matrix = self.init_calc_S(np.asarray([0 for v in self.agent_list])) #to avoid caluclations we assume everone is uninformed in the 0 step
         self.S_current_matrix = self.init_calc_S(np.asarray([agent[1] for agent in self.dogmatic_state_theta_mean_var_vector]))
         self.S_future_matrix = self.init_calc_S(np.asarray([agent[1] for agent in self.dogmatic_state_theta_mean_var_vector]))
@@ -165,41 +158,25 @@ class Market:
             data.append(mean + acf * (data[-1] - mean) + noise)
         return np.array(data)
 
-    def create_adjacency_matrix(self) -> tuple[npt.NDArray, npt.NDArray, nx.Graph]:
-        """
-        Create graph using Networkx library
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        adjacency_matrix: npt.NDArray[bool]
-            adjacency matrix, array giving social network structure where 1 represents a connection between agents and 0 no connection. It is symetric about the diagonal
-        ws: nx.Graph
-            a networkx watts strogatz small world graph
-        """
+    def create_adjacency_matrix(self):
         if self.network_type == "scale_free":
             G = nx.scale_free_graph(self.I)
-        elif self.network_type == "random":
-            G = nx.erdos_renyi_graph(self.I, 0.2)
-        elif self.network_type == "small-world":
-            G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small-world graph,watts_strogatz_graph( n, k, p[, seed])
+        elif self.network_type == "small_world":
+            G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small_world graph,watts_strogatz_graph( n, k, p[, seed])
         elif self.network_type == "SBM":
             block_sizes = [int(self.I/2), int(self.I/2)]  # Adjust the sizes as needed
-            num_blocks = len(block_sizes)
-            # Create the stochastic block model
-            block_probs = np.asarray([[0.1, 0.001],[0.001, 0.1]])  # Make the matrix symmetric
+            # Create the stochastic block model. we keep the same network density in the same block 
+            # and a tenth of the network density between blocks
+            block_probs = np.asarray([[self.network_density, self.network_density/10],[self.network_density/10, self.network_density]])  # Make the matrix symmetric
             G = nx.stochastic_block_model(block_sizes, block_probs, seed=self.set_seed)
         adjacency_matrix = nx.to_numpy_array(G)
-        #remove self loops, for the scale free network 
-        np.fill_diagonal(adjacency_matrix, 0)
-        #print("Network density:", nx.density(G))
-        return (
-            adjacency_matrix,
-            G,
-        )
+        #fill the diagonal with 1s
+        np.fill_diagonal(adjacency_matrix, 1)
+        # remove parallel edges
+        adjacency_matrix[adjacency_matrix > 1] = 1
+        #transform zeros to np.nans
+        adjacency_matrix[adjacency_matrix == 0] = np.nan
+        return adjacency_matrix, G 
 
     def create_agent_list(self) -> list[Consumer]:
         """
@@ -241,15 +218,15 @@ class Market:
         return agent_list
 
     def init_calc_S(self, reshape_payoff_expectations):
-        neighbour_influence =  np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)*reshape_payoff_expectations 
+        neighbour_influence =  self.adjacency_matrix*reshape_payoff_expectations 
         #print(neighbour_influence)
         return neighbour_influence
 
     def calc_S(self):
-        adj_matrix_nan = np.where(self.adjacency_matrix == 0, np.nan, self.adjacency_matrix)
+
         theta_vector = np.where(self.type == "theta", self.theta_t[self.step_count +2], self.theta_expectations)
         theta_and_gamma_vector = np.where(self.type == "gamma", self.gamma_t[self.step_count +2], theta_vector)
-        return adj_matrix_nan*theta_and_gamma_vector
+        return self.adjacency_matrix*theta_and_gamma_vector
 
     def get_consumers_theta_expectations(self):
         theta_expectations = np.asarray([i.theta_expectation_tplus1 for i in self.agent_list])

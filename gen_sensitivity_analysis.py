@@ -39,10 +39,10 @@ def generate_sensitivity_output(params: dict):
     for v in params["seed_list"]:
         params["set_seed"] = v
         data = generate_data_single(params, print_simu)
-        rational_price =(data.d/ (data.R - 1) + (data.theta_t[2:-1])/ (data.R - data.ar_1_coefficient))
+        rational_price =(data.d/ (data.R - 1) + (data.history_theta_t)/ (data.R - data.ar_1_coefficient))
         price_mean = np.mean(data.history_p_t - rational_price)
         price_var = np.var(data.history_p_t) - np.var(rational_price)
-        price_autocorr = np.corrcoef(data.history_p_t,data.history_p_t1) - data.ar_1_coefficient
+        price_autocorr = np.corrcoef(data.history_p_t[:-1],data.history_p_t[1:])[0,1] - data.ar_1_coefficient
         price_skew = kurtosis(np.asarray(data.history_p_t[1:])/np.asarray(data.history_p_t[:-1]) - 1)
 
         price_mean_list.append(price_mean)

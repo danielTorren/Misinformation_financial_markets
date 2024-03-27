@@ -2,7 +2,7 @@ import time
 import numpy as np
 import numpy.typing as npt
 from joblib import Parallel, delayed
-from market import Market
+from matrix_model import Market
 from scipy.stats import kurtosis
 import multiprocessing
 

@@ -112,7 +112,7 @@ def main(
 
     rootName = "two_param_sweep_average_" + base_params["network_type"]
     fileName = produce_name_datetime(rootName)
-    print("fileName:", fileName)
+    
 
     params_list = produce_param_list_n_double(base_params, variable_parameters_dict)
     print("TOTAL REPS", len(params_list))
@@ -140,7 +140,7 @@ def main(
 
     save_object(base_params, fileName + "/Data", "base_params")
     save_object(variable_parameters_dict, fileName + "/Data", "variable_parameters_dict")
-
+    print("fileName:", fileName)
     return fileName
 
 if __name__ == "__main__":
