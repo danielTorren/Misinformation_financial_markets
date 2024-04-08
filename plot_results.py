@@ -84,7 +84,7 @@ def plot_histogram_returns(fileName, Data, y_title, dpi_save):
     property_y = "history_p_t"
     fig, ax = plt.subplots()
     data = eval("Data.%s" % property_y)
-    prices = np.array(data)
+    prices = data
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
@@ -117,7 +117,7 @@ def plot_qq_plot(fileName, Data, y_title, dpi_save):
     property_y = "history_p_t"
     fig, ax = plt.subplots()
     data = eval("Data.%s" % property_y)
-    prices = np.array(data)
+    prices = data
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
@@ -137,7 +137,7 @@ def plot_qq_plot(fileName, Data, y_title, dpi_save):
     fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
     fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
-def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
+def plot_time_series_market(fileName,Data,y_title,property_y, dpi_save = ""):
 
     fig, ax = plt.subplots()
     data = eval("Data.%s" % property_y)
@@ -150,7 +150,7 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     #ax.set_ylim([(Data.d)/Data.R - 0.5*((Data.d)/Data.R), (Data.d)/Data.R + 0.5*((Data.d)/Data.R)])
     if property_y == "history_p_t":
         print("date Len is:", len(data), "time len is: ", len(Data.history_time))
-        ax.plot(Data.history_time, np.array(data), linestyle='solid', color="black", alpha = 1)
+        ax.plot(Data.history_time, data, linestyle='solid', color="black", alpha = 1)
         ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
     elif property_y == "history_X_t":
         color = ["blue" if state == 1 else "red" if state == -1 else "black" for state in Data.category_vector]
@@ -172,8 +172,9 @@ def plot_time_series_market(fileName,Data,y_title,dpi_save,property_y):
     fig.tight_layout()
     plotName = fileName + "/Plots"
     f = plotName + "/" + property_y + "_timeseries"
-    fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
-    fig.savefig(f + ".png", dpi=dpi_save, format="png")
+    if dpi_save != "":
+        fig.savefig(f + ".eps", dpi=dpi_save, format="eps")
+        fig.savefig(f + ".png", dpi=dpi_save, format="png")
 
 def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
@@ -401,8 +402,8 @@ def scatter_explore_single_param(fileName,Data_list,property_list, property_vari
 dpi_save = 600
 red_blue_c = True
 
-single_shot = 0
-single_param_vary = 1
+single_shot = 1
+single_param_vary = 0
 explore_single_param = 0
 
 ###PLOT STUFF
@@ -417,7 +418,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_15_27_15_27_03_2024"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_15_56_23_04_04_2024"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -460,7 +461,7 @@ if __name__ == "__main__":
         plt.show()
     
     elif explore_single_param:
-        fileName = "results/small-worldsingle_vary_ar_1_coefficient_15_34_53_27_03_2024"
+        fileName = "results/small_worldsingle_shot_15_59_30_30_03_2024"
         Data_list = load_object(fileName + "/Data", "financial_market_list")
         property_varied =  load_object(fileName + "/Data", "property_varied")
         property_list = load_object(fileName + "/Data", "property_list")

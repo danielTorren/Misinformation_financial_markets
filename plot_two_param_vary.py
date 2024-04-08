@@ -136,11 +136,14 @@ def main(
 
 if __name__ == '__main__':
     main(
-    fileName = "results/two_param_sweep_average_scale_free_18_22_46_26_03_2024",
-    SW = "results/two_param_sweep_average_small_world_18_32_05_26_03_2024",
-    SBM = "results/two_param_sweep_average_SBM_18_34_51_26_03_2024",
-    SF_misinfo = "results/two_param_sweep_average_scale_free_18_29_04_26_03_2024",
-    SF_info = "results/two_param_sweep_average_scale_free_18_22_46_26_03_2024",
+    fileName =   "results/two_param_sweep_average_scale_free_16_05_07_28_03_2024",
+    SW =         "results/two_param_sweep_average_small_world_15_51_55_28_03_2024",
+    SBM =        "results/two_param_sweep_average_SBM_15_47_19_28_03_2024",
+    SF_misinfo = "results/two_param_sweep_average_scale_free_16_06_51_28_03_2024",
+    SF_info =    "results/two_param_sweep_average_scale_free_16_05_07_28_03_2024",
     )
 
-
+"results/two_param_sweep_average_small_world_15_51_55_28_03_2024"
+"results/two_param_sweep_average_SBM_15_47_19_28_03_2024"
+"results/two_param_sweep_average_scale_free_16_06_51_28_03_2024"
+"results/two_param_sweep_average_scale_free_16_05_07_28_03_2024"

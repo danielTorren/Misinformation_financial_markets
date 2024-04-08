@@ -9,7 +9,7 @@
     "set_seed": 12,
     "R": 1.01,
     "a": 5.5,
-    "d": 0.1,
+    "d": 1.1,
     "theta_mean" : 0.0,
     "theta_sigma" :1,
     "epsilon_sigma": 10,

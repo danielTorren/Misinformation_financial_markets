@@ -48,7 +48,7 @@ plt.rcParams.update(params)
 
 def calc_node_size(Data, min_size, max_size):
     #Get source variance
-    list_errors = np.asarray([x.avg_sample_variance for x in Data.agent_list])
+    list_errors = np.asarray(Data.forecast_errors)
     #print("list_errors", list_errors)
     invert_errors = 1/list_errors
     #print("invert errros", invert_errors)
@@ -366,7 +366,7 @@ def plot_network(
     #ani_step_colours = cmap(colour_adjust)
 
     """THE AGENT LIST MUST BE IN THE SAME ORDER AS THE ADJACENCY MATRIX FOR THIS WORK"""
-    G = nx.from_numpy_matrix(Data.adjacency_matrix)
+    G = Data.network
 
     # get pos
     if network_structure == "small-world":
@@ -377,7 +377,7 @@ def plot_network(
         pos = nx.spring_layout(G)
     #purple = (0.5, 0, 0.5)  # RGB values for purple
     #yellow = (0.9, 0.8, 0.2)  # RGB values for yellow
-    node_colours = [colour_informed if x.dogmatic_state == "theta" else colour_uninformed if x.dogmatic_state == "normal" else colour_misinformed for x in Data.agent_list ]
+    node_colours = [colour_informed if x == 1 else colour_uninformed if x == 0 else colour_misinformed for x in Data.category_vector ]
     
     #ndoe zise defualt is 300, say between 100, 500
 
@@ -486,10 +486,10 @@ if __name__ == "__main__":
     min_size = 100
     max_size = 500
 
-single_run = 0
+single_run = 1
 
 if single_run:
-    fileName = "results/small-worldsingle_shot_16_20_36_29_10_2023"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+    fileName = "results/scale_freesingle_shot_15_29_46_28_03_2024"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
     Data = load_object(fileName + "/Data", "financial_market")
     base_params = load_object(fileName + "/Data", "base_params")
 

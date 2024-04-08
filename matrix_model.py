@@ -114,7 +114,7 @@ class Market:
     def create_adjacency_matrix(self):
         if self.network_type == "scale_free":
             G = nx.scale_free_graph(self.I)
-        elif self.network_type == "small-world":
+        elif self.network_type == "small_world":
             G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small-world graph,watts_strogatz_graph( n, k, p[, seed])
         elif self.network_type == "SBM":
             block_sizes = [int(self.I/2), int(self.I/2)]  # Adjust the sizes as needed
@@ -197,7 +197,11 @@ class Market:
     
     def compute_payoff_beliefs(self):
         payoff_expectation = (self.d * self.R)/(self.R -1) + (self.R * self.posterior_mean_vector)/(self.R - self.ar_1_coefficient)
-        payoff_variance = self.epsilon_sigma**2 + self.posterior_variance_vector * (self.R /(self.R - self.ar_1_coefficient))**2
+        payoff_variance = self.epsilon_sigma**2 + self.posterior_variance_vector
+        # add sigma_gamma and sigma theta where the category vector is -1
+        payoff_variance = np.where(self.category_vector == -1, payoff_variance + (self.theta_sigma**2 +self.gamma_sigma**2)/(self.R - self.ar_1_coefficient)**2, payoff_variance)
+        # add sigma_theta where the category vector is 1
+        payoff_variance = np.where(self.category_vector == 1, payoff_variance + (self.theta_sigma**2)/(self.R - self.ar_1_coefficient)**2, payoff_variance)
         return payoff_expectation, payoff_variance
     
     def compute_price(self):
@@ -220,26 +224,27 @@ class Market:
 
     def create_history(self):
         if self.save_timeseries_data:
-            self.history_p_t = []
-            self.history_theta_t = []
-            self.history_d_t = []
-            self.history_time = []
-            self.history_X_t = []
-            self.history_weighting_matrix = []
-            self.history_payoff_expectations = []
-            self.history_payoff_variances = []
+            self.history_p_t = np.array([])
+            self.history_theta_t = np.array([])
+            self.history_d_t = np.array([])
+            self.history_time = np.array([])
+            self.history_X_t = np.array([])
+            self.history_weighting_matrix = np.array([])
+            self.history_payoff_expectations = np.array([])
+            self.history_payoff_variances = np.array([])
         else:
-            self.history_p_t = []
+            self.history_p_t = np.array([])
 
     def append_data(self):
         if self.save_timeseries_data:
-            self.history_p_t.append(self.p_0)
-            self.history_theta_t.append(self.theta_0)
-            self.history_d_t.append(self.theta_0 + self.epsilon_0 + self.d)
-            self.history_time.append(self.step_count)
-            self.history_X_t.append(self.X_0)
-            self.history_weighting_matrix.append(self.weighting_matrix)
-            self.history_payoff_expectations.append(self.payoff_expectation)
-            self.history_payoff_variances.append(self.payoff_variance)
+            self.history_p_t = np.append(self.history_p_t, self.p_0)
+            self.history_theta_t = np.append(self.history_theta_t, self.theta_0)
+            self.history_d_t = np.append(self.history_d_t, self.theta_0 + self.epsilon_0 + self.d)
+            self.history_time = np.append(self.history_time, self.step_count)
+            self.history_X_t = np.append(self.history_X_t, self.X_0)
+            self.history_weighting_matrix = np.append(self.history_weighting_matrix, self.weighting_matrix)
+            self.history_payoff_expectations = np.append(self.history_payoff_expectations, self.payoff_expectation)
+            self.history_payoff_variances = np.append(self.history_payoff_variances, self.payoff_variance)
         else:
-            self.history_p_t.append(self.p_0)
+            self.history_p_t = np.append(self.history_p_t, self.p_0)
+            
