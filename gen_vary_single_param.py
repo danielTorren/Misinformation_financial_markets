@@ -71,17 +71,20 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
     #print(params_list)
     return params_list
 
-def main(property_varied, 
-         property_list,
-        RUN = 1,
-        print_simu = 1,
+def main(
+        base_params_load = "constants/base_params.json",
+        varied_param_load = "constants/varied_params.json"
         ):
     
     #load in exogenous parameters
-    f = open("constants/base_params.json")
+    f = open(base_params_load)
     params = json.load(f)
 
-    #print(property_list)
+    f_varied = open(varied_param_load)
+    var_param = json.load(f_varied)
+
+    property_varied = var_param["property"]
+    property_list = list(range(var_param["min"], var_param["max"]))
 
     rootName = params["network_type"] + "single_vary_" + property_varied
     fileName = produce_name_datetime(rootName)
@@ -91,15 +94,11 @@ def main(property_varied,
 
     params_list = gen_param_list(params, property_list, property_varied)
 
-    Data_list = generate_data_parallel(params_list,print_simu) 
+    Data_list = generate_data_parallel(params_list) 
     print(dir(Data_list[0]))
     # run the simulation
     createFolder(fileName)
-    # if property_varied == "set_seed":
-    #     #extract and save only the attributes we need, in case we are varying the stochastic seed
-    #     values_list = [(market.history_time, market.history_p_t, market.theta_t, market.compression_factor) for market in Data_list]
-    #     save_object(values_list, fileName + "/Data", "financial_market_list")
-    #else:
+
     save_object(Data_list, fileName + "/Data", "financial_market_list")
     save_object(property_varied, fileName + "/Data", "property_varied")
     save_object(property_list, fileName + "/Data", "property_list")
@@ -109,6 +108,7 @@ def main(property_varied,
     return fileName
 
 if __name__ == "__main__":
-    property_varied = "set_seed"
-    property_list = list(range(1, 11))
-    fileName = main(property_varied, property_list)
+    fileName = main(
+        base_params_load = "constants/base_params.json",
+        varied_param_load = "constants/varied_params.json"
+    )

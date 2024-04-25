@@ -27,7 +27,7 @@ params = {'font.family':'serif',
 plt.rcParams.update(params)
 
 def multi_scatter_seperate_total_sensitivity_analysis_plot(
-    fileName, data_dict, dict_list, names, dpi_save, N_samples, order
+    fileName, data_dict, dict_list, names, N_samples, order
 ):
     """
     Create scatter chart of results.
@@ -88,8 +88,8 @@ def multi_scatter_seperate_total_sensitivity_analysis_plot(
         + "%s_%s_%s_multi_scatter_seperate_sensitivity_analysis_plot.png"
         % (len(names), N_samples, order)
     )
-    fig.savefig(f, dpi=dpi_save, format="eps")
-    fig.savefig(f_png, dpi=dpi_save, format="pdf")
+    fig.savefig(f, dpi=600, format="eps")
+    fig.savefig(f_png, dpi=600, format="pdf")
 
 
 def get_plot_data(
@@ -278,9 +278,7 @@ def analyze_results(
 
 def main(
     fileName = "results/sensitivity_analysis_10_57_34_10_04_2024",
-    plot_outputs = ["price_mean","price_var","price_autocorr","price_kurtosis"],
-    dpi_save = 1200,
-    latex_bool = 0
+    plot_outputs = ["price_mean","price_var","price_autocorr","price_kurtosis"]
     ) -> None: 
     
     plot_dict = {
@@ -301,8 +299,6 @@ def main(
         r'$\beta$',
         r'$w$'
     ]
-
-
     
     price_mean = load_object(fileName + "/Data", "price_mean")
     price_var = load_object(fileName + "/Data", "price_var")
@@ -319,16 +315,14 @@ def main(
     
     ###############################
 
-    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_first,plot_outputs, titles, dpi_save, N_samples, "First")
-    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_total,plot_outputs, titles, dpi_save, N_samples, "Total")
+    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_first,plot_outputs, titles, N_samples, "First")
+    multi_scatter_seperate_total_sensitivity_analysis_plot(fileName, data_sa_dict_total,plot_outputs, titles, N_samples, "Total")
 
     plt.show()
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
     fileName = "results/sensitivity_analysis_10_57_34_10_04_2024",
-    plot_outputs = ["price_mean","price_var","price_autocorr","price_kurtosis"],
-    dpi_save = 1200,
-    latex_bool = 0
+    plot_outputs = ["price_mean","price_var","price_autocorr","price_kurtosis"]
     )
 

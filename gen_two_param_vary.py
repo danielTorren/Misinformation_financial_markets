@@ -19,7 +19,6 @@ from utility import (
     produce_name_datetime,
 )
 from generate_data import (
-    generate_data_parallel,
     generate_data_parallel_single_explore
 )
 
@@ -90,18 +89,18 @@ def unpack_and_mean(Data_list, variable_parameters, base_params, axis_mean):
     return Data_matrix_mean
 
 def main(
-        BASE_PARAMS_LOAD = "constants/base_params_2D.json",
-        VARIABLE_PARAMS_LOAD = "constants/variable_parameters_dict_2D.json", 
+        base_params_load = "constants/base_params_2D.json",
+        varied_param_load = "constants/variable_parameters_dict_2D.json", 
         print_simu = 1,
         ):
     
     # load base params
-    f_base_params = open(BASE_PARAMS_LOAD)
+    f_base_params = open(base_params_load)
     base_params = json.load(f_base_params)
     f_base_params.close()
 
     # load variable params
-    f_variable_parameters = open(VARIABLE_PARAMS_LOAD)
+    f_variable_parameters = open(varied_param_load)
     variable_parameters_dict = json.load(f_variable_parameters)
     f_variable_parameters.close()
 
@@ -141,11 +140,12 @@ def main(
     save_object(base_params, fileName + "/Data", "base_params")
     save_object(variable_parameters_dict, fileName + "/Data", "variable_parameters_dict")
     print("fileName:", fileName)
+
     return fileName
 
 if __name__ == "__main__":
     fileName = main(
-        BASE_PARAMS_LOAD = "constants/base_params_2D.json",
-        VARIABLE_PARAMS_LOAD = "constants/variable_parameters_dict_2D.json", 
+        base_params_load = "constants/base_params_2D.json",
+        varied_param_load = "constants/variable_parameters_dict_2D.json", 
         print_simu = 1,
     )

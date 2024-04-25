@@ -7,5 +7,4 @@
     "proportion_dogmatic_gamma": {"property": "proportion_misinformed", "min": 0.01, "max": 0.25, "round": 0, "title": "$\\% \\mathrm{dogmatic}_\\Gamma$"},
     "ar_1_coefficient": {"property": "ar_1_coefficient", "min": 0.05, "max": 0.9, "round": 0, "title": "$\\mathrm{AR}(1)$"},
     "w": {"property": "w", "min": 0.05, "max": 0.99, "round": 0, "title": "$memory$"}
-  
 }

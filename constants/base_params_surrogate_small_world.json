@@ -1,0 +1,17 @@
+
+{
+    "N_samples": 128,
+    "save_timeseries_data": 0, 
+    "total_steps": 500,
+    "compression_factor": 1,
+    "I": 200,
+    "R": 1.01,
+    "a": 5.5,
+    "d": 1.1,
+    "prob_rewire": 0.1,
+    "network_type": "small_world",
+    "theta_mean": 0,
+    "misinformed_central":0,
+    "network_density": 0.3
+
+}

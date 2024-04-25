@@ -6,7 +6,7 @@ This version: 9/4/2024
 import json
 import numpy as np
 from scipy.stats import kurtosis
-from SALib.sample import sobol
+from SALib.sample import sobol, saltelli
 import numpy.typing as npt
 from joblib import Parallel, delayed
 import multiprocessing
@@ -182,19 +182,19 @@ def produce_param_list_SA(
     return params_list
 
 def main(
-        BASE_PARAMS_LOAD = "package/constants/base_params.json",
-        VARIABLE_PARAMS_LOAD = "package/constants/variable_parameters_dict_SA.json"
+        base_params_load = "package/constants/base_params.json",
+        varied_param_load = "package/constants/variable_parameters_dict_SA.json"
          ) -> str: 
     
     calc_second_order = False
 
     # load base params
-    f = open(BASE_PARAMS_LOAD)
+    f = open(base_params_load)
     base_params = json.load(f)
     N_samples = base_params["N_samples"]
 
     # load variable params
-    f_variable_parameters = open(VARIABLE_PARAMS_LOAD)
+    f_variable_parameters = open(varied_param_load)
     variable_parameters_dict = json.load(f_variable_parameters)
     f_variable_parameters.close()
 
@@ -210,7 +210,12 @@ def main(
 
     # GENERATE PARAMETER VALUES
     print("problem, N_samples", problem, N_samples, type( N_samples))
-    param_values = sobol.sample(
+
+    #param_values = sobol.sample(
+    #    problem, N_samples, calc_second_order=calc_second_order
+    #)  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
+
+    param_values = saltelli.sample(
         problem, N_samples, calc_second_order=calc_second_order
     )  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
 
@@ -256,6 +261,6 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_6 = main(
-    BASE_PARAMS_LOAD = "constants/base_params_SA.json",
-    VARIABLE_PARAMS_LOAD = "constants/variable_parameters_dict_SA.json"
+    base_params_load = "constants/base_params_SA.json",
+    varied_param_load = "constants/variable_parameters_dict_SA.json"
 )

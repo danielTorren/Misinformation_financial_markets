@@ -5,6 +5,7 @@ Author: Tommaso Di Francesco and Daniel Torren Peraire  Daniel.Torren@uab.cat dt
 Created: 10/10/2022
 """
 # imports
+from fileinput import filename
 import json
 import pyperclip
 from utility import (
@@ -16,9 +17,11 @@ from generate_data import (
     generate_data_single
     )
 
-if __name__ == "__main__":
+def main(
+        base_params_load = "constants/base_params.json"
+):
     #load in exogenous parameters
-    f = open("constants/base_params.json")
+    f = open(base_params_load)
     params = json.load(f)
 
     rootName = params["network_type"] +"single_shot"
@@ -34,5 +37,12 @@ if __name__ == "__main__":
 
     save_object(Data, fileName + "/Data", "financial_market")
     save_object(params, fileName + "/Data", "base_params")
+
+    return fileName
+
+if __name__ == "__main__":
+    main(
+        base_params_load = "constants/base_params.json"
+    )
 
     

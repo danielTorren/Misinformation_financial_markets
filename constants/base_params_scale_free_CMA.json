@@ -1,0 +1,23 @@
+{
+    "save_timeseries_data": 1, 
+    "total_steps": 500,
+    "compression_factor": 1,
+    "I": 200,
+    "network_density": 0.7,
+    "prob_rewire": 0.5,
+    "set_seed": 10,
+    "R": 1.01,
+    "a": 5.5,
+    "d": 1.1,
+    "theta_mean" : 0.0,
+    "theta_sigma" :0.1,
+    "epsilon_sigma": 1,
+    "gamma_mean" : 0.0,
+    "gamma_sigma" :1,
+    "proportion_informed": 0.1,
+    "proportion_misinformed": 0.1,
+    "ar_1_coefficient": 0.20,
+    "network_type": "scale_free",
+    "w": 0.9,
+    "misinformed_central": 1
+}

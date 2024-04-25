@@ -29,6 +29,9 @@ class Market:
         self.num_misinfo = int(np.floor(self.I*parameters["proportion_misinformed"]))
         self.misinformed_central = parameters["misinformed_central"]
 
+
+        self.p_0 = np.zeros(self.I)
+        self.X_0 = np.zeros(self.I)
         #### Invariant objects
 
         # Network
@@ -87,8 +90,12 @@ class Market:
         self.payoff_expectation, self.payoff_variance = self.compute_payoff_beliefs()
 
         # Compute the price p0 and the demand X0
+        self.past_price = self.p_0#TO CALCULATE THE PROFITS
+        self.past_demand = self.X_0
         self.p_0 = self.compute_price()
         self.X_0 = self.compute_demand()
+        
+        self.profits = self.calc_profits()
 
         # Update the source errors matrix
         self.update_source_variance_matrix()
@@ -109,11 +116,14 @@ class Market:
         # if self.step_count % 100 == 0:
         #      print("step count: ", self.step_count)
     
+    def calc_profits(self):
+        return (self.d + self.theta_1 +self.epsilon_1 - self.R*self.past_price)*self.past_demand
+    
     def create_adjacency_matrix(self):
         if self.network_type == "scale_free":
             G = nx.scale_free_graph(self.I)
-        elif self.network_type == "small-world":
-            G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small-world graph,watts_strogatz_graph( n, k, p[, seed])
+        elif self.network_type == "small_world":
+            G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small_world graph,watts_strogatz_graph( n, k, p[, seed])
         elif self.network_type == "SBM":
             block_sizes = [int(self.I/2), int(self.I/2)]  # Adjust the sizes as needed
             # Create the stochastic block model. we keep the same network density in the same block 
@@ -241,8 +251,7 @@ class Market:
 
     def create_history(self):
         if self.save_timeseries_data:
-            self.history_p_t = []
-            self.history_theta_t = []
+            
             self.history_d_t = []
             self.history_time = []
             self.history_X_t = []
@@ -250,13 +259,14 @@ class Market:
             self.history_payoff_expectations = []
             self.history_payoff_variances = []
             self.history_weighting_matrix = []
-        else:
-            self.history_p_t = []
+            self.cumulative_profit = np.zeros(self.I)
+        
+        self.history_p_t = []
+        self.history_theta_t = []
 
     def append_data(self):
         if self.save_timeseries_data:
-            self.history_p_t.append(self.p_0)
-            self.history_theta_t.append(self.theta_0)
+            
             self.history_d_t.append(self.theta_0 + self.epsilon_0 + self.d)
             self.history_time.append(self.step_count)
             self.history_X_t.append(self.X_0)
@@ -264,5 +274,8 @@ class Market:
             self.history_payoff_expectations.append(self.payoff_expectation)
             self.history_payoff_variances.append(self.payoff_variance)
             self.history_weighting_matrix.append(self.weighting_matrix)
-        else:
-            self.history_p_t.append(self.p_0)
+            self.cumulative_profit += self.profits
+        
+        self.history_p_t.append(self.p_0)
+        self.history_theta_t.append(self.theta_0)
+        

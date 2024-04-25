@@ -1,0 +1,18 @@
+
+{
+    "N_samples": 128,
+    "save_timeseries_data": 0, 
+    "total_steps": 500,
+    "compression_factor": 1,
+    "seed_list": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
+    "I": 200,
+    "R": 1.01,
+    "a": 5.5,
+    "d": 1.1,
+    "prob_rewire": 0.1,
+    "network_type": "scale_free",
+    "theta_mean": 0,
+    "misinformed_central":1,
+    "network_density": 0.3
+
+}
