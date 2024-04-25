@@ -1,18 +1,21 @@
 # (Mis)Information Diffusion and the Financial Market
 This repository contains the code to reproduce the results in the paper (Mis)Information Diffusion and the Financial Market, Di Francesco & Torren-Peraire (2023). 
 
-## Content of the folder
 
-'consumer.py' defines the class of Consumer. A consumer is the agent of the market and we define here all the variables and updating mechanism that are agent specific.
-'market.py' defined the class of Financial Market. The financial market regulates the interaction among the agents. All the aggregated variables such as the market price are computed here.
-'gen_explore_single_param.py' provides the code to simulate the model for a specific set of the parameters.
-'gen_sensitivty_analysis.py' provides the code to generate the Sobol sensitivity analysis.
-'gen_two_param_vary.py', provides the code to simulate multiple instances of the model by varying two parameters at the time. Each parameter combination is simulated n times with n different stochastic seeds.
-'gen_vary_single_param.py', provides the code to simulate multiple instances of the model by varying one parameter at the time, keeping fixed the stochastic seed.
-'generate_data.py', defines all the functions to simulate the model.
+## Sensitivity analysis
+To run the sensittivity analysis one can:
+- Define the base parameters in the file 'base_params.json'. These are the parameters that will be kept constant over the different simulations. Apart from the base parameters described in the paper, one can choose two extra one. 'N_samples' defines the number of samples taken per parameter.
+- Define the dictionary of variable parameters in the file 'variable_parameters_dict_SA.json'. This is done by defining the parameter name, the lower and upper bound of the range to be explored and the label of the parameters which will be used for plotting.
+- At this point one can run the file 'gen_sensitivty_analysis.py'. This will generate a subfolder in the result folder and provide the user with a filename.
+- To plot the results you can run the file 'plot_sensitivity_analysis.py' after changing the filename in the main function. This script will display the first and total order Sobol index and save the picture in the same subfolder in the result folder.
 
+## Contour plot for two parameters varying simultaneously
+- One can choose the base parameters in the 'base_params_2D.json" file. In addition to the usual parameters the user can select the number of repetitions with different stochastic seed for each parameter combination by using the parameter "seed_reps".
+- The two parameters to be varied and their range can be chosen in the file 'variable_parameters_dict_2D.json' in whcih the user can also choose the grid size.
+- Then one can simply run the file 'gen_two_param_vary.py' to generate data in a subfolder in the result folder and the realitve filename.
+- The filename can be copied into the main function into the 'plot_two_param_vary.py' file to generate the contour plots. The scritp will display the figures and save them in the same subfolder.
 
-## Description of matrix_model
+## Description of the main functions 'matrix_model.py'
 - self.category vector: stores the category of each agents. 1 is for informed, 0 is for uninformed, -1 is for misinformed;
 - if misinformed agents are central we flip this vector, otherwise the order is informed first and misinformed last. This makes so that when using the SBM network the two end up in separate blocks.
 When the networkf is scale free then one group is in the central positions. For the Small Worlds network it does not matter, so this is the most convenient configuration to acheive the desired positions.
@@ -26,3 +29,4 @@ Then we create another matrix by filling the elemtns that would have to be NANs 
 - self.posterior_mean_vector: now we can just get it by multiply the prior matrix with the weight matrix. Also here we fill the NANs in the prior matrix with zeros, since is does not change the result.
 
 - caveat: we add 1e-16 to the prior variance matrix to avoid divisions by 0. In this way the prior variance of dogmatic agent is 1e-16 and the posterior mean will be almost exaclty equal to the prior mean anyway.
+

@@ -1,6 +1,7 @@
 # imports
 import numpy as np
 import networkx as nx
+import warnings
 
 class Market:
     def __init__(self, parameters: dict):
@@ -72,7 +73,7 @@ class Market:
         self.epsilon_1 = np.random.normal(0, self.epsilon_sigma)
 
         # update the prior mean vector
-        self.prior_mean_vector = np.where(self.category_vector == 1, self.theta_1, np.where(self.category_vector == -1, self.gamma_1, self.prior_mean_vector_0))
+        self.prior_mean_vector = np.where(self.category_vector == 1, self.theta_1, np.where(self.category_vector == -1, self.gamma_1, self.posterior_mean_vector))
         self.prior_mean_matrix = self.compute_prior_mean_matrix(self.prior_mean_vector)
 
         #compute implied variance matrix
@@ -107,14 +108,11 @@ class Market:
         self.step_count +=1 
         # if self.step_count % 100 == 0:
         #      print("step count: ", self.step_count)
-
-
-
     
     def create_adjacency_matrix(self):
         if self.network_type == "scale_free":
             G = nx.scale_free_graph(self.I)
-        elif self.network_type == "small_world":
+        elif self.network_type == "small-world":
             G = nx.watts_strogatz_graph(n=self.I, k=self.K, p=self.prob_rewire, seed=self.set_seed)  # Watts–Strogatz small-world graph,watts_strogatz_graph( n, k, p[, seed])
         elif self.network_type == "SBM":
             block_sizes = [int(self.I/2), int(self.I/2)]  # Adjust the sizes as needed
@@ -123,6 +121,16 @@ class Market:
             block_probs = np.asarray([[self.network_density, self.network_density/10],[self.network_density/10, self.network_density]])  # Make the matrix symmetric
             G = nx.stochastic_block_model(block_sizes, block_probs, seed=self.set_seed)
         adjacency_matrix = nx.to_numpy_array(G)
+        if not self.misinformed_central:
+            #fill the first num_info rows with nans
+            adjacency_matrix[:self.num_info, :] = np.nan
+            #fill the last num_misinfo rows with nans
+            adjacency_matrix[-self.num_misinfo:, :] = np.nan
+        else:
+            #fill the first num_misinfo rows with nans
+            adjacency_matrix[:self.num_misinfo, :] = np.nan
+            #fill the last num_info rows with nans
+            adjacency_matrix[-self.num_info:, :] = np.nan
         #fill the diagonal with 1s
         np.fill_diagonal(adjacency_matrix, 1)
         # remove parallel edges
@@ -138,7 +146,11 @@ class Market:
         # select the first num_info indices to be 1
         category_vector[: self.num_info] = 1
         # select the last num_misinfo indices to be -1
-        category_vector[-self.num_misinfo :] = -1
+        #first check that the number of misinformed is not 0
+        if self.num_misinfo > 0:
+            category_vector[-self.num_misinfo :] = -1
+        else:
+            pass
         return category_vector
     
     def create_prior_variance_matrix(self):
@@ -157,7 +169,7 @@ class Market:
         # Finally multiply it elementwise by the adjacency matrix to have nans where there are no connections
         prior_variance_matrix = prior_variance_matrix * self.adjacency_matrix
         # add a small number to avoid division by zero
-        return prior_variance_matrix + 1e-16
+        return prior_variance_matrix + 1e-128
     
     def compute_prior_mean_matrix(self, prior_vector):
         # mutiply every row of the adjacency matrix by the prior mean vector, elementwise
@@ -183,11 +195,16 @@ class Market:
         #then replace the position in the numerator with 0 where x was nan,as it is invariant to sum
         filled_with_zeros = np.copy(numerator)
         filled_with_zeros[np.isnan(self.implied_variance_matrix)] = 0
-        #if some rows are below 1e-16, convert them to 1e-16
-        if np.any(np.sum(filled_with_zeros, axis=1) < 1e-16):
-            filled_with_zeros[np.sum(filled_with_zeros, axis=1) < 1e-16] = 1e-16
-        # then divide the numerator by the sum of filled_with_zeros over rows
-        return np.transpose(np.transpose(numerator)/np.sum(filled_with_zeros, axis=1)), product/np.sum(filled_with_zeros, axis=1)
+        #if some rows are below 1e-64, convert them to 1e-64
+        if np.any(np.sum(filled_with_zeros, axis=1) < 1e-128):
+            filled_with_zeros[np.sum(filled_with_zeros, axis=1) < 1e-128] = 1e-128
+        # #if some element is np.inf, convert it to 1e128
+        # if np.any(np.isinf(filled_with_zeros)):
+        #     filled_with_zeros[np.isinf(filled_with_zeros)] = 1e128
+        # then divide the numerator by the sum of filled_with_zeros over rows 
+        a = np.transpose(np.transpose(filled_with_zeros)/np.sum(filled_with_zeros, axis=1))
+        b = product/np.sum(filled_with_zeros, axis=1)
+        return a, b
     
     def compute_posterior_mean_vector(self):
         # multiply the weighting matrix by the prior mean matrix then sum over rows
@@ -203,7 +220,7 @@ class Market:
         # add sigma_theta where the category vector is 1
         payoff_variance = np.where(self.category_vector == 1, payoff_variance + (self.theta_sigma**2)/(self.R - self.ar_1_coefficient)**2, payoff_variance)
         return payoff_expectation, payoff_variance
-    
+
     def compute_price(self):
        term_1 = sum((self.payoff_expectation)/(self.payoff_variance))
        term_2 = 1/(sum(1/self.payoff_variance))
@@ -224,27 +241,28 @@ class Market:
 
     def create_history(self):
         if self.save_timeseries_data:
-            self.history_p_t = np.array([])
-            self.history_theta_t = np.array([])
-            self.history_d_t = np.array([])
-            self.history_time = np.array([])
-            self.history_X_t = np.array([])
-            self.history_weighting_matrix = np.array([])
-            self.history_payoff_expectations = np.array([])
-            self.history_payoff_variances = np.array([])
+            self.history_p_t = []
+            self.history_theta_t = []
+            self.history_d_t = []
+            self.history_time = []
+            self.history_X_t = []
+            self.history_weighting_matrix = []
+            self.history_payoff_expectations = []
+            self.history_payoff_variances = []
+            self.history_weighting_matrix = []
         else:
-            self.history_p_t = np.array([])
+            self.history_p_t = []
 
     def append_data(self):
         if self.save_timeseries_data:
-            self.history_p_t = np.append(self.history_p_t, self.p_0)
-            self.history_theta_t = np.append(self.history_theta_t, self.theta_0)
-            self.history_d_t = np.append(self.history_d_t, self.theta_0 + self.epsilon_0 + self.d)
-            self.history_time = np.append(self.history_time, self.step_count)
-            self.history_X_t = np.append(self.history_X_t, self.X_0)
-            self.history_weighting_matrix = np.append(self.history_weighting_matrix, self.weighting_matrix)
-            self.history_payoff_expectations = np.append(self.history_payoff_expectations, self.payoff_expectation)
-            self.history_payoff_variances = np.append(self.history_payoff_variances, self.payoff_variance)
+            self.history_p_t.append(self.p_0)
+            self.history_theta_t.append(self.theta_0)
+            self.history_d_t.append(self.theta_0 + self.epsilon_0 + self.d)
+            self.history_time.append(self.step_count)
+            self.history_X_t.append(self.X_0)
+            self.history_weighting_matrix.append(self.weighting_matrix)
+            self.history_payoff_expectations.append(self.payoff_expectation)
+            self.history_payoff_variances.append(self.payoff_variance)
+            self.history_weighting_matrix.append(self.weighting_matrix)
         else:
-            self.history_p_t = np.append(self.history_p_t, self.p_0)
-            
+            self.history_p_t.append(self.p_0)

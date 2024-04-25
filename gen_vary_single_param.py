@@ -10,7 +10,7 @@ import time
 import pyperclip
 
 import numpy as np
-from market import Market
+from matrix_model import Market
 from utility import (
     createFolder, 
     save_object, 
@@ -21,12 +21,9 @@ from generate_data import (
     generate_data_parallel
 )
 
-def generate_data(params):
+def generate_data(params, print_simu = False):
 
     #generate the inital data, move forward in time and return
-
-    print_simu = 0  # Whether of not to print how long the single shot simulation took
-
     if print_simu:
         start_time = time.time()
 
@@ -34,7 +31,7 @@ def generate_data(params):
 
     #### RUN TIME STEPS
     time_counter = 0
-    while time_counter < params["steps"]:
+    while time_counter < params["total_steps"]:
         financial_market.next_step()
         time_counter += 1
 
@@ -71,7 +68,7 @@ def gen_param_list(params: dict, property_list: list, property_varied: str) -> l
         params_list.append(
             params.copy()
         )  # have to make a copy so that it actually appends a new dict and not just the location of the params dict
-    print(params_list)
+    #print(params_list)
     return params_list
 
 def main(property_varied, 
@@ -112,6 +109,6 @@ def main(property_varied,
     return fileName
 
 if __name__ == "__main__":
-    property_varied = "ar_1_coefficient"
-    property_list = [0.1, .2, .3, .4, .5, .6, .7, .8, .9]
+    property_varied = "set_seed"
+    property_list = list(range(1, 11))
     fileName = main(property_varied, property_list)

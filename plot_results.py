@@ -117,7 +117,7 @@ def plot_qq_plot(fileName, Data, y_title, dpi_save):
     property_y = "history_p_t"
     fig, ax = plt.subplots()
     data = eval("Data.%s" % property_y)
-    prices = data
+    prices = np.asarray(data)
 
     # Calculate returns
     returns = (prices[1:] - prices[:-1]) / prices[:-1]
@@ -151,7 +151,7 @@ def plot_time_series_market(fileName,Data,y_title,property_y, dpi_save = ""):
     if property_y == "history_p_t":
         print("date Len is:", len(data), "time len is: ", len(Data.history_time))
         ax.plot(Data.history_time, data, linestyle='solid', color="black", alpha = 1)
-        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
+        ax.plot(Data.history_time, (Data.d/ (Data.R - 1) + (np.asarray(Data.history_theta_t))/ (Data.R - Data.ar_1_coefficient)), linestyle='dashed', color="red")
     elif property_y == "history_X_t":
         color = ["blue" if state == 1 else "red" if state == -1 else "black" for state in Data.category_vector]
         T,I = np.asarray(data).shape
@@ -199,18 +199,18 @@ def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, color1 = '#2A9D8F', color2 = '#F4A261'):
     #order in Data list is: time, p_t, theta_t, compression_factor
     fig, ax = plt.subplots(figsize = (18, 9))
-    time = np.asarray(range(1, Data_list[0].total_steps))
+    time = np.asarray(range(Data_list[0].total_steps))
     price = [mkt.history_p_t for mkt in Data_list]
     returns = [(np.asarray(price_series[1:]) - np.asarray(price_series[:-1])) / np.asarray(price_series[:-1]) for price_series in price]
-    theta = [mkt.theta_t for mkt in Data_list]
+    theta = [mkt.history_theta_t for mkt in Data_list]
     avg_price = np.asarray([np.sum(values)/len(Data_list) for values in zip(*price)])
     avg_theta = np.asarray([np.sum(values)/len(Data_list) for values in zip(*theta)])
-    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta[2:-1]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
+    avg_RA_price = np.asarray((Data_list[0].d/ (Data_list[0].R - 1) + (np.asarray(avg_theta))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)))
     std_deviation_price = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*price), avg_price)])
     corr_price = np.mean([np.corrcoef(price_series[1:], price_series[:-1])[0,1] for price_series in price])
     kurtosis_returns = np.mean([kurtosis(return_series) for return_series in returns])
     std_deviation_theta = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)])
-    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta[2:-1]))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
+    std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
     
     print("avg_price is: ", np.mean(avg_price), "RA_price is: ", np.mean(avg_RA_price))
     print("avg_std is: ", np.mean(std_deviation_price**2), "RA_ is: ", np.mean(std_deviation_RA_price**2))
@@ -243,7 +243,7 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
     rational_returns = np.array([])
     for i in range(len(Data_list)):
         prices = np.array(Data_list[i].history_p_t)
-        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:])/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + np.asarray(Data_list[i].history_theta_t)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
         rational_return = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
@@ -283,7 +283,7 @@ def plot_qq_plot_different_seed(fileName, Data_list):
     rational_returns = np.array([])
     for i in range(len(Data_list)):
         prices = np.array(Data_list[i].history_p_t)
-        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + (Data_list[i].theta_t[::Data_list[i].compression_factor][2:] )/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
+        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + np.asarray(Data_list[i].history_theta_t)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
         rational_return = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
@@ -418,7 +418,7 @@ round_dec = 2
 
 if __name__ == "__main__":
     if single_shot:
-        fileName = "results/small-worldsingle_shot_15_56_23_04_04_2024"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
+        fileName = "results/small-worldsingle_shot_14_06_17_09_04_2024"#"results/single_shot_steps_500_I_100_network_structure_small_world_degroot_aggregation_1"
         createFolder(fileName)
         Data = load_object(fileName + "/Data", "financial_market")
         base_params = load_object(fileName + "/Data", "base_params")
@@ -429,10 +429,10 @@ if __name__ == "__main__":
         rational_prices =(Data.d/ (Data.R - 1) + (Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient))
         rational_returns = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
         #print("kurtosis is:", kurtosis(rational_returns))
-        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$",dpi_save,"history_p_t")  
-        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", dpi_save, "history_X_t")
-        plot_history_payoff_expectations = plot_time_series_market(fileName, Data, "history_payoff_expectations", dpi_save, "history_payoff_expectations")
-        plot_history_payoff_variances = plot_time_series_market(fileName, Data, "history_payoff_variances", dpi_save, "history_payoff_variances")
+        plot_history_p_t = plot_time_series_market(fileName,Data,"Price, $p_t$","history_p_t", dpi_save=dpi_save)  
+        plot_history_x_it = plot_time_series_market(fileName, Data, "Demand", "history_X_t", dpi_save=dpi_save)
+        plot_history_payoff_expectations = plot_time_series_market(fileName, Data, "history_payoff_expectations", "history_payoff_expectations", dpi_save=dpi_save)
+        plot_history_payoff_variances = plot_time_series_market(fileName, Data, "history_payoff_variances", "history_payoff_variances", dpi_save=dpi_save)
        
        #plot_histogram_returns = plot_histogram_returns(fileName,Data,"returns",dpi_save)
         plot_qq_plot = plot_qq_plot(fileName, Data, "qq_plot", dpi_save)
