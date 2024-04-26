@@ -49,7 +49,7 @@ def main(
     #)  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
 
     param_values = saltelli.sample(
-        problem, N_samples, calc_second_order=calc_second_order
+        problem, N_samples, calc_second_order=False
     )  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
 
     #DEAL WITH ROUNDED VARIABLES
@@ -71,6 +71,7 @@ def main(
         params_list.extend(params_list_sa)
 
     print("TOTAL RUNS: ", len(params_list))
+
     returns_timeseries = generate_data_surrogate(
         params_list
     )
