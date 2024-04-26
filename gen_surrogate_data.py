@@ -75,7 +75,7 @@ def main(
         params_list
     )
     returns_timeseries_arr_serial = np.asarray(returns_timeseries)
-    returns_timeseries_arr = returns_timeseries_arr_serial.reshape(base_params["seed_reps"], len(params_list_sa), base_params["total_steps"])
+    returns_timeseries_arr = returns_timeseries_arr_serial.reshape(base_params["seed_reps"], len(params_list_sa), len(returns_timeseries[0]))
     
     ###################################################
 
