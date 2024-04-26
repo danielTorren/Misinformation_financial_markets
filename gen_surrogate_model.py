@@ -80,7 +80,7 @@ def main(fileName = "results/sensitivity_analysis_10_57_34_10_04_2024"):
     plt.show()
 
 if __name__ == '__main__':
-    filename = "results/surrogate_model_11_28_59_26_04_2024"
+    filename = "results/surrogate_model_12_04_43_26_04_2024"
     main(filename)
 
 
