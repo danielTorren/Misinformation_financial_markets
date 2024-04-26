@@ -63,7 +63,6 @@ def main(
     seed_list = []
     params_list = []
     for seed in range(1, base_params["seed_reps"]+1):
-        print("seed", seed)
         base_params["set_seed"] = seed
         seed_list.append(seed)
         params_list_sa = produce_param_list_SA(
