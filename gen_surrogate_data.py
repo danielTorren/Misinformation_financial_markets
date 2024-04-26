@@ -71,6 +71,7 @@ def main(
         )
         params_list.extend(params_list_sa)
 
+    print("TOTAL RUNS: ", len(params_list))
     returns_timeseries = generate_data_surrogate(
         params_list
     )
