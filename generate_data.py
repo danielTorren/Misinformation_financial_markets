@@ -115,25 +115,15 @@ def gen_output_surrogate(params):
     while financial_market.step_count < params["total_steps"]:
         financial_market.next_step()
 
-    rational_price =(financial_market.d/ (financial_market.R - 1) + (financial_market.history_theta_t)/ (financial_market.R - financial_market.ar_1_coefficient))
-    price_mean = np.mean(financial_market.history_p_t - rational_price)
-    price_var = np.var(financial_market.history_p_t) - np.var(rational_price)
-    price_autocorr = np.corrcoef(financial_market.history_p_t[:-1],financial_market.history_p_t[1:])[0,1] - financial_market.ar_1_coefficient
-    return_kurt = kurtosis(np.asarray(financial_market.history_p_t[1:])/np.asarray(financial_market.history_p_t[:-1]) - 1)
+    returns_timeseries = np.asarray(financial_market.history_p_t[1:])/np.asarray(financial_market.history_p_t[:-1]) - 1
 
-    return price_mean, price_var, price_autocorr, return_kurt
+    return returns_timeseries
 
 def generate_data_surrogate(params_list):
     num_cores = multiprocessing.cpu_count()
-    #data_parallel = [generate_data(i) for i in params_dict]
-    #print(params_list)
-    res = Parallel(n_jobs=num_cores, verbose=10)(
+    returns_timeseries_list = Parallel(n_jobs=num_cores, verbose=10)(
         delayed(gen_output_surrogate)(i) for i in params_list
     )
-
-    results_price_mean, results_price_var, results_price_autocorr, results_price_kurtosis = zip(
-        *res
-    )
     
-    return results_price_mean, results_price_var, results_price_autocorr, results_price_kurtosis
+    return returns_timeseries_list
 

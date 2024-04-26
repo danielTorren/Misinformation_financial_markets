@@ -9,9 +9,9 @@
     "a": 5.5,
     "d": 1.1,
     "prob_rewire": 0.1,
-    "network_type": "SBM",
+    "network_type": "scale_free",
     "theta_mean": 0,
-    "misinformed_central":0,
+    "misinformed_central":1,
     "network_density": 0.1,
     "w": 0.9,
     "set_seed" : 10

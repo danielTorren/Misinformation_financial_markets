@@ -35,10 +35,7 @@ def main(
     variable_parameters_dict = json.load(f_variable_parameters)
     f_variable_parameters.close()
 
-    ##AVERAGE RUNS
-    AV_reps = len(base_params["seed_list"])
-    print("Average reps: ", AV_reps)
-
+    AV_reps = 1
     problem = generate_problem(
         variable_parameters_dict, N_samples, AV_reps, calc_second_order
     )
@@ -67,7 +64,7 @@ def main(
         param_values, base_params, variable_parameters_dict
     )
 
-    price_mean, price_var, price_autocorr, price_kurtosis = generate_data_surrogate(
+    returns_timeseries = generate_data_surrogate(
         params_list_sa
     )
 
@@ -83,12 +80,7 @@ def main(
     save_object(params_list_sa, fileName + "/Data", "params_list_sa")
     save_object(variable_parameters_dict, fileName + "/Data", "variable_parameters_dict")
     save_object(problem, fileName + "/Data", "problem")
-
-    save_object(price_mean, fileName + "/Data", "price_mean")
-    save_object(price_var, fileName + "/Data", "price_var")
-    save_object(price_autocorr, fileName + "/Data", "price_autocorr")
-    save_object(price_kurtosis, fileName + "/Data", "price_kurtosis")
-
+    save_object(returns_timeseries, fileName + "/Data", "returns_timeseries")
     save_object(N_samples , fileName + "/Data","N_samples")
     save_object(calc_second_order, fileName + "/Data","calc_second_order")
 
@@ -97,6 +89,6 @@ def main(
 
 if __name__ == '__main__':
     fileName_Figure_14 = main(
-    base_params_load = "constants/base_params_surrogate.json",
-    varied_param_load = "constants/variable_parameters_dict_SA.json"
+    base_params_load = "constants/base_params_surrogate_small_world.json",
+    varied_param_load = "constants/variable_parameters_dict_surrogate.json"
 )
