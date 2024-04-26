@@ -60,14 +60,23 @@ def main(
         param_values[:,index_round] = np.round(param_values[:,index_round])
 
 
-    params_list_sa = produce_param_list_SA(
-        param_values, base_params, variable_parameters_dict
-    )
+    seed_list = []
+    params_list = []
+    for seed in range(1, base_params["seed_reps"]+1):
+        print("seed", seed)
+        base_params["set_seed"] = seed
+        seed_list.append(seed)
+        params_list_sa = produce_param_list_SA(
+            param_values, base_params, variable_parameters_dict
+        )
+        params_list.extend(params_list_sa)
 
     returns_timeseries = generate_data_surrogate(
-        params_list_sa
+        params_list
     )
-
+    returns_timeseries_arr_serial = np.asarray(returns_timeseries)
+    returns_timeseries_arr = returns_timeseries_arr_serial.reshape(base_params["seed_reps"], len(params_list_sa), base_params["total_steps"])
+    
     ###################################################
 
     root = "surrogate_model"
@@ -77,9 +86,8 @@ def main(
     createFolder(fileName)
 
     save_object(param_values, fileName + "/Data", "param_values")
-    save_object(returns_timeseries, fileName + "/Data", "returns_timeseries")
-
-
+    #save_object(returns_timeseries, fileName + "/Data", "returns_timeseries")
+    save_object(returns_timeseries_arr, fileName + "/Data", "returns_timeseries_arr")
 
     return fileName
 
