@@ -76,13 +76,9 @@ def main(
 
     createFolder(fileName)
 
-    save_object(base_params, fileName + "/Data", "base_params")
-    save_object(params_list_sa, fileName + "/Data", "params_list_sa")
-    save_object(variable_parameters_dict, fileName + "/Data", "variable_parameters_dict")
-    save_object(problem, fileName + "/Data", "problem")
+    save_object(param_values, fileName + "/Data", "param_values")
     save_object(returns_timeseries, fileName + "/Data", "returns_timeseries")
-    save_object(N_samples , fileName + "/Data","N_samples")
-    save_object(calc_second_order, fileName + "/Data","calc_second_order")
+
 
 
     return fileName
