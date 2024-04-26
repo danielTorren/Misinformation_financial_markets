@@ -1,6 +1,6 @@
 
 {
-    "seed_reps":100,
+    "seed_reps":10,
     "N_samples": 512,
     "save_timeseries_data": 0, 
     "total_steps": 500,
