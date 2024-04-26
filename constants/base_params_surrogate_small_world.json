@@ -3,7 +3,7 @@
     "seed_reps":2,
     "N_samples": 2048,
     "save_timeseries_data": 0, 
-    "total_steps": 500,
+    "total_steps": 5,
     "compression_factor": 1,
     "I": 200,
     "R": 1.01,
