@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from utility import (
     load_object
 )
+from joblib import Parallel, delayed
+import multiprocessing
 
 # Defne a NN model
 class Net(nn.Module):
@@ -23,18 +25,16 @@ class Net(nn.Module):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         x = torch.relu(self.fc3(x))
-        x = self.fc4(x)
+        # Define bounds for the output
+        lower_bounds = torch.tensor([0.01, -10.0, 0.01, 0.01, 0.01, 0.01, 0.01])
+        upper_bounds = torch.tensor([10.0, 10.0, 10.0, 10.0, 0.45, 0.45, 0.99])
+        # Apply the bounds
+        x = torch.sigmoid(self.fc4(x))
+        x = lower_bounds + x * (upper_bounds - lower_bounds)
         return x
-    
 
-def main(fileName = "results/sensitivity_analysis_10_57_34_10_04_2024"):
-    
-    parameters_list = load_object(fileName + "/Data", "param_values")
-    returns_timeseries = load_object(fileName + "/Data", "returns_timeseries")
-    
-    input_size = len(returns_timeseries[0])
-    hidden_size = 50
-    output_size = len(parameters_list[0])
+def single_surrogate(returns_timeseries, parameters_list, input_size, hidden_size, output_size):
+
 
     #Prepare the data for the neural network
     X = torch.tensor(np.asarray(returns_timeseries)).float()
@@ -51,36 +51,44 @@ def main(fileName = "results/sensitivity_analysis_10_57_34_10_04_2024"):
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     #Train the model and keep the loss to plot it later
-    epochs = 2000
-    train_losses = []
+    epochs = 5000
     for epoch in range(epochs):
         optimizer.zero_grad()
         output = model(train_X)
         loss = criterion(output, train_y)
-        train_losses.append(loss.item())
         loss.backward()
         optimizer.step()
         if epoch % 100 == 0:
             print(f'Epoch {epoch} loss: {loss.item()}')
-
-    #Plot the loss
-    plt.plot(train_losses)
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-
+    
     #Test the model
     model.eval()
     with torch.no_grad():
         test_output = model(test_X)
         loss = criterion(test_output, test_y)
-        print(f'Test loss: {loss.item()}')
+    print(f'Test loss: {loss.item()}')   
+    return model
 
-    #Save the NN model 
-    torch.save(model.state_dict(), fileName + "/Data/NN_model.pt")
-    plt.show()
+def main(fileName = "results/sensitivity_analysis_10_57_34_10_04_2024"):
+        
+    parameters_list = load_object(fileName + "/Data", "param_values")
+    returns_timeseries_arr = load_object(fileName + "/Data", "returns_timeseries_arr")
+
+    input_size = returns_timeseries_arr.shape[2]
+    hidden_size = 50
+    output_size = parameters_list.shape[1]
+    num_cores = multiprocessing.cpu_count()
+    
+    surrogates = Parallel(n_jobs=num_cores, verbose=10)(
+        delayed(single_surrogate)(i, parameters_list, input_size, hidden_size, output_size) for i in returns_timeseries_arr)
+    
+    #save the models states
+    for i, model in enumerate(surrogates):
+        torch.save(model.state_dict(), fileName + f"/Data/model_{i}")
 
 if __name__ == '__main__':
-    filename = "results/surrogate_model_11_28_59_26_04_2024"
+    filename = "results/surrogate_model_15_40_28_26_04_2024"
+ 
     main(filename)
 
 
