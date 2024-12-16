@@ -9,6 +9,7 @@ Created: 10/10/2022
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
+import statsmodels.api as sm
 
 from matplotlib.colors import LinearSegmentedColormap
 
@@ -36,7 +37,7 @@ def calc_node_size(Data, min_size, max_size):
 
 def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
-    if network_structure == "small-world":
+    if network_structure == "small_world":
         layout_type = "circular"
     elif network_structure == "random" or "scale_free":
         layout_type ="kamada_kawai"
@@ -54,6 +55,28 @@ def prod_pos(network_structure: str, network: nx.Graph) -> nx.Graph:
 
     return pos_culture_network
 
+
+def plot_price_single_run(fileName, Data, dpi = 300):
+    fig, ax = plt.subplots(figsize=(18, 9))
+    time = np.asarray(range(Data.total_steps))
+    price = Data.history_p_t
+
+    # Create the plot
+    ax.plot(time, price, label='Model Price')
+    ax.set_xlabel('Steps')
+    ax.set_ylabel('Price')
+    #add the process theta_t to the plot with a different axis
+    # ax2 = ax.twinx()
+    # ax2.plot(time, Data.history_theta_t, color='red', label='Theta_t', linestyle='dashed')
+    # ax2.set_ylabel('Theta_t')
+    #fig.legend(loc='upper right')
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "price_single_run" + "_timeseries"
+    fig.savefig(f + ".png", dpi=dpi, format="png")
+
+
+
 def plot_network(
     fileName: str,
     Data: list,
@@ -62,8 +85,10 @@ def plot_network(
     colour_informed,
     colour_uninformed,
     colour_misinformed,
+    output_folder,
     min_size = 400, 
-    max_size = 400
+    max_size = 400,
+    dpi = 100
 ): 
 
     fig, ax = plt.subplots()
@@ -103,10 +128,10 @@ def plot_network(
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
     ax.legend(loc='upper right')
-    plotName = fileName + "/Plots"
+    plotName = output_folder
     f = plotName + "/" + property_value + "_plot_network_shape" + "_" + network_structure
-    fig.savefig(f + ".eps", dpi=600, format="eps")
-    fig.savefig(f + ".png", dpi=600, format="png")
+    #fig.savefig(f + ".eps", dpi=dpi, format="eps")
+    fig.savefig(f + ".png", dpi=dpi, format="png")
 
 def scatter_profit_variance_multiple_seeds(
     fileName,
@@ -117,7 +142,9 @@ def scatter_profit_variance_multiple_seeds(
     colour_uninformed_block_1,
     colour_uninformed_block_2,
     colour_misinformed,
-    colour_uninformed
+    colour_uninformed,
+    output_folder,
+    dpi = 300
 ):
     
     # Map dogmatic states to custom colors
@@ -149,6 +176,24 @@ def scatter_profit_variance_multiple_seeds(
     total_error = sum(market.forecast_errors for market in Data)
     average_error = total_error / len(Data)
 
+    #get the postion of the first informed agent in the network
+    informed_agent = [i for i, x in enumerate(Data[0].category_vector) if x == 1][0]
+    #get the postion of the first misinformed agent in the network
+    misinformed_agent = [i for i, x in enumerate(Data[0].category_vector) if x == -1][0]
+
+    print("profits of informed agent: ", average_profit[informed_agent])
+    print("profits of misinformed agent: ", average_profit[misinformed_agent])
+    #compute the gini index of the profits of uninformed agents
+    uninformed_profits = [average_profit[i] for i, x in enumerate(Data[0].category_vector) if x == 0]
+    #compute the gini
+    uninformed_profits = np.sort(uninformed_profits)
+    #add the minimum value so that all values are non-negative
+    uninformed_profits = uninformed_profits + abs(uninformed_profits[0])
+    n = len(uninformed_profits)
+    gini = 1 - 2/(n-1) * (n - np.sum((np.arange(1, n+1)) * uninformed_profits)/ np.sum(uninformed_profits))
+    print("Gini index of uninformed agents: ", gini)
+
+
     # Create the barplot with varying color intensities within each category
     fig, ax = plt.subplots()
     ax.scatter(
@@ -168,7 +213,7 @@ def scatter_profit_variance_multiple_seeds(
     
     for v in range(len(values)):
         plt.scatter([],[], c=values[v], label="%s" % (c_list[v]))
-    fig.legend(loc='lower right')
+    fig.legend(loc='upper right')
 
     # Customize the plot as needed
     ax.set_title('')
@@ -176,15 +221,16 @@ def scatter_profit_variance_multiple_seeds(
     ax.set_ylabel('Cumulative Profit')
     fig.tight_layout()
     # Save or show the plot
-    plotName = fileName + "/Plots"
+    plotName = output_folder
     f = plotName + "/" + property_value + "_plot_scatter_profit_variance" + "_" + network_structure
-    fig.savefig(f + ".eps", dpi=600, format="eps")
-    fig.savefig(f + ".png", dpi=600, format="png")
+    #fig.savefig(f + ".eps", dpi=dpi, format="eps")
+    fig.savefig(f + ".png", dpi=dpi, format="png")
 
 
 ############################################################################################################3
 
-def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, color1 = '#2A9D8F', color2 = '#F4A261'):
+def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, 
+                                  color1 = '#2A9D8F', color2 = '#F4A261', dpi = 300):
     #order in Data list is: time, p_t, theta_t, compression_factor
     fig, ax = plt.subplots(figsize = (18, 9))
     time = np.asarray(range(Data_list[0].total_steps))
@@ -199,7 +245,11 @@ def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, 
     kurtosis_returns = np.mean([kurtosis(return_series) for return_series in returns])
     std_deviation_theta = np.asarray([np.sqrt(sum((x - mean) ** 2 for x in values) / len(Data_list)) for values, mean in zip(zip(*theta), avg_theta)])
     std_deviation_RA_price = np.asarray(np.asarray(std_deviation_theta))/ (Data_list[0].R - Data_list[0].ar_1_coefficient)
-    
+    # element_1 = Data_list[0].proportion_informed/( Data_list[0].epsilon_sigma**2 + Data_list[0].theta_sigma**2/(Data_list[0].R - Data_list[0].ar_1_coefficient)**2)
+    # element_2 = Data_list[0].proportion_misinformed/(Data_list[0].epsilon_sigma**2 + (Data_list[0].theta_sigma**2 + Data_list[0].gamma_sigma**2)/(Data_list[0].R - Data_list[0].ar_1_coefficient)**2)
+    # element_3 = (1 - Data_list[0].proportion_informed - Data_list[0].proportion_misinformed)/(Data_list[0].epsilon_sigma**2)
+    # no_com_price = Data_list[0].d/ (Data_list[0].R - 1) + ((np.asarray(Data_list[0].history_theta_t)/ (Data_list[0].R - Data_list[0].ar_1_coefficient))*element_1 + ((np.asarray(Data_list[0].history_gamma_t) + np.asarray(Data_list[0].history_theta_t))/(Data_list[0].R - Data_list[0].ar_1_coefficient))*element_2 + element_3) / (element_1 + element_2 + element_3)
+
     print("avg_price is: ", np.mean(avg_price), "RA_price is: ", np.mean(avg_RA_price))
     print("avg_std is: ", np.mean(std_deviation_price**2), "RA_ is: ", np.mean(std_deviation_RA_price**2))
     print("avg_autocorr is: ", corr_price, "RA is: ", Data_list[0].ar_1_coefficient)
@@ -223,10 +273,45 @@ def plot_avg_price_different_seed(fileName,Data_list, transparency_level = 0.2, 
     fig.tight_layout()
     plotName = fileName + "/Plots"
     f = plotName + "/" + "avg_p_t_multiple_seeds" + "_timeseries"
-    fig.savefig(f + ".eps", dpi=600, format="eps")
-    fig.savefig(f + ".png", dpi=600, format="png")
+    #fig.savefig(f + ".eps", dpi=dpi, format="eps")
+    fig.savefig(f + ".png", dpi=dpi, format="png")
 
-def plot_histogram_returns_different_seed(fileName, Data_list):
+def plot_squared_returns(fileName,Data,
+                                  color1 = '#2A9D8F', color2 = '#F4A261', dpi = 300):
+    #order in Data list is: time, p_t, theta_t, compression_factor
+    fig, ax = plt.subplots(figsize = (18, 9))
+    time = np.asarray(range(Data.total_steps))
+    price = Data.history_p_t
+    returns = (np.asarray(price[1:]) - np.asarray(price[:-1])) / np.asarray(price[:-1]) 
+    theta = Data.history_theta_t
+    RA_price = np.asarray((Data.d/ (Data.R - 1) + (np.asarray(theta))/ (Data.R - Data.ar_1_coefficient)))
+    RA_retruns = (np.asarray(RA_price[1:]) - np.asarray(RA_price[:-1])) / np.asarray(RA_price[:-1])
+
+    # element_1 = Data.proportion_informed/( Data.epsilon_sigma**2 + Data.theta_sigma**2/(Data.R - Data.ar_1_coefficient)**2)
+    # element_2 = Data.proportion_misinformed/(Data.epsilon_sigma**2 + (Data.theta_sigma**2 + Data.gamma_sigma**2)/(Data.R - Data.ar_1_coefficient)**2)
+    # element_3 = (1 - Data.proportion_informed - Data.proportion_misinformed)/(Data.epsilon_sigma**2)
+    # no_com_price = Data.d/ (Data.R - 1) + ((np.asarray(Data.history_theta_t)/ (Data.R - Data.ar_1_coefficient))*element_1 + ((np.asarray(Data.history_gamma_t) + np.asarray(Data.history_theta_t))/(Data.R - Data.ar_1_coefficient))*element_2 + element_3) / (element_1 + element_2 + element_3)
+    # no_com_returns = (np.asarray(no_com_price[1:]) - np.asarray(no_com_price[:-1])) / np.asarray(no_com_price[:-1])
+    # #compute and plot the acf of the squared returns and the squared returns
+    #plot it with confidence intervals
+    squared_returns = returns**2
+    squared_RA_returns = RA_retruns**2
+
+    sm.graphics.tsa.plot_acf(squared_returns, lags=40, ax=ax, title="Squared Returns ACF")
+    sm.graphics.tsa.plot_acf(squared_RA_returns, lags=40, ax=ax, title="Squared Returns ACF")
+
+
+    fig.tight_layout()
+    plotName = fileName + "/Plots"
+    f = plotName + "/" + "returns_squared" + "_timeseries"
+    #fig.savefig(f + ".eps", dpi=300, format="eps")
+    fig.savefig(f + ".png", dpi=300, format="png")
+
+
+
+
+
+def plot_histogram_returns_different_seed(fileName, Data_list, output_folder, dpi = 300):
     returns = np.array([])
     rational_returns = np.array([])
     for i in range(len(Data_list)):
@@ -236,6 +321,13 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
         ret = (prices[1:] - prices[:-1]) / prices[:-1]
         returns = np.append(returns, np.array(ret))
         rational_returns = np.append(rational_returns, np.array(rational_return))
+        # element_1 = Data_list[i].proportion_informed/( Data_list[i].epsilon_sigma**2 + Data_list[i].theta_sigma**2/(Data_list[i].R - Data_list[i].ar_1_coefficient)**2)
+        # element_2 = Data_list[i].proportion_misinformed/(Data_list[i].epsilon_sigma**2 + (Data_list[i].theta_sigma**2 + Data_list[i].gamma_sigma**2)/(Data_list[i].R - Data_list[i].ar_1_coefficient)**2)
+        # element_3 = (1 - Data_list[i].proportion_informed - Data_list[i].proportion_misinformed)/(Data_list[i].epsilon_sigma**2)
+        # no_com_price = Data_list[i].d/ (Data_list[i].R - 1) + ((np.asarray(Data_list[i].history_theta_t)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))*element_1 + ((np.asarray(Data_list[i].history_gamma_t) + np.asarray(Data_list[i].history_theta_t))/(Data_list[i].R - Data_list[i].ar_1_coefficient))*element_2 + element_3) / (element_1 + element_2 + element_3)
+        # no_com_returns = (np.asarray(no_com_price[1:]) - np.asarray(no_com_price[:-1])) / np.asarray(no_com_price[:-1])
+        # #Discard the first 10 values
+        # no_com_returns = no_com_returns[10:]
 
     fig1, ax1 = plt.subplots()
     ax1.plot(returns)
@@ -259,12 +351,44 @@ def plot_histogram_returns_different_seed(fileName, Data_list):
     fig.legend(loc='upper right')
     fig.tight_layout()
     
-    plotName = fileName + "/Plots"
+    plotName = output_folder
     f = plotName + "/" + "histogram_returns"
-    fig.savefig(f + ".eps", dpi=600, format="eps")
-    fig.savefig(f + ".png", dpi=600, format="png")
+    fig.savefig(f + ".eps", dpi=dpi, format="eps")
+    fig.savefig(f + ".png", dpi=dpi, format="png")
 
-def plot_qq_plot_different_seed(fileName, Data_list):
+
+def compute_moments(fileName, Data_list, output_folder):
+    returns = np.array([])
+    rational_returns = np.array([])
+    autocorrelation = np.array([])
+    excesse_var = np.array([])
+    skewness = np.array([])
+    kurtosis = np.array([])
+    for i in range(len(Data_list)):
+        prices = np.array(Data_list[i].history_p_t)
+        autocorrelation = np.append(autocorrelation , np.corrcoef(prices[1:], prices[:-1])[0,1])
+        rational_prices =(Data_list[i].d/ (Data_list[i].R - 1) + np.asarray(Data_list[i].history_theta_t)/ (Data_list[i].R - Data_list[i].ar_1_coefficient))
+        excesse_var = np.append(excesse_var, np.var(prices) - np.var(rational_prices))
+        rational_return = (rational_prices[1:] - rational_prices[:-1]) / rational_prices[:-1]
+        ret = (prices[1:] - prices[:-1]) / prices[:-1]
+        returns = np.append(returns, np.array(ret))
+        skewness= np.append(skewness, np.mean(((ret - np.mean(ret)) / np.std(ret)) ** 3))
+        kurtosis= np.append(kurtosis, np.mean(((ret - np.mean(ret)) / np.std(ret)) ** 4))
+        rational_returns = np.append(rational_returns, np.array(rational_return))
+
+    #compute the average autocorrelation of prices
+    avg_autocorrelation = np.mean(autocorrelation)
+    #compute the average excess variance of prices
+    avg_excess_var = np.mean(excesse_var)
+    #compute the average skewness of returns
+    avg_skewness = np.mean(skewness)
+    #compute the average kurtosis of returns
+    avg_kurtosis = np.mean(kurtosis)
+
+    return {"avg_autocorrelation": avg_autocorrelation, "avg_excess_var": avg_excess_var, "avg_skewness": avg_skewness, "avg_kurtosis": avg_kurtosis}
+
+
+def plot_qq_plot_different_seed(fileName, Data_list, output_folder, dpi = 300):
     returns = np.array([])
     rational_returns = np.array([])
     for i in range(len(Data_list)):
@@ -289,15 +413,16 @@ def plot_qq_plot_different_seed(fileName, Data_list):
     
     fig.tight_layout()
     
-    plotName = fileName + "/Plots"
+    plotName = output_folder
     f = plotName + "/" + "qq_plot_returns"
-    fig.savefig(f + ".eps", dpi=600, format="eps")
-    fig.savefig(f + ".png", dpi=600, format="png")
+    #fig.savefig(f + ".eps", dpi=dpi, format="eps")
+    fig.savefig(f + ".png", dpi=dpi, format="png")
 
 
 def main(
     fileName_single = "results/scale_freesingle_shot_15_29_46_28_03_2024",
     fileName_multi = "results/scale_freesingle_vary_set_seed_09_37_07_01_11_2023",
+    output_folder = "Figures/SW",
     network_structure = "scale_free"
 ):
     
@@ -331,21 +456,23 @@ def main(
 
     #SINGLE RUN
     Data_single = load_object(fileName_single + "/Data", "financial_market")
-    plot_network(fileName_single,Data_single, network_structure, property_value, colour_informed, colour_uninformed, colour_misinformed)
-    
+    plot_network(fileName_single,Data_single, network_structure, property_value, colour_informed, colour_uninformed, colour_misinformed, output_folder)
+    #plot_squared_returns(fileName_single,Data_single)
+    #plot_price_single_run(fileName_single, Data_single)
+
     #MULTIPLE STOCHASTIC SEED RUNS
     Data_multi = load_object(fileName_multi + "/Data", "financial_market_list") 
-    scatter_profit_variance_multiple_seeds(fileName_multi,Data_multi, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, colour_uninformed)
-    plot_avg_price_different_seed(fileName_multi,Data_multi, transparency_level=0.3)
-    plot_histogram_returns_different_seed(fileName_multi,Data_multi)
-    plot_qq_plot_different_seed(fileName_multi,Data_multi)
+    scatter_profit_variance_multiple_seeds(fileName_multi,Data_multi, network_structure, property_value, colour_informed, colour_uninformed_block_1, colour_uninformed_block_2, colour_misinformed, colour_uninformed, output_folder, dpi= 100)
+    #plot_avg_price_different_seed(fileName_multi,Data_multi, transparency_level=0.3)
+    plot_histogram_returns_different_seed(fileName_multi,Data_multi, output_folder, dpi=100)
+    plot_qq_plot_different_seed(fileName_multi,Data_multi, output_folder, dpi=100)
 
     plt.show()
 
 
 if __name__ == "__main__":
     main(
-        fileName_single = "results/scale_freesingle_shot_15_29_46_28_03_2024",
+        fileName_single = "results/SBMsingle_shot_16_59_45_17_06_2024",
         fileName_multi = "results/scale_freesingle_vary_set_seed_09_37_07_01_11_2023",
-        network_structure = "scale_free"
+        network_structure = "SBM"
     )

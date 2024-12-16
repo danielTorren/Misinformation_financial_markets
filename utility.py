@@ -91,9 +91,23 @@ def load_object(fileName, objectName) -> dict:
     data: object
         the pickle file loaded
     """
-    with open(fileName + "/" + objectName + ".pkl", "rb") as f:
-        data = pickle.load(f)
-    return data
+    try:
+        with open(fileName + "/" + objectName + ".pkl", "rb") as f:
+            data = pickle.load(f)
+        return data
+    except FileNotFoundError:
+        print(f"Error: File not found - {fileName}")
+    except EOFError:
+        print("Error: EOF reached - The file may be incomplete or corrupted.")
+    except pickle.UnpicklingError:
+        print("Error: The file could not be unpickled. It may be corrupted.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    
+
+    
+
+
 
 def produce_name_datetime(root):
     fileName = "results/" + root +  "_" + datetime.datetime.now().strftime("%H_%M_%S_%d_%m_%Y")

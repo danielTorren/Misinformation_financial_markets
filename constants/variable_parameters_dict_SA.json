@@ -1,10 +1,9 @@
 {
-    "theta_sigma": {"property": "theta_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\Theta$"},
-    "gamma_mean": {"property": "gamma_mean", "min": -1.0, "max": 1.0, "round": 0, "title": "$\\Gamma$"},
-    "gamma_sigma": {"property": "gamma_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\Gamma$"},
+    "ar_1_coefficient": {"property": "ar_1_coefficient", "min": 0.1, "max": 0.9, "round": 0, "title": "$\\beta$"},
+    "theta_sigma": {"property": "theta_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\eta$"},
+    "gamma_sigma": {"property": "gamma_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\gamma$"},
     "epsilon_sigma": {"property": "epsilon_sigma", "min": 0.1, "max": 2, "round": 0, "title": "$\\sigma_\\epsilon$"},
-    "proportion_dogmatic_theta": {"property": "proportion_informed", "min": 0.01, "max": 0.25, "round": 0, "title": "$\\% \\mathrm{dogmatic}_\\Theta$"},
-    "proportion_dogmatic_gamma": {"property": "proportion_misinformed", "min": 0.01, "max": 0.25, "round": 0, "title": "$\\% \\mathrm{dogmatic}_\\Gamma$"},
-    "ar_1_coefficient": {"property": "ar_1_coefficient", "min": 0.05, "max": 0.9, "round": 0, "title": "$\\mathrm{AR}(1)$"},
-    "w": {"property": "w", "min": 0.05, "max": 0.99, "round": 0, "title": "$memory$"}
+    "proportion_dogmatic_theta": {"property": "proportion_informed", "min": 0.01, "max": 0.3, "round": 0, "title": "$\\lambda$"},
+    "proportion_dogmatic_gamma": {"property": "proportion_misinformed", "min": 0.01, "max": 0.3, "round": 0, "title": "$\\xi$"},
+    "w": {"property": "w", "min": 0.05, "max": 0.99, "round": 0, "title": "w$"}
 }

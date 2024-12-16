@@ -1,0 +1,24 @@
+- Find stylised facts that we want to match:
+Look some paper that does this, maybe Ivan or Elisa?
+
+-- Information diffuse slowly
+-- Misinformation has an effect but a lower one
+-- We match kurtosis and skewness
+-- Inequality, pareto? 80% are gaining and 20% are losing?
+
+- Simulated method of moments instead of Black Box?
+
+sigma_gamma -> sigma_nu
+sigma_theta -> sigma_eta
+
+De groot derivation is incorrect
+
+-check citep, parentheses
+
+-do de groot in the limit for I that goes to infinity so variance goes to 0
+
+- model with no learning
+- de groot learning 
+- our model
+- impulse response --> save the weighting matrix object then upload it in different version
+- motivate our model with adding positive feedback which is needed for skeweness and kurtosis

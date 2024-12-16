@@ -6,6 +6,7 @@ This version: 9/4/2024
 import json
 import numpy as np
 from scipy.stats import kurtosis
+from scipy.stats import skew
 from SALib.sample import sobol, saltelli
 import numpy.typing as npt
 from joblib import Parallel, delayed
@@ -27,57 +28,51 @@ def generate_sensitivity_output(params: dict):
     #print(params)
     print_simu = 0
 
-    price_mean_list = []
     price_var_list = []
-    price_autocorr_list = []
+    price_skew_list = []
     price_kurtosis_list = []
 
     for v in params["seed_list"]:
         params["set_seed"] = v
         data = generate_data_single(params, print_simu)
-        rational_price =(data.d/ (data.R - 1) + (data.history_theta_t)/ (data.R - data.ar_1_coefficient))
-        price_mean = np.mean(data.history_p_t - rational_price)
+        rational_price =(data.d/ (data.R - 1) + (np.asarray(data.history_theta_t))/ (data.R - data.ar_1_coefficient))
         price_var = np.var(data.history_p_t) - np.var(rational_price)
-        price_autocorr = np.corrcoef(data.history_p_t[:-1],data.history_p_t[1:])[0,1] - data.ar_1_coefficient
+        price_skew = skew(np.asarray(data.history_p_t[1:])/np.asarray(data.history_p_t[:-1]) - 1)
         price_kurtosis = kurtosis(np.asarray(data.history_p_t[1:])/np.asarray(data.history_p_t[:-1]) - 1)
 
-        price_mean_list.append(price_mean)
         price_var_list.append(price_var)
-        price_autocorr_list.append(price_autocorr)
+        price_skew_list.append(price_skew)
         price_kurtosis_list.append(price_kurtosis)
 
-    stochastic_norm_price_mean = np.mean(price_mean)
     stochastic_norm_price_var = np.mean(price_var)
-    stochastic_norm_price_autocorr = np.mean(price_autocorr)
+    stochastic_norm_price_skew = np.mean(price_skew)
     stochastic_norm_price_kurtosis = np.mean(price_kurtosis)
 
     return (
-    stochastic_norm_price_mean,
     stochastic_norm_price_var,
-    stochastic_norm_price_autocorr,
+    stochastic_norm_price_skew,
     stochastic_norm_price_kurtosis,
     )
 
 def parallel_run_sa(
-    params_dict: dict[dict],
-) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]:
+    params_dict: dict[dict]
+):
     """
     Generate data for sensitivity analysis for model varying lots of parameters dictated by params_dict, producing output
     measures emissions,mean,variance and coefficient of variance. Results averaged over multiple runs with different stochastic seed
 
     """
 
+
     res = Parallel(n_jobs=multiprocessing.cpu_count(), verbose=10)(delayed(generate_sensitivity_output)(i) for i in params_dict)
     #res = [generate_sensitivity_output(i) for i in params_dict]
-
-    results_price_mean, results_price_var, results_price_autocorr, results_price_kurtosis = zip(
-        *res
-    )
-
+    results_price_var, results_price_skew, results_price_kurtosis = zip(
+            *res
+        )
+ 
     return (
-        np.asarray(results_price_mean),
         np.asarray(results_price_var),
-        np.asarray(results_price_autocorr),
+        np.asarray(results_price_skew),
         np.asarray(results_price_kurtosis)
     )
 
@@ -187,7 +182,6 @@ def main(
          ) -> str: 
     
     calc_second_order = False
-
     # load base params
     f = open(base_params_load)
     base_params = json.load(f)
@@ -201,7 +195,7 @@ def main(
     ##AVERAGE RUNS
     AV_reps = len(base_params["seed_list"])
     print("Average reps: ", AV_reps)
-
+    
     problem = generate_problem(
         variable_parameters_dict, N_samples, AV_reps, calc_second_order
     )
@@ -210,7 +204,7 @@ def main(
 
     # GENERATE PARAMETER VALUES
     print("problem, N_samples", problem, N_samples, type( N_samples))
-
+    
     #param_values = sobol.sample(
     #    problem, N_samples, calc_second_order=calc_second_order
     #)  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
@@ -218,7 +212,7 @@ def main(
     param_values = saltelli.sample(
         problem, N_samples, calc_second_order=calc_second_order
     )  # NumPy matrix. #N(2D +2) samples where N is 1024 and D is the number of parameters
-
+    
     #DEAL WITH ROUNDED VARIABLES
     round_variable_list = [x["property"] for x in variable_parameters_dict.values() if x["round"]]
     print("round_variable_list:",round_variable_list)
@@ -230,8 +224,8 @@ def main(
     params_list_sa = produce_param_list_SA(
         param_values, base_params, variable_parameters_dict
     )
-
-    price_mean, price_var, price_autocorr, price_kurtosis = parallel_run_sa(
+    
+    price_var, price_skew, price_kurtosis = parallel_run_sa(
         params_list_sa
     )
 
@@ -249,9 +243,8 @@ def main(
     save_object(variable_parameters_dict, fileName + "/Data", "variable_parameters_dict")
     save_object(problem, fileName + "/Data", "problem")
 
-    save_object(price_mean, fileName + "/Data", "price_mean")
     save_object(price_var, fileName + "/Data", "price_var")
-    save_object(price_autocorr, fileName + "/Data", "price_autocorr")
+    save_object(price_skew, fileName + "/Data", "price_skew")
     save_object(price_kurtosis, fileName + "/Data", "price_kurtosis")
 
     save_object(N_samples , fileName + "/Data","N_samples")

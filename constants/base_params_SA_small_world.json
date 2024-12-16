@@ -8,11 +8,11 @@
     "I": 200,
     "R": 1.01,
     "a": 5.5,
-    "d": 1.1,
-    "prob_rewire": 0.1,
+    "d": 0.021,
+    "prob_rewire": 0.01,
     "network_type": "small_world",
     "theta_mean": 0,
     "misinformed_central":0,
-    "network_density": 0.3
+    "network_density": 0.1
 
 }

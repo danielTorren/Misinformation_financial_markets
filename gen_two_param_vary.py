@@ -117,7 +117,7 @@ def main(
     print("TOTAL REPS", len(params_list))
 
     #Data_list = generate_data_parallel(params_list,print_simu) 
-    Data_list = generate_data_parallel_single_explore(params_list, print_simu)
+    Data_list = generate_data_parallel_single_explore(params_list)
 
     dev_price_list = [d["dev_price"] for d in Data_list]
     excess_var_list = [d["excess_var"] for d in Data_list]

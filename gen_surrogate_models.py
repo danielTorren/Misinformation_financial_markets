@@ -9,6 +9,7 @@ from utility import (
 from joblib import Parallel, delayed
 import multiprocessing
 
+
 # Defne a NN model
 class Net(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -69,8 +70,9 @@ def single_surrogate(returns_timeseries, parameters_list, input_size, hidden_siz
     print(f'Test loss: {loss.item()}')   
     return model
 
+
 def main(fileName = "results/sensitivity_analysis_10_57_34_10_04_2024"):
-        
+
     parameters_list = load_object(fileName + "/Data", "param_values")
     returns_timeseries_arr = load_object(fileName + "/Data", "returns_timeseries_arr")
 
@@ -87,7 +89,7 @@ def main(fileName = "results/sensitivity_analysis_10_57_34_10_04_2024"):
         torch.save(model.state_dict(), fileName + f"/Data/model_{i}")
 
 if __name__ == '__main__':
-    filename = "results/surrogate_model_15_40_28_26_04_2024"
+    filename = "results/surrogate_model_04_16_47_27_04_2024"
  
     main(filename)
 

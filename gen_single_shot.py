@@ -42,7 +42,7 @@ def main(
 
 if __name__ == "__main__":
     main(
-        base_params_load = "constants/base_params.json"
+        base_params_load = "constants/base_params_SBM.json"
     )
 
     
