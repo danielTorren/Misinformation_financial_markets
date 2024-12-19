@@ -1,7 +1,7 @@
 # (Mis)Information Diffusion and the Financial Market
 This repository contains the code to reproduce the results in the paper (Mis)Information Diffusion and the Financial Market, Di Francesco & Torren-Peraire (2024). 
 
-## To reproduce all the figures in the paper on only has to run 3 files:
+## To reproduce all the figures in the paper one only has to run 3 files:
 - 'obtain_posterior_params.ipynb' will calibrate the model using the already pretrained Sequential Neural Posterior Approximator. Running the notebook will produce figure 3 and 10 and create a table with moments of the posterior distribution.
 Moreover the notebook will save the calibrated two parameters to the .json file in the constants folder, that will be used to produce the other figures in the paper.
 If one wishes to calibrate different parameters, then they can uncomment the last two cell blocks of the notebook.
