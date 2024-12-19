@@ -1,6 +1,16 @@
 # (Mis)Information Diffusion and the Financial Market
-This repository contains the code to reproduce the results in the paper (Mis)Information Diffusion and the Financial Market, Di Francesco & Torren-Peraire (2023). 
+This repository contains the code to reproduce the results in the paper (Mis)Information Diffusion and the Financial Market, Di Francesco & Torren-Peraire (2024). 
 
+## To reproduce all the figures in the paper on only has to run 3 files:
+- 'obtain_posterior_params.ipynb' will calibrate the model using the already pretrained Sequential Neural Posterior Approximator. Running the notebook will produce figure 3 and 10 and create a table with moments of the posterior distribution.
+Moreover the notebook will save the calibrated two parameters to the .json file in the constants folder, that will be used to produce the other figures in the paper.
+If one wishes to calibrate different parameters, then they can uncomment the last two cell blocks of the notebook.
+
+- 'produce_figures.ipynb' will produce figures 4, 6, 7 and 8.
+To produce figure 3 one has to run the sensitivity analyisis again as described below, since the results were to large to include on github. 
+If one wishes to change parameters, they can do so in the appropriate .json files in the 'constant' folders and then run the commented cells.
+
+- 'single_run_playground.ipynb' will produce figures 1 and 5.
 
 ## Sensitivity analysis
 To run the sensittivity analysis one can:
@@ -8,12 +18,6 @@ To run the sensittivity analysis one can:
 - Define the dictionary of variable parameters in the file 'variable_parameters_dict_SA.json'. This is done by defining the parameter name, the lower and upper bound of the range to be explored and the label of the parameters which will be used for plotting.
 - At this point one can run the file 'gen_sensitivty_analysis.py'. This will generate a subfolder in the result folder and provide the user with a filename.
 - To plot the results you can run the file 'plot_sensitivity_analysis.py' after changing the filename in the main function. This script will display the first and total order Sobol index and save the picture in the same subfolder in the result folder.
-
-## Contour plot for two parameters varying simultaneously
-- One can choose the base parameters in the 'base_params_2D.json" file. In addition to the usual parameters the user can select the number of repetitions with different stochastic seed for each parameter combination by using the parameter "seed_reps".
-- The two parameters to be varied and their range can be chosen in the file 'variable_parameters_dict_2D.json' in whcih the user can also choose the grid size.
-- Then one can simply run the file 'gen_two_param_vary.py' to generate data in a subfolder in the result folder and the realitve filename.
-- The filename can be copied into the main function into the 'plot_two_param_vary.py' file to generate the contour plots. The scritp will display the figures and save them in the same subfolder.
 
 ## Description of the main functions 'matrix_model.py'
 - self.category vector: stores the category of each agents. 1 is for informed, 0 is for uninformed, -1 is for misinformed;
